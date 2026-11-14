@@ -2,10 +2,9 @@
 import { computed } from 'vue';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
-import Message from 'primevue/message';
 import Icon from './Icon.vue';
 import { s, tracker } from '../app/store';
-import { apply, markRemove, openResult, removeStaged } from '../app/project';
+import { apply, markRemove, removeStaged } from '../app/project';
 import { pauseSummary } from '../app/logic';
 import { t, tn, tMaybe, fmt } from '../core/i18n';
 
@@ -54,23 +53,11 @@ const objectName = (k: number) => s.project?.objects[k]?.name ?? '';
     </div>
   </section>
 
-  <section v-if="s.result" class="em-card em-result" data-test="result" aria-labelledby="result-h">
-    <Icon name="spot/done" class="em-spot" />
-    <h2 id="result-h">{{ t('result.title') }}</h2>
-    <p>{{ t('result.body', { name: s.result.name, pockets: s.result.pockets, removed: s.result.removed }) }}</p>
-    <p v-for="p in s.result.pauses" :key="p.top_z" class="oui-meta"><Icon name="icon/pause" /> Z {{ fmt.number(p.top_z, 2) }} mm · {{ p.extra }}</p>
-    <Message v-for="w in s.result.warnings" :key="w" severity="warn"><Icon name="icon/warning" /> {{ tMaybe(`warn.${w}`, w) }}</Message>
-    <p class="oui-meta">{{ t('result.copy') }}</p>
-    <p class="oui-error-detail" data-test="result-path">{{ s.result.path }}</p>
-    <Button :loading="tracker.isBusy('open')" data-test="open" @click="openResult"><Icon name="icon/folder" /><span>{{ t('result.open') }}</span></Button>
-    <p v-if="s.opened" role="status" data-test="opened">{{ t(s.opened === 'asked' ? 'result.asked' : 'result.none') }}</p>
-  </section>
 </template>
 
 <style scoped>
-.em-list, .em-result { display: grid; gap: 12px; }
-.em-list > h2, .em-result > h2, .em-list h3 { margin: 0; }
-.em-result { justify-items: start; }
+.em-list { display: grid; gap: 12px; }
+.em-list > h2, .em-list h3 { margin: 0; }
 .em-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .em-item { display: flex; align-items: center; gap: 8px; }
 .em-item-main { flex: 1; display: grid; gap: 2px; min-width: 0; }

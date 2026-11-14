@@ -18,6 +18,7 @@ export const currentObject = () => (s.project && s.object != null ? s.project.ob
 
 export async function loadProject(): Promise<void> {
   if (s.loading) return;
+  pullToken++;   // a mesh pull still running for the old project must not land in the new one
   s.loading = { done: 0, total: 0 };
   const r = await tracker.run<Project>({ key: 'load', label: t('act.load'), cmd: 'project.load', timeoutMs: LONG_MS });
   s.loading = null;

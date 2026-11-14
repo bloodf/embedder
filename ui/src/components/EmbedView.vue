@@ -9,6 +9,7 @@ import PlaceFallback from './PlaceFallback.vue';
 import PocketForm from './PocketForm.vue';
 import PlanCard from './PlanCard.vue';
 import PocketList from './PocketList.vue';
+import ResultCard from './ResultCard.vue';
 import { s } from '../app/store';
 import { loadProject } from '../app/project';
 import { t, tMaybe } from '../core/i18n';
@@ -42,7 +43,8 @@ const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`bloc
       <strong>{{ t('block.title') }}</strong>
       <ul class="em-blocks"><li v-for="b in blocks" :key="b">{{ b }}</li></ul>
     </Message>
-    <p v-if="!s.project.objects.length" class="em-card oui-muted" data-test="no-objects">{{ t('load.noObjects') }}</p>
+    <ResultCard v-if="s.result" />
+    <p v-else-if="!s.project.objects.length" class="em-card oui-muted" data-test="no-objects">{{ t('load.noObjects') }}</p>
     <div v-else class="em-grid">
       <div class="em-side">
         <PocketForm />

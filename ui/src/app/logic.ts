@@ -33,11 +33,16 @@ export function pauseSummary(staged: readonly Staged[]): PauseGroup[] {
     if (z == null || s.plan.mode !== 'embedded') continue;
     const key = Math.round(z * 1e6) / 1e6;
     const labels = groups.get(key) ?? new Map<string, number>();
-    labels.set(s.plan.label ?? '?', (labels.get(s.plan.label ?? '?') ?? 0) + 1);
+    labels.set(s.plan.label ?? '?', (labels.get(s.plan.label ?? '?') ?? 0) + (s.plan.copies ?? 1));
     groups.set(key, labels);
   }
   return [...groups.entries()].sort((a, b) => a[0] - b[0])
     .map(([z, labels]) => ({ z, items: [...labels.entries()].map(([label, n]) => ({ label, n })) }));
+}
+
+/** Previews of the staged pockets on one object (the viewer shows one object at a time). */
+export function previewsFor(staged: readonly Staged[], object: number | null): NonNullable<Plan['preview']>[] {
+  return staged.flatMap(x => (x.args.object === object && x.plan.preview ? [x.plan.preview] : []));
 }
 
 export interface PresetGroup { key: 'magnet' | 'nfc' | 'mine'; items: Preset[] }

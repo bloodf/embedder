@@ -126,6 +126,7 @@ export function createScene(host: HTMLElement, onPick: (hit: Hit) => void): Scen
       renderer.domElement.removeEventListener('pointerup', onUp);
       controls.dispose();
       disposeAll([...parts, ...pockets, ...(grid ? [grid] : [])]);
+      renderer.forceContextLoss();   // free the GL context now; WebViews cap how many may live at once
       renderer.dispose();
       renderer.domElement.remove();
     },

@@ -211,12 +211,15 @@ test('apply writes a copy with the staged and removed pockets; open asks OrcaSli
   assert(text(byTest('result')).includes('Save Project As'), 'save-as note');
   assert(text(byTest('result')).includes('Your own custom G-code'), 'apply warning');
   eq(text(byTest('result-path')), path, 'path shown');
-  assert(byTest('staged-empty'), 'staged list cleared');
+  assert(!byTest('apply') && !byTest('viewer') && !byTest('no3d') && !byTest('preset'), 'the job is over: no more staging on this copy');
+  assert(text(byTest('result')).includes('Load project'), 'result asks for a new load: ' + text(byTest('result')));
   await click(byTest('open'));
   await until(() => last('cmd', 'project.open'), 'open sent');
   eq(last('cmd', 'project.open').args, {path}, 'open arguments');
   await reply(last('cmd', 'project.open'), {open: 'asked'});
   assert(text(byTest('opened')).includes('asked to open'), 'opened: ' + text(byTest('opened')));
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
 `);
 
 test('a stale job error tells the user to load again', `

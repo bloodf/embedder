@@ -4,6 +4,7 @@ import Button from 'primevue/button';
 import Icon from './Icon.vue';
 import { s } from '../app/store';
 import { currentObject, meshesOf, placeAt } from '../app/project';
+import { previewsFor } from '../app/logic';
 import { createScene, type SceneApi } from '../core/scene';
 import { t } from '../core/i18n';
 
@@ -18,7 +19,7 @@ function showParts() {
   scene.setParts(meshesOf(obj.object), part => normal.has(part));
 }
 function showPockets() {
-  scene?.setPockets(s.plan?.preview ?? null, s.staged.flatMap(x => (x.plan.preview ? [x.plan.preview] : [])));
+  scene?.setPockets(s.plan?.preview ?? null, previewsFor(s.staged, s.object));
 }
 
 onMounted(() => {

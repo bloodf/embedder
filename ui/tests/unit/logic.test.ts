@@ -1,7 +1,7 @@
 // Pure Embed-panel rules: plan arguments, the Embedded block reason, pause summary, preset groups, staging.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { embeddedBlock, groupPresets, pauseSummary, planArgs, stage, toggle, unstage } from '../../src/app/logic.ts';
+import { embeddedBlock, groupPresets, pauseSummary, planArgs, previewsFor, stage, toggle, unstage } from '../../src/app/logic.ts';
 import type { ObjectInfo, Plan, Preset, Staged } from '../../src/app/types.ts';
 
 const hit = { part: 1, tri: 7, point: [1, 2, 3] as [number, number, number] };
@@ -35,6 +35,19 @@ test('pauses group embedded pockets by height, lowest first', () => {
     { z: 5.4, items: [{ label: '6x3 magnet', n: 2 }, { label: '8x2 magnet', n: 1 }] },
   ]);
   assert.deepEqual(pauseSummary([]), []);
+});
+
+test('a pocket on an object with copies counts once per copy', () => {
+  const two: Staged = { key: 1, args: {} as Staged['args'], plan: { mode: 'embedded', pause_z: 5.4, label: '6x3 magnet', copies: 2, blocked: null, preview: null } };
+  assert.deepEqual(pauseSummary([two, staged(2, 5.4, '6x3 magnet')]), [{ z: 5.4, items: [{ label: '6x3 magnet', n: 3 }] }]);
+});
+
+test('the viewer shows only the selected object\'s staged pockets', () => {
+  const preview = { positions: [0, 0, 0], indices: [0, 0, 0] };
+  const at = (key: number, object: number, withPreview = true): Staged =>
+    ({ key, args: { object } as Staged['args'], plan: { mode: 'open', blocked: null, preview: withPreview ? preview : null } });
+  assert.equal(previewsFor([at(1, 0), at(2, 1), at(3, 0, false)], 0).length, 1);
+  assert.equal(previewsFor([at(1, 0)], null).length, 0);
 });
 
 test('presets group into magnets, NFC and mine; empty groups drop', () => {

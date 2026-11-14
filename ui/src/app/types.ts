@@ -93,6 +93,7 @@ export interface Plan {
   kind?: Kind;
   preview: { positions: number[]; indices: number[] } | null;
   warnings?: string[];
+  copies?: number;          // instances of the object on the plate: each gets the insert
   blocked: { code: string; detail: string } | null;
 }
 
