@@ -260,11 +260,11 @@ def _cmd_project_open(page, args):
     """UI thread: hand an applied copy (a .3mf directly in the storage folder) to OrcaSlicer."""
     path = args.get("path")
     folder = os.path.realpath(_storage_or_raise())
-    if not (isinstance(path, str) and path.endswith(".3mf") and os.path.isfile(path)
-            and os.path.dirname(os.path.realpath(path)) == folder):
+    real = os.path.realpath(path) if isinstance(path, str) else ""
+    if not (real.endswith(".3mf") and os.path.isfile(real) and os.path.dirname(real) == folder):
         raise CommandError("bad_request", "only an applied copy in the plugin folder can be opened")
     try:
-        opened = _open_in_orca(path)
+        opened = _open_in_orca(real)   # the checked file itself, not a link that could change later
     except Exception as e:
         raise CommandError("open_failed", str(e)) from None
     return {"open": "asked" if opened else "none"}

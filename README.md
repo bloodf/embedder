@@ -151,13 +151,18 @@ Embedded pockets are blocked, with the reason shown, when:
 - the print sequence is "by object" (OrcaSlicer ignores layer pauses in that mode)
 - the printer profile has no pause G-code
 - the profile uses a raft, or the object has variable layer height or layer ranges
-- the object's instances differ by more than a Z rotation and a move
+- copies of the object sit on another plate (the pause is written for one plate)
 - the face is tilted (open pockets still work there)
-- the pocket would reach below the bed, or the pause would fall before the second layer
+- the pocket would reach below the bed, would have no printed layer under it, or the pause would fall
+  before the second layer
 
-Embedder warns, without blocking, when the cover is thin (less than two layers), when an NFC pocket is
-within 10 mm of a magnet pocket (the tag may not read), and when another custom G-code already sits
-on the pause layer (Embedder leaves it alone and adds no pause there).
+When the object's copies differ by more than a Z rotation and a move, no pocket is offered at all: one
+negative part cuts every copy.
+
+Embedder warns, without blocking, when the cover is thin (less than two layers, or under 0.8 mm for a
+side wall), when the pocket reaches outside the part, when an NFC pocket is within 10 mm of a magnet
+pocket (the tag may not read), and when another custom G-code already sits on the pause layer (Embedder
+leaves it alone and adds no pause there).
 
 Things to know:
 
@@ -166,6 +171,10 @@ Things to know:
 - **Changing the layer height after Apply moves the layers.** The pause is tied to a height. If you
   change the layer height in the new project, load it again and re-apply.
 - **Cut objects with connectors** and **bare mesh objects** without a parts list are not supported.
+- **One Apply per load.** After Apply the new copy is the project; open it and load it again to add more.
+- **Linux:** "Open in OrcaSlicer" starts the OrcaSlicer executable (or the AppImage) with the file, which
+  may open a second OrcaSlicer window instead of reusing the running one. Close the old window, or open
+  the file from File > Open.
 - Embedder's pockets and pauses are marked (the part names start with "Embedder", the pause text with
   "Embedder:"). Loading a project that already has them lists them so you can remove or re-apply them.
   Pockets and pauses you made by hand are left alone.

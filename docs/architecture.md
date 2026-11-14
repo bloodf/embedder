@@ -40,6 +40,17 @@ The page bridge runs on OrcaSlicer's UI thread. Two commands need that thread:
 Parsing and writing run on the plugin's own threads (`_worker` in `plugin.py`), which reply later with
 the request id. Everything the plugin writes stays in the storage folder.
 
+**Posting from a worker thread.** The worker posts its `progress` messages and the late `reply` straight
+through `post_message`. The host does not document `post_message` as thread-safe, so this choice rests on
+the family's practice: u1control (released 0.5.0 to 0.6.0) and kobracontrol post every command reply and
+status push from their service threads the same way, with no hop to the UI thread, and that has held up in
+OrcaSlicer 2.5. Organizer is the one sibling that is stricter (worker posts are dropped and its page polls).
+If a host release ever needs it, the fallback is the same polling: keep the result in the session and let
+the page ask with a `job.status` command on the UI thread.
+
+Old job folders are deleted on a short-lived thread, so a new load never waits for them; a worker that
+was still reading a dropped job answers `stale_job`.
+
 ## Storage
 
 ```text
@@ -111,6 +122,10 @@ Meshes are sent in plate coordinates. The page pulls them in chunks of 256 KiB o
 (`CHUNK_BYTES`), base64-encoded, positions as float32 and indices as uint32, so one message stays small.
 A reply to a stale job id fails with `stale_job`.
 
+A build item's plate comes from `<plate>/<model_instance>` in `model_settings.config` (object id plus
+instance number, in build order); only an instance missing there is placed by position, from the cached
+bounding boxes of its parts.
+
 ### Planning
 
 `pocket.plan` takes `job`, `object` (index into the job's objects), `part`, `tri` (the clicked triangle),
@@ -120,14 +135,22 @@ A reply to a stale job id fails with `stale_job`.
 
 Python is the single source of geometry. The page only draws the primitive Python returns. The point must
 lie within 1 mm of the triangle's plane. The reply carries the pocket's mode, face class, shape, size,
-transform, cavity `floor` and `top`, `pause_z`, cover, label, kind, a preview mesh and `warnings`, or a
-`blocked` object with a stable `code`.
+transform, cavity `floor` and `top`, `pause_z`, the actual cover (never thinner than asked), label, kind,
+`copies` (instances of the object on the plate; each gets the insert), a preview mesh and `warnings`, or
+a `blocked` object with a stable `code`.
 
 ### Applying
 
 `project.apply` re-plans every pocket (never trusting the page's earlier answer), then writes the copy.
 Pauses are recomputed from all embedded pockets on every apply, including the Embedder parts that stay
-because they were not in `remove`.
+because they were not in `remove`. A negative part cuts every instance of its object, so the pause text
+counts each pocket once per instance on the plate.
+
+A successful apply ends the job: the new copy is the project now, and later `pocket.plan` or
+`project.apply` calls for that job answer `stale_job`. The page shows the result and asks for
+**Load project** again before more pockets, so a second apply never rebuilds from the old copy and drops
+the first one's pockets. The output name is claimed atomically (a hard link from the temporary file, or an
+exclusive create where links are not supported); a name already taken gets `-2`, `-3`, ...
 
 ### Error codes
 
@@ -150,8 +173,9 @@ clean. Disc: cylinder (64 sides). Block: box.
 
 **Embedded pocket, flat face.** Height is thickness plus Z clearance. On a top face the cavity ends one
 cover thickness below the surface; on a bottom face it starts one cover thickness above it. The floor is
-snapped down to the grid and the top is snapped up, so the insert never stands proud of the last printed
-layer.
+snapped to the grid on the cover side first (top face: the cavity top snaps down under the cover; bottom
+face: the floor snaps up over it), so the cover is never thinner than asked, then the other end moves away
+so the cavity is never shorter than the insert.
 
 **Embedded pocket, side face.** A vertical slot behind the wall. Width is the insert's length (diameter
 for a disc) plus clearance, depth is the thickness plus clearance, height is the diameter (disc) or
@@ -163,12 +187,18 @@ same `pause_z` share one pause. The text is `Embedder: insert N x <label>, ...`.
 
 **Blocks** (embedded only; open pockets are never blocked by these): `tilted_face`, `by_object`
 (print sequence "by object", also read per plate), `no_pause_gcode`, `raft`, `variable_layer_height`
-(a layer height profile, or a layer range on the object), `instances_differ`. Also `below_bed`,
-`pause_too_low` (pause before the second layer) and `no_layer_height`.
+(a layer height profile, or a layer range on the object), `instances_other_plate` (an instance of the
+object sits on another plate: the part would cut it, but the pause is written for this plate only).
+Also `below_bed`, `no_floor` (no printed layer under the cavity), `pause_too_low` (pause before the
+second layer) and `no_layer_height`. `instances_differ` (instances differ by more than a Z rotation and a
+move) blocks both modes, because one part cuts every instance.
 
-**Warnings:** `thin_cover` (cover under two layers), `nfc_near_magnet` (NFC pocket edge within 10 mm of a
-magnet pocket edge), `existing_gcode_at_layer` (someone else's custom G-code already on the pause layer;
-no Embedder pause is added there).
+**Warnings:** `thin_cover` (cover under two layers on a top or bottom face, under 0.8 mm for a side wall),
+`breaks_surface` (an embedded cavity leaves the part: nine probe columns, the centre and eight around the
+rim, are ray-tested against the clicked part's mesh above the top, through the middle and under the floor;
+for a side slot its eight corners and centre must be inside the solid), `nfc_near_magnet` (NFC pocket edge
+within 10 mm of a magnet pocket edge), `existing_gcode_at_layer` (someone else's custom G-code already on
+the pause layer; no Embedder pause is added there).
 
 **Face classes.** A face within 5 degrees of horizontal is flat (top or bottom), within 5 degrees of
 vertical is a side face, anything else is tilted.

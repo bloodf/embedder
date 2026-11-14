@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 from array import array
 
@@ -88,7 +89,18 @@ class Load(Base):
         first = self.load()
         self.load()
         self.assertEqual(self.error(self.plan, first["job"]), "stale_job")
-        self.assertFalse(os.path.exists(os.path.join(self.storage, "jobs", first["job"])), "older job folder removed")
+        old = os.path.join(self.storage, "jobs", first["job"])
+        for _ in range(200):   # removed on a worker thread
+            if not os.path.exists(old):
+                break
+            time.sleep(0.01)
+        self.assertFalse(os.path.exists(old), "older job folder removed")
+
+    def test_loading_a_replaced_job_is_stale(self):
+        first, source = self.s.new_job()
+        fixtures.cube(source)
+        self.s.new_job()
+        self.assertEqual(self.error(self.s.load, first, "", 1, {}), "stale_job")
 
     def test_empty_project_settings_use_live_values(self):
         live = {"layer_height": "0.12", "initial_layer_print_height": "0.2", "machine_pause_gcode": "",
@@ -103,6 +115,12 @@ class Load(Base):
         r = self.load(fixtures.two_plates, plate=2)
         self.assertEqual([o["item"] for o in r["objects"]], [1])
         self.assertEqual(r["plates"], 2)
+
+    def test_instances_on_another_plate_block_embedded(self):
+        r = self.load(fixtures.two_plates, plate=1)
+        self.assertEqual(r["objects"][0]["embedded_block"], "instances_other_plate")
+        self.assertEqual(self.plan(r["job"])["blocked"]["code"], "instances_other_plate")
+        self.assertIsNone(self.plan(r["job"], mode="open")["blocked"])
 
     def test_two_instances_are_listed(self):
         r = self.load(fixtures.two_instances)
@@ -169,6 +187,15 @@ class Plan(Base):
         r = self.load(extra={"Metadata/cut_information.xml": cut})
         self.assertEqual(self.error(self.plan, r["job"]), "cut_object")
 
+    def test_breaking_through_warns(self):
+        r = self.load()
+        self.assertEqual(self.plan(r["job"])["warnings"], [])
+        self.assertIn("breaks_surface", self.plan(r["job"], point=[101, 110, 20])["warnings"])
+
+    def test_copies_are_reported(self):
+        r = self.load(fixtures.two_instances)
+        self.assertEqual(self.plan(r["job"], point=[70, 110, 20])["copies"], 2)
+
     def test_others_bring_proximity_warnings(self):
         r = self.load(fixtures.build, objects=[fixtures.cube_object(size=60)])
         near = {"object": 0, "part": 0, "tri": TOP_TRI, "point": [120, 110, 60], "preset": "nfc-sticker-25", "mode": "embedded"}
@@ -196,6 +223,17 @@ class Apply(Base):
                          ["Embedder 6x3 magnet (embedded)"] * 2 + ["Embedder 6x3 magnet (open)"])
         self.assertEqual(out["pockets"], 3)
 
+    def test_pause_counts_every_instance(self):
+        r = self.load(fixtures.two_instances)
+        out = self.apply(r["job"], [self.pocket(point=[70, 110, 20])])
+        self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 2 x 6x3 magnet"}])
+
+    def test_an_applied_job_is_finished(self):
+        r = self.load()
+        self.apply(r["job"], [self.pocket()])
+        self.assertEqual(self.error(self.plan, r["job"]), "stale_job")
+        self.assertEqual(self.error(self.apply, r["job"], [self.pocket()]), "stale_job")
+
     def test_reapply_keeps_and_removes(self):
         r = self.load()
         first = self.apply(r["job"], [self.pocket(), self.pocket(preset="magnet-disc-5x3", point=[105, 105, 20])])
@@ -205,11 +243,11 @@ class Apply(Base):
         existing = {e["label"]: e["id"] for e in r2["existing"]}
         self.assertEqual(set(existing), {"6x3 magnet", "5x3 magnet"})
         self.assertEqual([p["embedder"] for p in r2["pauses"]], [True])
+        self.assertEqual(self.error(self.apply, r2["job"], (), ["1"]), "not_embedder_part")
         second = self.apply(r2["job"], remove=[existing["6x3 magnet"]])
         pkg = threemf.read(second["path"])
         self.assertEqual([e.label for e in pkg.embedder_parts()], ["5x3 magnet"])
         self.assertEqual([(l.top_z, l.extra) for l in pkg.layers], [(19.2, "Embedder: insert 1 x 5x3 magnet")])
-        self.assertEqual(self.error(self.apply, r2["job"], (), ["1"]), "not_embedder_part")
 
     def test_existing_user_gcode_at_the_same_layer(self):
         r = self.load(fixtures.user_pause, z=19.2)

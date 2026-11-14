@@ -127,7 +127,7 @@ class RoundTrip(Base):
         plugin._open_in_orca = lambda path: opened.append(path) or True
         self.addCleanup(setattr, plugin, "_open_in_orca", plugin.open_in_orca)
         self.assertEqual(self.call("project.open", path=applied["path"]), {"open": "asked"})
-        self.assertEqual(opened, [applied["path"]])
+        self.assertEqual(opened, [os.path.realpath(applied["path"])])
         self.assertEqual(self.error("project.open", path=self.src), "bad_request")
 
     def test_storage_is_only_asked_inside_callbacks(self):

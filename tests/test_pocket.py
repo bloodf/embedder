@@ -3,7 +3,7 @@ import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path[:0] = [os.path.join(ROOT, "src", "embedder")]
+sys.path[:0] = [os.path.join(ROOT, "src", "embedder"), os.path.join(ROOT, "tests")]
 import geometry as g  # noqa: E402
 import pocket  # noqa: E402
 import presets  # noqa: E402
@@ -100,11 +100,10 @@ class Embedded(unittest.TestCase):
     def test_blocks(self):
         cases = {
             "tilted_face": (req(normal=(0.7071, 0, 0.7071)), CTX),
-            "by_object": (req(), CTX._replace(by_object=True)),
-            "no_pause_gcode": (req(), CTX._replace(pause_gcode=False)),
-            "raft": (req(), CTX._replace(raft=True)),
-            "variable_layer_height": (req(), CTX._replace(variable_layers=True)),
+            "by_object": (req(), CTX._replace(block="by_object")),
+            "instances_other_plate": (req(), CTX._replace(block="instances_other_plate")),
             "instances_differ": (req(), CTX._replace(instances_rigid=False)),
+            "no_floor": (req(point=(0, 0, 4.4)), CTX._replace(grid=pocket.Grid(0.3, 0.2))),
             "below_bed": (req(point=(0, 0, 2)), CTX),
         }
         for code, (r, ctx) in cases.items():
@@ -117,8 +116,26 @@ class Embedded(unittest.TestCase):
             pocket.check_pause(0.2, GRID)
         self.assertEqual(cm.exception.code, "pause_too_low")
         pocket.check_pause(0.4, GRID)
-        p = pocket.plan(req(insert=NFC, point=(0, 0, 0), normal=(0, 0, -1), cover=0.0), CTX)
-        self.assertEqual((p.floor, p.pause_z), (0.0, 0.8))
+
+    def test_no_material_under_the_cavity_is_blocked(self):
+        for r in (req(insert=NFC, point=(0, 0, 0), normal=(0, 0, -1), cover=0.0),
+                  req(point=(20, 10, 3.2), normal=(1, 0, 0))):
+            with self.assertRaises(pocket.Blocked) as cm:
+                pocket.plan(r, CTX)
+            self.assertEqual(cm.exception.code, "no_floor")
+
+    def test_actual_cover_is_never_thinner_than_asked(self):
+        grid = pocket.Grid(0.3, 0.12)
+        ctx = pocket.Context(grid=grid)
+        for z, face in ((9.87, (0, 0, 1)), (0.0, (0, 0, -1))):
+            p = pocket.plan(req(point=(0, 0, z), normal=face, cover=1.0), ctx)
+            self.assertGreaterEqual(p.cover, 1.0 - 1e-9, face)
+            self.assertGreaterEqual(p.top - p.floor, 3.2 - 1e-9, face)
+
+    def test_side_thin_cover_is_a_fixed_wall(self):
+        thin = pocket.plan(req(point=(20, 10, 10), normal=(1, 0, 0), cover=0.7), CTX)
+        thick = pocket.plan(req(point=(20, 10, 10), normal=(1, 0, 0), cover=0.9), CTX)
+        self.assertEqual((thin.warnings, thick.warnings), (("thin_cover",), ()))
 
     def test_bad_mode(self):
         with self.assertRaises(pocket.Blocked) as cm:
@@ -127,9 +144,14 @@ class Embedded(unittest.TestCase):
 
 
 class Open(unittest.TestCase):
+    def test_instances_differ_blocks_open_too(self):
+        with self.assertRaises(pocket.Blocked) as cm:
+            pocket.plan(req(mode="open"), CTX._replace(instances_rigid=False))
+        self.assertEqual(cm.exception.code, "instances_differ")
+
     def test_open_on_tilted_face_follows_the_normal_and_overshoots(self):
         n = (0.6, 0, 0.8)
-        p = pocket.plan(req(mode="open", point=(1, 2, 3), normal=n, spin=10), CTX._replace(by_object=True))
+        p = pocket.plan(req(mode="open", point=(1, 2, 3), normal=n, spin=10), CTX._replace(block="by_object"))
         self.assertEqual((p.face, p.mode, p.pause_z, p.floor, p.top), ("tilted", "open", None, None, None))
         self.assertTrue(_close(g.apply_dir(p.transform, (0, 0, 1)), n))
         depth = 3.2
@@ -168,6 +190,11 @@ class Pauses(unittest.TestCase):
         self.assertIn(round(c.pause_z, 6), by_z)
         self.assertEqual(warnings, ())
 
+    def test_copies_count_every_instance(self):
+        a = pocket.plan(req(point=(5, 5, 20)), CTX)
+        out, _ = pocket.pauses([a], existing=(), copies=[3])
+        self.assertEqual(out, ((round(a.pause_z, 6), "Embedder: insert 3 x 6x3 magnet"),))
+
     def test_mixed_labels_in_one_entry(self):
         a = pocket.plan(req(point=(5, 5, 20)), CTX)
         b = pocket.plan(pocket.Request(presets.find("magnet-disc-5x3"), "embedded", (25, 5, 20), (0, 0, 1), 0, 1.0), CTX)
@@ -186,6 +213,34 @@ class Pauses(unittest.TestCase):
         far = pocket.plan(req(insert=NFC, point=(80, 5, 20), cover=0.6), CTX)
         self.assertEqual(pocket.proximity_warnings([a, near]), (("nfc_near_magnet", 0, 1),))
         self.assertEqual(pocket.proximity_warnings([a, far]), ())
+
+
+class Containment(unittest.TestCase):
+    """The cavity must stay inside the part: cube 20 mm at (100, 100, 0)."""
+    MESH = None
+
+    @classmethod
+    def setUpClass(cls):
+        import fixtures
+        verts, tris = fixtures.box(20, 20, 20, 100, 100, 0)
+        cls.pos = [c for v in verts for c in v]
+        cls.idx = [i for t in tris for i in t]
+
+    def breaks(self, r):
+        return pocket.breaks_surface(pocket.plan(r, CTX), self.pos, self.idx)
+
+    def test_inside(self):
+        self.assertFalse(self.breaks(req(point=(110, 110, 20))))
+        self.assertFalse(self.breaks(req(point=(120, 110, 10), normal=(1, 0, 0))))
+        self.assertFalse(self.breaks(req(point=(110, 110, 0), normal=(0, 0, -1))))
+
+    def test_breaks_through(self):
+        self.assertTrue(self.breaks(req(point=(101, 110, 20))))              # rim leaves the side wall
+        self.assertTrue(self.breaks(req(point=(120, 110, 19), normal=(1, 0, 0))))    # slot above the part
+        self.assertTrue(self.breaks(req(point=(120, 101, 10), normal=(1, 0, 0))))     # slot past the corner
+
+    def test_open_pockets_are_not_checked(self):
+        self.assertFalse(self.breaks(req(mode="open", point=(101, 110, 20))))
 
 
 def _close(a, b, eps=1e-6):

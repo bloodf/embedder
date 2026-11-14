@@ -69,7 +69,12 @@ all get the same part, so Embedder only plans on objects whose instances differ 
 
 On a multi-plate project the plate's origin is offset by the bed size with a 20 percent gap
 (`PLATE_GAP = 0.2`, from Orca's logical plate gap, 1.2 x the bed size). A build item belongs to the first
-plate whose area its bounding box touches.
+plate listed for it in `model_settings.config` (`<plate>/<model_instance>`, object id plus instance
+number); an instance missing from those lists goes to the first plate whose area its bounding box touches.
+
+For an object whose meshes sit inline in the main model, the new mesh `<object>` is written right before
+the object that references it, and the new `<component>` copies its `p:path` (if any) from the component
+of the object's first part, which names the file the new mesh went into.
 
 ### Not supported
 
@@ -98,7 +103,10 @@ plate whose area its bounding box touches.
 - The file is read only when the 3MF opens as a project, and the markers are **ignored when the print
   sequence is "by object"**. This is why Embedder blocks embedded pockets in that mode.
 - Each `<plate>` carries `<plate_info id="N"/>` and a `<mode value="..."/>` line. If the file is missing,
-  Embedder creates it, with the same zip metadata date as the main model.
+  Embedder creates it, with the same zip metadata date as the main model; a new plate block gets
+  `SingleExtruder` when the project has one filament, otherwise `MultiExtruder`, and an existing block
+  keeps its mode. A plate block left with no entries is dropped, and no file is written when there is
+  nothing to pause. `<layer>` entries without a `top_z` are kept as they are and ignored when reading.
 
 On apply, Embedder replaces every entry on the plate whose `extra` starts with `Embedder:` and keeps all
 the others (color changes and hand-made pauses stay). Entries are sorted by `top_z`. If a non-Embedder

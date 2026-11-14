@@ -100,6 +100,24 @@ class Read(Base):
         self.assertEqual(bbox(pkg.plate_mesh(pkg.items[1], part)[0]), bbox(pkg.plate_mesh(pkg.items[0], part)[0]))
         self.assertEqual(pkg.plate_origin(2), (307.2, 0.0))
 
+    def test_plate_membership_comes_from_model_settings_first(self):
+        items = [(0, "1 0 0 0 1 0 0 0 1 100 100 0"), (0, "1 0 0 0 1 0 0 0 1 407.2 100 0")]
+        pkg = self.read(fixtures.build, items=items, plates=2, plate_items=[[1], [0]])   # lists contradict positions
+        self.assertEqual([i.plate for i in pkg.items], [2, 1])
+        unlisted = self.read(fixtures.build, name="u.3mf", items=items, plates=2, plate_items=[[], []])
+        self.assertEqual([i.plate for i in unlisted.items], [1, 2], "by position when the lists are silent")
+
+    def test_item_lookup_by_index(self):
+        pkg = self.read(fixtures.two_instances)
+        self.assertIs(pkg.item(1), pkg.items[1])
+        with self.assertRaises(threemf.ThreeMFError):
+            pkg.item(7)
+
+    def test_layer_without_height_is_skipped(self):
+        xml = fixtures.user_pause_xml(5.0).replace("<mode", '<layer type="2" extruder="1" color="" extra="" gcode=""/>\n<mode')
+        pkg = self.read(fixtures.build, gcode_xml=xml)
+        self.assertEqual([l.top_z for l in pkg.layers], [5.0])
+
     def test_empty_project_settings_fall_back(self):
         pkg = self.read(fixtures.empty_settings)
         self.assertEqual(pkg.config_source, "preset")
@@ -222,7 +240,63 @@ class Write(Base):
         with zipfile.ZipFile(out) as z:
             model = z.read("3D/3dmodel.model").decode()
         self.assertNotIn("p:path", model)
+        self.assertLess(model.index('<object id="3"'), model.index('<object id="2"'), "defined before its parent")
         self.assertEqual(len(pkg.plate_mesh(pkg.items[0], new)[1]), 256 * 3)
+
+    def test_one_line_xml(self):
+        src = self.make(fixtures.cube)
+        flat = os.path.join(self.tmp, "flat.3mf")
+        with zipfile.ZipFile(src) as a, zipfile.ZipFile(flat, "w") as b:
+            for info in a.infolist():
+                data = a.read(info)
+                if info.filename.endswith((".model", ".config")) and "project" not in info.filename:
+                    data = data.replace(b"\n", b"")
+                b.writestr(info, data)
+        out = self.apply(flat, add=[self.addition(flat)], pauses=[(19.2, "Embedder: a")])
+        with zipfile.ZipFile(out) as z:
+            for name in ("3D/3dmodel.model", "3D/Objects/object_1.model", "Metadata/model_settings.config"):
+                self.assertTrue(z.read(name).startswith(b"<?xml"), name)
+        self.assertEqual(len(threemf.read(out).embedder_parts()), 1)
+
+    def test_component_path_follows_the_file_of_the_first_part(self):
+        src = self.make(fixtures.multipart_with_negative)
+        with zipfile.ZipFile(src) as z:
+            model = z.read("3D/3dmodel.model").decode()
+        first, second = re.findall(r"<component [^>]*>", model)
+        self.assertIn('objectid="1"', first)
+        # the second (negative) component claims another file; the new part must follow part 1's file
+        moved = model.replace(second, second.replace("/3D/Objects/object_1.model", "/3D/Objects/other.model"))
+        other = '%s <resources>\n  <object id="2" type="model">\n%s  </object>\n </resources>\n <build/>\n</model>\n' % (
+            fixtures.HEAD, fixtures.mesh_xml(fixtures.cylinder(3, 12)))
+        alt = self.make(fixtures.multipart_with_negative, name="alt.3mf",
+                        extra={"3D/3dmodel.model": moved, "3D/Objects/other.model": other})
+        out = self.apply(alt, add=[self.addition(alt)])
+        with zipfile.ZipFile(out) as z:
+            last = re.findall(r"<component [^>]*>", z.read("3D/3dmodel.model").decode())[-1]
+        self.assertIn('p:path="/3D/Objects/object_1.model"', last)
+
+    def test_publish_falls_back_when_hard_links_fail(self):
+        src = self.make(fixtures.cube)
+        real = os.link
+
+        def no_link(a, b):
+            raise OSError(1, "links not supported")
+        os.link = no_link
+        self.addCleanup(setattr, os, "link", real)
+        out = self.apply(src, pauses=[(19.2, "Embedder: a")])
+        self.assertEqual(len(threemf.read(out).layers), 1)
+        self.assertEqual(sorted(os.listdir(self.tmp)), ["out.3mf", "src.3mf"])
+
+    def test_nothing_to_pause_writes_no_gcode_file(self):
+        src = self.make(fixtures.cube)
+        out = self.apply(src, add=[self.addition(src)])
+        with zipfile.ZipFile(out) as z:
+            self.assertNotIn("Metadata/custom_gcode_per_layer.xml", z.namelist())
+
+    def test_mode_follows_the_filament_count_when_created(self):
+        single = self.make(fixtures.build, settings=dict(fixtures.SETTINGS, filament_colour=["#FFFFFF"]))
+        with zipfile.ZipFile(self.apply(single, pauses=[(19.2, "Embedder: a")])) as z:
+            self.assertIn('<mode value="SingleExtruder"/>', z.read("Metadata/custom_gcode_per_layer.xml").decode())
 
     def test_spaced_sub_model(self):
         src = self.make(fixtures.spaced_submodel)
@@ -258,6 +332,12 @@ class Write(Base):
         layers = threemf.read(out).layers
         self.assertEqual([(l.plate, l.top_z) for l in layers], [(1, 5.0), (2, 9.0)])
 
+    def test_layer_without_height_is_kept_on_write(self):
+        xml = fixtures.user_pause_xml(5.0).replace("<mode", '<layer type="2" extruder="1" color="" extra="x" gcode=""/>\n<mode')
+        src = self.make(fixtures.build, gcode_xml=xml)
+        with zipfile.ZipFile(self.apply(src, pauses=[(19.2, "Embedder: a")])) as z:
+            self.assertIn('<layer type="2" extruder="1" color="" extra="x" gcode=""/>', z.read("Metadata/custom_gcode_per_layer.xml").decode())
+
     def test_extra_is_escaped(self):
         src = self.make(fixtures.cube)
         out = self.apply(src, pauses=[(19.2, 'Embedder: <"a" & b>')])
@@ -270,6 +350,8 @@ class Write(Base):
         pkg = threemf.read(second)
         self.assertEqual([p.id for p in pkg.objects["2"].parts], ["1"])
         self.assertEqual(pkg.layers, ())
+        with zipfile.ZipFile(second) as z:
+            self.assertNotIn("<plate>", z.read("Metadata/custom_gcode_per_layer.xml").decode(), "no empty plate block")
         with zipfile.ZipFile(second) as a, zipfile.ZipFile(src) as b:
             for name in ("3D/3dmodel.model", "3D/Objects/object_1.model", "Metadata/model_settings.config"):
                 self.assertNotIn('id="3"', a.read(name).decode(), name)

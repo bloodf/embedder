@@ -103,13 +103,12 @@ def build(path, objects=None, items=None, plates=1, settings=None, submodel="3D/
     build_items = "".join('  <item objectid="%d" p:UUID="%s" transform="%s" printable="1"/>\n'
                           % (next_id + k, uid(4, i), t) for i, (k, t) in enumerate(items))
     plate_items = plate_items or [list(range(len(items)))] + [[] for _ in range(plates - 1)]
-    seen = {}
 
     def instance(i):
         k = items[i][0]
-        seen[k] = seen.get(k, -1) + 1
+        nth = sum(1 for j in range(i) if items[j][0] == k)   # instance number = order among this object's items
         return ('    <model_instance>\n      <metadata key="object_id" value="%d"/>\n      <metadata key="instance_id" value="%d"/>\n'
-                '      <metadata key="identify_id" value="%d"/>\n    </model_instance>\n' % (next_id + k, seen[k], 100 + i))
+                '      <metadata key="identify_id" value="%d"/>\n    </model_instance>\n' % (next_id + k, nth, 100 + i))
     plate_xml = "".join('  <plate>\n    <metadata key="plater_id" value="%d"/>\n    <metadata key="plater_name" value=""/>\n'
                         '    <metadata key="locked" value="false"/>\n%s  </plate>\n'
                         % (n + 1, "".join(instance(i) for i in plate_items[n])) for n in range(plates))

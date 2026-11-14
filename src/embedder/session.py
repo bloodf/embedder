@@ -11,7 +11,7 @@ import sys
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import geometry
 import pocket
@@ -50,6 +50,11 @@ class Job:
     plate: int
     pkg: object                  # threemf.Package
     entries: tuple
+    applied: bool = False        # written once: the copy is now the project; Load again before more pockets
+
+    def copies(self, object_id):
+        """How many instances of the object print on this plate (a negative part cuts each of them)."""
+        return sum(1 for e in self.entries if e.obj.id == object_id)
 
 
 def _bytes(arr):
@@ -101,22 +106,23 @@ class Session:
         folder = os.path.join(self.storage, "jobs", job_id)
         os.makedirs(folder)
         with self.lock:
-            self._drop_older(job_id)
             self.job = Job(job_id, folder, "", 0, None, ())
-        return job_id, os.path.join(folder, "source.3mf")
-
-    def _drop_older(self, keep):
         jobs = os.path.join(self.storage, "jobs")
-        for name in os.listdir(jobs):
-            if name != keep:
-                shutil.rmtree(os.path.join(jobs, name), ignore_errors=True)
+        old = [os.path.join(jobs, n) for n in os.listdir(jobs) if n != job_id]
+        if old:   # off the caller's (UI) thread; a worker still reading one of them gets stale_job
+            threading.Thread(target=lambda: [shutil.rmtree(d, ignore_errors=True) for d in old], daemon=True).start()
+        return job_id, os.path.join(folder, "source.3mf")
 
     def _current(self, job_id, loaded=True):
         with self.lock:
             job = self.job
-        if job is None or job.id != job_id or (loaded and job.pkg is None):
-            raise SessionError("stale_job", "the project was loaded again; load it once more")
+        if job is None or job.id != job_id or (loaded and (job.pkg is None or job.applied)):
+            raise SessionError("stale_job", "the project was loaded again or already applied; load it once more")
         return job
+
+    def _is_current(self, job_id):
+        with self.lock:
+            return self.job is not None and self.job.id == job_id
 
     def load(self, job_id, project_path, plate, live, progress=None):
         """Parse the copy in the job folder. `live`: preset values for settings the project does not carry."""
@@ -124,7 +130,13 @@ class Session:
         try:
             pkg = threemf.read(os.path.join(job.dir, "source.3mf"), {k: live.get(k) for k in LIVE_KEYS if k in live})
         except threemf.ThreeMFError as e:
+            if not self._is_current(job_id):
+                raise SessionError("stale_job", "a newer load replaced this one") from None
             raise SessionError(e.code, e.detail) from None
+        except OSError:
+            if not self._is_current(job_id):
+                raise SessionError("stale_job", "a newer load replaced this one") from None
+            raise
         entries = self._entries(pkg, plate, progress)
         loaded = Job(job.id, job.dir, _stem(project_path), plate, pkg, entries)
         with self.lock:
@@ -167,10 +179,10 @@ class Session:
         blocks = self._global_blocks(job)
         if blocks:
             return blocks[0]
+        if any(i.plate != job.plate for i in job.pkg.items if i.object_id == entry.obj.id):
+            return "instances_other_plate"
         if job.pkg.variable_layers(entry.obj.id):
             return "variable_layer_height"
-        if not job.pkg.instances_rigid(entry.obj.id):
-            return "instances_differ"
         return None
 
     def _describe(self, job):
@@ -251,25 +263,27 @@ class Session:
         if args.get("cover") is not None:
             cover = _number(args, "cover", low=0, high=10)
         spin = _number(args, "spin", 0)
-        return entry, pocket.Request(insert, args.get("mode"), point, normal, spin, cover)
+        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover)
 
     def _context(self, job, entry):
         block = self._object_block(job, entry)
         cfg = self.settings_fn()
         grid = self._grid(job, entry)
         return pocket.Context(grid=grid or pocket.Grid(1.0, 1.0), xy_clearance=cfg["xy_clearance"], z_clearance=cfg["z_clearance"],
-                              pause_gcode=block != "no_pause_gcode", by_object=block == "by_object", raft=block == "raft",
-                              variable_layers=block == "variable_layer_height", instances_rigid=block != "instances_differ"), grid
+                              block=block, instances_rigid=job.pkg.instances_rigid(entry.obj.id)), grid
 
     def _plan_one(self, job, args):
         """(entry, Pocket) or raises pocket.Blocked / SessionError."""
         if not isinstance(args, dict):
             raise SessionError("bad_request", "a pocket is an object")
-        entry, req = self._request(job, args)
+        entry, j, req = self._request(job, args)
         ctx, grid = self._context(job, entry)
         if req.mode == "embedded" and grid is None:
             raise pocket.Blocked("no_layer_height", "the layer height is unknown")
-        return entry, pocket.plan(req, ctx)
+        p = pocket.plan(req, ctx)
+        if pocket.breaks_surface(p, *entry.meshes[j]):
+            p = replace(p, warnings=p.warnings + ("breaks_surface",))
+        return entry, p
 
     def plan(self, args):
         job = self._current(args.get("job"))
@@ -282,7 +296,7 @@ class Session:
         if others:
             planned = [p] + [q for _, q in self._plan_quiet(job, others)]
             warnings += [w[0] for w in pocket.proximity_warnings(planned) if 0 in w[1:]]
-        return {**_describe_pocket(p), "warnings": warnings, "blocked": None}
+        return {**_describe_pocket(p), "copies": job.copies(entry.obj.id), "warnings": warnings, "blocked": None}
 
     def _plan_quiet(self, job, many):
         out = []
@@ -296,7 +310,7 @@ class Session:
     # -------------------------------------------------------------- applying
 
     def _kept_pauses(self, job, removed):
-        """Embedded Embedder parts that stay: their pause is the layer after their cavity top."""
+        """Embedded Embedder parts that stay: ((Pocket, copies), ...); the pause is the layer after the cavity top."""
         out = []
         for e in job.entries:
             if e.instance:
@@ -308,17 +322,27 @@ class Session:
                     continue
                 top = grid.snap_up(max(pos[2::3]))
                 label = presets.Preset("kept", m.group(1), "magnet", "disc", 0, 0, 0, False)
-                out.append(pocket.Pocket(label, "embedded", "", "", (0, 0, 0), geometry.IDENTITY, pause_z=round(top + grid.height, 6)))
+                out.append((pocket.Pocket(label, "embedded", "", "", (0, 0, 0), geometry.IDENTITY,
+                                          pause_z=round(top + grid.height, 6)), job.copies(e.obj.id)))
         return out
 
-    def _output(self, job):
-        """<storage>/<stem>-embedder-<YYYYmmdd-HHMMSS>-<id6>.3mf; a second apply in the same second gets -2, -3..."""
+    def _write(self, job, adds, remove, pauses):
+        """Write <storage>/<stem>-embedder-<YYYYmmdd-HHMMSS>-<id6>.3mf; a name taken in the meantime gets -2, -3...
+        threemf.write never replaces a file, so the name is claimed atomically."""
         base = os.path.join(self.storage, "%s-embedder-%s-%s" % (job.stem, time.strftime("%Y%m%d-%H%M%S"), job.id[:6]))
-        n, out = 1, base + ".3mf"
-        while os.path.exists(out):
-            n += 1
-            out = "%s-%d.3mf" % (base, n)
-        return out
+        for n in range(1, 100):
+            out = base + (".3mf" if n == 1 else "-%d.3mf" % n)
+            try:
+                threemf.write(job.pkg, out, job.plate, adds, remove, pauses)
+                return out
+            except threemf.ThreeMFError as e:
+                if e.code != "exists":
+                    raise SessionError(e.code, e.detail) from None
+            except OSError:
+                if not self._is_current(job.id):
+                    raise SessionError("stale_job", "a newer load replaced this one") from None
+                raise
+        raise SessionError("exists", base)
 
     def apply(self, args):
         job = self._current(args.get("job"))
@@ -332,15 +356,16 @@ class Session:
             except pocket.Blocked as e:
                 raise SessionError("pocket_blocked", "pocket %d: %s" % (n + 1, e.code)) from None
         pockets = [p for _, p in planned]
+        kept = self._kept_pauses(job, set(remove))
         existing = [l.top_z for l in job.pkg.layers if l.plate == job.plate and not l.embedder]
-        pauses, pause_warnings = pocket.pauses(pockets + self._kept_pauses(job, set(remove)), existing)
+        pauses, pause_warnings = pocket.pauses(pockets + [k for k, _ in kept], existing,
+                                               [job.copies(e.obj.id) for e, _ in planned] + [n for _, n in kept])
         adds = [threemf.Addition(e.obj.id, e.item.index, "Embedder %s (%s)" % (p.insert.label, p.mode), *p.mesh(), p.transform)
                 for e, p in planned]
-        out = self._output(job)
-        try:
-            threemf.write(job.pkg, out, job.plate, adds, remove, pauses)
-        except threemf.ThreeMFError as e:
-            raise SessionError(e.code, e.detail) from None
+        out = self._write(job, adds, remove, pauses)
+        with self.lock:
+            if self.job is not None and self.job.id == job.id:
+                self.job = replace(self.job, applied=True)
         warnings = sorted({w for p in pockets for w in p.warnings} | {w[0] for w in pause_warnings}
                           | {w[0] for w in pocket.proximity_warnings(pockets)})
         return {"path": out, "name": os.path.basename(out), "pockets": len(pockets), "removed": len(remove),
