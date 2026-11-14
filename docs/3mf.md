@@ -126,8 +126,10 @@ floor is at 1.2 mm and its top at 5.2 mm. The CLI sliced it with exit code 0:
 
 The rule holds: pause at cavity top plus one layer.
 
-**End to end, Python core.** Load a project, plan an embedded pocket and write the copy: cavity floor
-15.8 mm, cavity top 19.0 mm, pause at 19.2 mm, exit code 0.
+**End to end, Python core.** A 20 mm cube with an embedded 6x3 magnet on its top face, written by
+`Session.apply` and sliced by the CLI (exit code 0): cavity floor 15.8 mm, cavity top 19.0 mm, no
+extrusion near the pocket centre on layers 16.0 to 19.0, solid layers at 15.8 and 19.2, and one
+`; PAUSE_PRINTING` with the profile's pause G-code right after `; Z_HEIGHT: 19.2`.
 
 CLI quirks, not plugin issues: projects written by Bambu Studio need `--allow-newer-file`, and one printer
 profile used as a donor fails CLI validation even unmodified (`retraction_distances_when_cut: 0 not in
