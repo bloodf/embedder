@@ -1,0 +1,48 @@
+name: Bug report
+description: Something doesn't work as described.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. Attach the project (.3mf) if you can share it.
+  - type: input
+    id: version
+    attributes:
+      label: embedder version
+      description: Settings page of the Embedder tab.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: orca
+    attributes:
+      label: OrcaSlicer version and OS
+      placeholder: "OrcaSlicer 2.5.0, macOS 15"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Loading the project
+        - 3D view / placing
+        - Pocket size or position
+        - Pause layer
+        - Applying / reopening the copy
+        - Presets
+        - Settings
+        - Other
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Steps, what you expected, what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Plugin log
+      description: Relevant lines from <OrcaSlicer data folder>/log/python_*.log
+      render: text
