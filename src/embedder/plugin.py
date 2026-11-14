@@ -1,13 +1,18 @@
-"""OrcaSlicer glue: the Embedder tab. The only module that imports `orca`."""
+"""OrcaSlicer glue: the Embedder tab. The only module that imports `orca`. The page bridge runs on OrcaSlicer's
+UI thread; parsing and writing project copies run on the plugin's own threads (session.py)."""
 
 import json
 import os
 import re
+import subprocess
 import sys
 import threading
+from pathlib import Path
 
 import orca
 
+import presets
+import session
 import settings
 
 VERSION = "0.0.0-dev"
@@ -15,6 +20,8 @@ VERSION = "0.0.0-dev"
 _store = None
 _store_lock = threading.Lock()
 _storage_dir = None
+_session = None
+_session_lock = threading.Lock()
 
 
 def log(msg):
@@ -123,6 +130,60 @@ def page_html(language="auto"):
     return _asset("app.html").replace("__BOOT__", json_for_html(boot), 1)
 
 
+# ---------------------------------------------------------------------- host reads (UI thread only)
+
+def _call(obj, name):
+    attr = getattr(obj, name)
+    return attr() if callable(attr) else attr
+
+
+def _current_plate():
+    """1-based plate selected in Orca; plate 1 when the host does not say."""
+    try:
+        return int(_call(orca.host.model(), "current_plate_index")) + 1
+    except Exception:
+        return 1
+
+
+def _live_values():
+    """The live preset values a project without its own settings falls back to."""
+    out = {}
+    try:
+        bundle = orca.host.preset_bundle()
+    except Exception as e:
+        log("no preset bundle (%s)" % e)
+        return out
+    for key in session.LIVE_KEYS:
+        try:
+            value = bundle.full_config_value(key)
+        except Exception:
+            continue
+        if value is not None:
+            out[key] = value
+    return out
+
+
+def open_in_orca(path):
+    """Ask the running OrcaSlicer to open `path` (port of orca_organizer's _open_in_orca). False: no launcher."""
+    if sys.platform == "darwin":
+        app = next((p for p in Path(sys.prefix).resolve().parents if p.suffix == ".app"), None)
+        cmd = ["open", "-a", str(app) if app else "OrcaSlicer", str(path)]
+    elif sys.platform.startswith("linux"):
+        exe = os.environ.get("APPIMAGE") or os.path.realpath("/proc/self/exe")
+        cmd = [exe, str(path)]
+    else:
+        candidates = [Path(sys.executable)] + [Path(sys.prefix).parent / n for n in ("orca-slicer.exe", "OrcaSlicer.exe")]
+        exe = next((c for c in candidates if c.is_file() and "orca" in c.name.lower()), None)
+        if exe is None:
+            return False
+        cmd = [str(exe), str(path)]
+    subprocess.Popen(cmd)
+    return True
+
+
+_open_in_orca = open_in_orca
+
+
 # ---------------------------------------------------------------------- commands
 
 class CommandError(Exception):
@@ -131,6 +192,14 @@ class CommandError(Exception):
     def __init__(self, code, detail=""):
         super().__init__(detail or code)
         self.code, self.detail = code, detail
+
+
+def get_session(page):
+    global _session
+    with _session_lock:
+        if _session is None:
+            _session = session.Session(_storage_or_raise(), lambda: get_store(page).effective())
+        return _session
 
 
 def _cmd_hello(page, args):
@@ -145,11 +214,86 @@ def _cmd_settings_save(page, args):
     return get_store(page).update(dict(args.get("settings") or {}))
 
 
+def _cmd_presets_list(page, args):
+    return {"builtin": [p.as_dict() for p in presets.BUILTIN], "user": get_store(page).effective()["user_presets"]}
+
+
+def _cmd_presets_save(page, args):
+    store = get_store(page)
+    raw = args.get("preset")
+    users = presets.upsert(store.effective()["user_presets"], raw)
+    saved = users[-1] if not (isinstance(raw, dict) and raw.get("id")) else next(u for u in users if u["id"] == raw["id"])
+    return {"id": saved["id"], "user": store.update({"user_presets": users})["user_presets"]}
+
+
+def _cmd_presets_delete(page, args):
+    store = get_store(page)
+    users = presets.delete(store.effective()["user_presets"], args.get("id"))
+    return {"user": store.update({"user_presets": users})["user_presets"]}
+
+
+def _cmd_project_load(page, args, msg_id):
+    """UI thread: export the open project (export_3mf_copy is UI-thread only), then parse on a worker."""
+    sess = get_session(page)
+    plater = orca.host.plater()
+    project, plate, live = _call(plater, "project_path") or "", _current_plate(), _live_values()
+    job_id, source = sess.new_job()
+    try:
+        ok = plater.export_3mf_copy(source)
+    except Exception as e:
+        raise CommandError("export_failed", str(e)) from None
+    if ok is False or not os.path.isfile(source):
+        raise CommandError("export_failed", "OrcaSlicer did not write the project copy")
+
+    def progress(done, total):
+        page.post_message({"type": "progress", "job": job_id, "stage": "meshes", "done": done, "total": total})
+
+    _worker(page, msg_id, lambda: sess.load(job_id, project, plate, live, progress))
+
+
+def _cmd_project_apply(page, args, msg_id):
+    sess = get_session(page)
+    _worker(page, msg_id, lambda: sess.apply(args))
+
+
+def _cmd_project_open(page, args):
+    """UI thread: hand an applied copy (a .3mf directly in the storage folder) to OrcaSlicer."""
+    path = args.get("path")
+    folder = os.path.realpath(_storage_or_raise())
+    if not (isinstance(path, str) and path.endswith(".3mf") and os.path.isfile(path)
+            and os.path.dirname(os.path.realpath(path)) == folder):
+        raise CommandError("bad_request", "only an applied copy in the plugin folder can be opened")
+    try:
+        opened = _open_in_orca(path)
+    except Exception as e:
+        raise CommandError("open_failed", str(e)) from None
+    return {"open": "asked" if opened else "none"}
+
+
+def _worker(page, msg_id, fn):
+    def run():
+        try:
+            page.reply(msg_id, fn())
+        except session.SessionError as e:
+            page.reply(msg_id, error={"code": e.code, "detail": e.detail})
+        except Exception as e:
+            log("worker failed: %r" % e)
+            page.reply(msg_id, error={"code": "internal", "detail": str(e)})
+    threading.Thread(target=run, daemon=True).start()
+
+
 COMMANDS = {
     "hello": _cmd_hello,
     "settings.get": _cmd_settings_get,
     "settings.save": _cmd_settings_save,
+    "presets.list": _cmd_presets_list,
+    "presets.save": _cmd_presets_save,
+    "presets.delete": _cmd_presets_delete,
+    "mesh.chunk": lambda page, args: get_session(page).mesh_chunk(args),
+    "pocket.plan": lambda page, args: get_session(page).plan(args),
+    "project.open": _cmd_project_open,
 }
+ASYNC_COMMANDS = {"project.load": _cmd_project_load, "project.apply": _cmd_project_apply}
 
 
 # ====================================================================== Embedder tab
@@ -199,13 +343,16 @@ class EmbedderPage(orca.pages.PagesPluginCapabilityBase):
             return
         if kind != "cmd":
             return
-        handler = COMMANDS.get(data.get("cmd"))
+        cmd = data.get("cmd")
         args = data.get("args") if isinstance(data.get("args"), dict) else {}
         try:
-            if handler is None:
-                raise CommandError("unknown_command", str(data.get("cmd")))
-            self.reply(msg_id, handler(self, args))
-        except CommandError as e:
+            if cmd in ASYNC_COMMANDS:
+                ASYNC_COMMANDS[cmd](self, args, msg_id)
+                return
+            if cmd not in COMMANDS:
+                raise CommandError("unknown_command", str(cmd))
+            self.reply(msg_id, COMMANDS[cmd](self, args))
+        except (CommandError, session.SessionError, presets.PresetError) as e:
             self.reply(msg_id, error={"code": e.code, "detail": e.detail})
         except Exception as e:
             log("command %s failed: %r" % (data.get("cmd"), e))

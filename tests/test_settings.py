@@ -62,6 +62,13 @@ class StoreTests(unittest.TestCase):
         st.update({"xy_clearance": 0.3, "bogus": 1})
         self.assertEqual(len(box), 1)
 
+    def test_user_presets_are_validated(self):
+        st = settings.Store()
+        good = {"id": "user-1", "name": "Mine", "kind": "magnet", "shape": "disc", "d": 7, "t": 2}
+        out = st.update({"user_presets": [good, {"name": ""}]})
+        self.assertEqual([p["id"] for p in out["user_presets"]], ["user-1"])
+        self.assertEqual(st.update({"user_presets": "x"})["user_presets"], out["user_presets"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -5,6 +5,8 @@ import math
 import os
 import threading
 
+import presets
+
 UI_LANGUAGES = ("auto", "en", "pt-BR")   # "auto": OrcaSlicer's language, then the system's
 DEFAULTS = {
     "ui_language": "auto",
@@ -12,7 +14,7 @@ DEFAULTS = {
     "z_clearance": 0.2,      # mm added to the insert's thickness
     "cover_magnet": 1.0,     # mm of material sealed over an embedded magnet
     "cover_nfc": 0.6,        # mm of material sealed over an embedded NFC tag
-    "user_presets": [],      # the user's own insert presets
+    "user_presets": [],      # the user's own insert presets, validated by presets.clean_user_presets
 }
 RANGES = {"xy_clearance": (0.0, 1.0), "z_clearance": (0.0, 1.0), "cover_magnet": (0.0, 10.0), "cover_nfc": (0.0, 10.0)}
 
@@ -22,7 +24,7 @@ def _clean(key, value):
     if key == "ui_language":
         return value if value in UI_LANGUAGES else None
     if key == "user_presets":
-        return value if isinstance(value, list) else None
+        return presets.clean_user_presets(value)
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         return None
     low, high = RANGES[key]
@@ -64,7 +66,7 @@ class Store:
 
     def effective(self):
         with self.lock:
-            out = dict(DEFAULTS)
+            out = {**DEFAULTS, "user_presets": []}
             for key in DEFAULTS:
                 if key in self.data:
                     clean = _clean(key, self.data[key])
