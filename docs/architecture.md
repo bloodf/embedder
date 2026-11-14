@@ -1,0 +1,181 @@
+# Architecture
+
+Embedder ships as a pure-Python wheel, `embedder_any.whl`, which OrcaSlicer loads as a plugin. The
+sources live in `src/embedder/`, and `scripts/build.py` packs them. The tab's page is a Vue 3 + PrimeVue
+project in `ui/`, built into one offline HTML file (`src/embedder/ui/app.html`) with a three.js viewer.
+
+## Why it works on a copy
+
+OrcaSlicer 2.5 plugins cannot read or edit live geometry, and cannot draw or pick in Orca's 3D view.
+The one route is the host's `plater().export_3mf_copy(path)`: export a copy, edit the copy, ask Orca
+to open it. So Embedder never changes the user's project. Every result is a new `.3mf` in the plugin's
+storage folder. (`orca_organizer` uses the same route.)
+
+## Modules
+
+| Module | Job | Uses `orca`? |
+|---|---|---|
+| `plugin.py` | Capabilities, permissions, storage folder, settings store, page HTML, command dispatch, opening a file in OrcaSlicer | yes |
+| `session.py` | One job: load a copy, serve meshes in chunks, plan pockets, write the applied copy | no |
+| `pocket.py` | Pocket rules: layer grid, embedded and open shapes, blocks, warnings, pause heights and pause text | no |
+| `threemf.py` | Read a 3MF project; write a copy with new negative parts, removed parts and pauses | no |
+| `geometry.py` | 4x4 matrices, 3MF and config transform strings, cylinder and box meshes, face tilt | no |
+| `presets.py` | Built-in insert table, validation of user presets | no |
+| `settings.py` | Validated settings store (JSON file) | no |
+| `ui/app.html` | The Embedder tab: one compiled Vue page, built from `ui/` | - |
+
+Only `plugin.py` imports `orca`, so everything else is tested without OrcaSlicer. All modules are
+standard library only (Python 3.12 or newer).
+
+## Capabilities and threads
+
+One capability: a Pages capability named **Embedder**, shown as a tab next to Prepare, Preview and
+Device. The plugin asks for the `threading` permission.
+
+The page bridge runs on OrcaSlicer's UI thread. Two commands need that thread:
+
+- `project.load` calls `export_3mf_copy` (UI thread only), then parses the copy on a worker thread.
+- `project.open` asks the OS to open the applied file.
+
+Parsing and writing run on the plugin's own threads (`_worker` in `plugin.py`), which reply later with
+the request id. Everything the plugin writes stays in the storage folder.
+
+## Storage
+
+```text
+<storage>/settings.json                                 settings and user presets
+<storage>/jobs/<job id>/source.3mf                      the exported copy of the open project
+<storage>/<stem>-embedder-<YYYYmmdd-HHMMSS>-<id6>.3mf   an applied copy (-2, -3 if the name exists)
+```
+
+Starting a new load deletes the older job folders. Applied copies are kept; they are the files the
+user opens and saves.
+
+## Page protocol
+
+The page and the plugin exchange JSON through `orca.postMessage` and `post_message`.
+
+Page to plugin:
+
+| type | fields | effect |
+|---|---|---|
+| `cmd` | `id`, `cmd`, `args` | run a command below; the answer is a `reply` with the same `id` |
+| `ui_language` | `value` | store the page's language choice (`auto`, `en`, `pt-BR`) |
+
+Plugin to page:
+
+| type | fields |
+|---|---|
+| `reply` | `id`, `result` or `error` (`{code, detail}`) |
+| `progress` | `job`, `stage` (`meshes`), `done`, `total` while a project is parsed |
+
+### Commands
+
+| `cmd` | `args` | `result` |
+|---|---|---|
+| `hello` | | `{version, settings}` |
+| `settings.get` | | the effective settings |
+| `settings.save` | `settings` | the effective settings after validation |
+| `presets.list` | | `{builtin, user}` |
+| `presets.save` | `preset` | `{id, user}`; new user presets get an id that starts with `user-` |
+| `presets.delete` | `id` | `{user}` |
+| `project.load` | | the job description below (asynchronous) |
+| `mesh.chunk` | `job`, `object`, `part`, `kind` (`pos` or `idx`), `i` | `{i, chunks, bytes, data}` (base64) |
+| `pocket.plan` | see below | the planned pocket or a block |
+| `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings}` (asynchronous) |
+| `project.open` | `path` | `{open: "asked" or "none"}` |
+
+`project.open` only accepts a `.3mf` that sits directly in the storage folder.
+
+### Settings
+
+| key | default | range |
+|---|---|---|
+| `ui_language` | `auto` | `auto`, `en`, `pt-BR` |
+| `xy_clearance` | 0.2 mm | 0 to 1; added on each side of the insert's width or diameter |
+| `z_clearance` | 0.2 mm | 0 to 1; added to the insert's thickness |
+| `cover_magnet` | 1.0 mm | 0 to 10; material sealed over an embedded magnet |
+| `cover_nfc` | 0.6 mm | 0 to 10; the same for an NFC tag |
+| `user_presets` | `[]` | at most 200 valid presets |
+
+### Loading and meshes
+
+`project.load` exports the copy, records the project path and the current plate, and reads a few live
+preset values (`layer_height`, `initial_layer_print_height`, `machine_pause_gcode`, `print_sequence`,
+`raft_layers`, `printable_area`) for projects that carry no settings of their own. The reply describes the
+job: the job id, project name, plate, `settings`, global `blocks`, the `objects` on the plate (each with its
+parts, vertex and triangle counts, chunk counts and an `embedded_block` code), the `existing` Embedder
+parts and the `pauses` on the plate.
+
+Meshes are sent in plate coordinates. The page pulls them in chunks of 256 KiB of raw bytes
+(`CHUNK_BYTES`), base64-encoded, positions as float32 and indices as uint32, so one message stays small.
+A reply to a stale job id fails with `stale_job`.
+
+### Planning
+
+`pocket.plan` takes `job`, `object` (index into the job's objects), `part`, `tri` (the clicked triangle),
+`point` (plate frame), `preset` (id) or `custom` (`{kind, shape, d, t}` or `{kind, shape, l, w, t}`),
+`mode` (`open` or `embedded`), and optionally `cover`, `spin` (degrees about the pocket axis) and
+`others` (the other pockets already placed, for the NFC-near-magnet check).
+
+Python is the single source of geometry. The page only draws the primitive Python returns. The point must
+lie within 1 mm of the triangle's plane. The reply carries the pocket's mode, face class, shape, size,
+transform, cavity `floor` and `top`, `pause_z`, cover, label, kind, a preview mesh and `warnings`, or a
+`blocked` object with a stable `code`.
+
+### Applying
+
+`project.apply` re-plans every pocket (never trusting the page's earlier answer), then writes the copy.
+Pauses are recomputed from all embedded pockets on every apply, including the Embedder parts that stay
+because they were not in `remove`.
+
+### Error codes
+
+Errors reach the page as `{code, detail}`. Codes seen from the session and plugin include `stale_job`,
+`bad_request`, `bad_part`, `cut_object`, `bad_triangle`, `bad_point`, `pocket_blocked`, `export_failed`,
+`open_failed`, `unknown_command` and `internal`, plus the 3MF codes in [3mf.md](3mf.md) and the preset
+codes (`no_preset`, `unknown_preset`, `bad_dimension`, ...).
+
+## Pockets and the pause rule
+
+All coordinates are millimetres in the plate frame; world Z is print Z.
+
+**Layer grid.** Layer tops are `first + k * height`, where `first` is the initial layer height and
+`height` is the layer height (an object's own `layer_height` wins). `snap_down` and `snap_up` move a
+height to the grid.
+
+**Open pocket.** Any face. Depth is the insert thickness plus the Z clearance. The footprint is the
+insert size plus the XY clearance on each side. The mesh reaches 1 mm outside the surface so the cut is
+clean. Disc: cylinder (64 sides). Block: box.
+
+**Embedded pocket, flat face.** Height is thickness plus Z clearance. On a top face the cavity ends one
+cover thickness below the surface; on a bottom face it starts one cover thickness above it. The floor is
+snapped down to the grid and the top is snapped up, so the insert never stands proud of the last printed
+layer.
+
+**Embedded pocket, side face.** A vertical slot behind the wall. Width is the insert's length (diameter
+for a disc) plus clearance, depth is the thickness plus clearance, height is the diameter (disc) or
+width (block) plus Z clearance, centred on the clicked height and snapped to the grid. The back of the
+slot is one cover thickness behind the wall.
+
+**Pause.** `pause_z = cavity top + layer height`: the first layer that closes the cavity. Pockets with the
+same `pause_z` share one pause. The text is `Embedder: insert N x <label>, ...`.
+
+**Blocks** (embedded only; open pockets are never blocked by these): `tilted_face`, `by_object`
+(print sequence "by object", also read per plate), `no_pause_gcode`, `raft`, `variable_layer_height`
+(a layer height profile, or a layer range on the object), `instances_differ`. Also `below_bed`,
+`pause_too_low` (pause before the second layer) and `no_layer_height`.
+
+**Warnings:** `thin_cover` (cover under two layers), `nfc_near_magnet` (NFC pocket edge within 10 mm of a
+magnet pocket edge), `existing_gcode_at_layer` (someone else's custom G-code already on the pause layer;
+no Embedder pause is added there).
+
+**Face classes.** A face within 5 degrees of horizontal is flat (top or bottom), within 5 degrees of
+vertical is a side face, anything else is tilted.
+
+## Build and tests
+
+`python3 scripts/build.py` writes `dist/embedder_any.whl` and `dist/SHA256SUMS`, and replaces the
+`VERSION` placeholder in `plugin.py` with the version from `pyproject.toml`. Tests are in `tests/`:
+`python3 -m unittest discover -s tests`. They use a fake `orca` module, 3MF fixtures built in the tests
+and the built page in headless Chrome. Nothing talks to a real OrcaSlicer.
