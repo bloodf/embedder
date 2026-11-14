@@ -1,0 +1,58 @@
+// Pure Embed-panel rules: plan arguments, the Embedded block reason, pause summary, preset groups, staging.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { embeddedBlock, groupPresets, pauseSummary, planArgs, stage, toggle, unstage } from '../../src/app/logic.ts';
+import type { ObjectInfo, Plan, Preset, Staged } from '../../src/app/types.ts';
+
+const hit = { part: 1, tri: 7, point: [1, 2, 3] as [number, number, number] };
+
+test('plan arguments name the hit, the insert and only the options that are set', () => {
+  assert.deepEqual(planArgs(0, hit, { preset: 'magnet-disc-6x3', custom: null }, { mode: 'embedded', spin: null, cover: null }),
+    { object: 0, part: 1, tri: 7, point: [1, 2, 3], mode: 'embedded', preset: 'magnet-disc-6x3' });
+  assert.deepEqual(planArgs(2, hit, { preset: 'x', custom: { kind: 'nfc', shape: 'block', d: 1, l: 30, w: 20, t: 1 } }, { mode: 'open', spin: 45, cover: 0 }),
+    { object: 2, part: 1, tri: 7, point: [1, 2, 3], mode: 'open', custom: { kind: 'nfc', shape: 'block', l: 30, w: 20, t: 1 }, spin: 45, cover: 0 });
+  assert.deepEqual(planArgs(0, hit, { preset: null, custom: { kind: 'magnet', shape: 'disc', d: 8, l: 1, w: 1, t: 2 } }, { mode: 'open', spin: 0, cover: null })?.custom,
+    { kind: 'magnet', shape: 'disc', d: 8, t: 2 });
+  assert.equal(planArgs(0, hit, { preset: null, custom: null }, { mode: 'open', spin: null, cover: null }), null);
+});
+
+test('Embedded is blocked by the object first, then by an embedded plan', () => {
+  const obj = { embedded_block: 'raft' } as ObjectInfo;
+  const plan = (mode: 'open' | 'embedded', code: string | null) => ({ mode, blocked: code ? { code, detail: '' } : null, preview: null }) as Plan;
+  assert.equal(embeddedBlock(obj, plan('embedded', 'tilted_face')), 'raft');
+  assert.equal(embeddedBlock({ embedded_block: null } as ObjectInfo, plan('embedded', 'tilted_face')), 'tilted_face');
+  assert.equal(embeddedBlock(null, plan('open', 'bad_mode')), null);
+  assert.equal(embeddedBlock(null, null), null);
+});
+
+const staged = (key: number, z: number | null, label: string, mode: 'open' | 'embedded' = 'embedded'): Staged =>
+  ({ key, args: {} as Staged['args'], plan: { mode, pause_z: z, label, blocked: null, preview: null } });
+
+test('pauses group embedded pockets by height, lowest first', () => {
+  const list = [staged(1, 5.4, '6x3 magnet'), staged(2, 2.2, 'NFC'), staged(3, 5.4000001, '6x3 magnet'), staged(4, 5.4, '8x2 magnet'), staged(5, null, 'x', 'open')];
+  assert.deepEqual(pauseSummary(list), [
+    { z: 2.2, items: [{ label: 'NFC', n: 1 }] },
+    { z: 5.4, items: [{ label: '6x3 magnet', n: 2 }, { label: '8x2 magnet', n: 1 }] },
+  ]);
+  assert.deepEqual(pauseSummary([]), []);
+});
+
+test('presets group into magnets, NFC and mine; empty groups drop', () => {
+  const p = (id: string, kind: 'magnet' | 'nfc', builtin = true) => ({ id, name: id, kind, shape: 'disc', d: 1, t: 1, builtin }) as Preset;
+  const groups = groupPresets([p('m', 'magnet'), p('n', 'nfc')], [p('user-1', 'nfc', false)]);
+  assert.deepEqual(groups.map(g => [g.key, g.items.map(i => i.id)]), [['magnet', ['m']], ['nfc', ['n']], ['mine', ['user-1']]]);
+  assert.deepEqual(groupPresets([p('m', 'magnet')], []).map(g => g.key), ['magnet']);
+});
+
+test('staging and removal lists never mutate their input', () => {
+  const a = Object.freeze([] as Staged[]);
+  const b = stage(a, {} as Staged['args'], { mode: 'open', blocked: null, preview: null });
+  const c = stage(b, {} as Staged['args'], { mode: 'open', blocked: null, preview: null });
+  assert.deepEqual(c.map(x => x.key), [1, 2]);
+  assert.deepEqual(unstage(Object.freeze(c), 1).map(x => x.key), [2]);
+  assert.deepEqual(stage(unstage(c, 1), {} as Staged['args'], { mode: 'open', blocked: null, preview: null }).map(x => x.key), [2, 3]);
+  const ids = Object.freeze(['a']);
+  assert.deepEqual(toggle(ids, 'b', true), ['a', 'b']);
+  assert.deepEqual(toggle(ids, 'a', false), []);
+  assert.deepEqual(toggle(ids, 'a', true), ['a']);
+});

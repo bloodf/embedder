@@ -8,13 +8,15 @@ import TabPanel from 'primevue/tabpanel';
 import Icon from './components/Icon.vue';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import NoticeArea from './components/NoticeArea.vue';
+import EmbedView from './components/EmbedView.vue';
+import SettingsView from './components/SettingsView.vue';
 import { s, start } from './app/store';
 import { t } from './core/i18n';
 
 const stop = start();
 onBeforeUnmount(stop);
 const sections = [
-  { value: 'embed', icon: 'icon/folder', label: 'nav.embed' },
+  { value: 'embed', icon: 'icon/layers', label: 'nav.embed' },
   { value: 'settings', icon: 'icon/settings', label: 'nav.settings' },
 ] as const;
 </script>
@@ -36,19 +38,8 @@ const sections = [
     <main class="em-main">
       <NoticeArea />
       <TabPanels class="em-panels">
-        <TabPanel value="embed">
-          <section class="em-card em-empty" data-test="embed-empty" aria-labelledby="embed-h">
-            <h2 id="embed-h">{{ t('embed.empty.title') }}</h2>
-            <p>{{ t('embed.empty.body') }}</p>
-            <p v-if="s.webgl === false" class="oui-meta" data-test="no3d"><Icon name="icon/warning" /> {{ t('embed.no3d') }}</p>
-          </section>
-        </TabPanel>
-        <TabPanel value="settings">
-          <section class="em-card em-empty" data-test="settings-empty" aria-labelledby="settings-h">
-            <h2 id="settings-h">{{ t('settings.empty.title') }}</h2>
-            <p>{{ t('settings.empty.body') }}</p>
-          </section>
-        </TabPanel>
+        <TabPanel value="embed"><EmbedView /></TabPanel>
+        <TabPanel value="settings"><SettingsView /></TabPanel>
       </TabPanels>
     </main>
     <ConfirmDialog />
@@ -68,6 +59,9 @@ body { background: var(--oui-background); }
 .em-panels.p-tabpanels { padding: 0; background: transparent; }
 .em-card { padding: 16px; background: var(--oui-surface); border: 1px solid var(--oui-border); border-radius: 12px; min-width: 0; }
 .em-card > h2 { margin: 0 0 12px; }
-.em-empty { text-align: center; }
+.em-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.em-warn { color: var(--oui-warning); }
+.em-card .em-icon.em-spot { width: 160px; height: 120px; color: var(--oui-muted); }
+.em-row .em-icon, .p-button .em-icon, .p-message .em-icon { vertical-align: middle; }
 @media (max-width: 720px) { .em-main { padding: 12px; } .em-nav { margin-left: 0; width: 100%; overflow-x: auto; } }
 </style>

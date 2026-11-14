@@ -50,7 +50,7 @@ class BuiltPage(unittest.TestCase):
             self.assertIn("PASS", proc.stdout)
             with open(results, encoding="utf-8") as f:
                 done = json.load(f)
-            self.assertGreaterEqual(len(done), 7)
+            self.assertGreaterEqual(len(done), 17)
             self.assertTrue(all(r["ok"] for r in done))
 
 

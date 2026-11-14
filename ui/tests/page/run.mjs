@@ -21,14 +21,67 @@ async function pageWithIcons() {
 
 const PRELUDE = `
 const SETTINGS = {ui_language: 'auto', xy_clearance: 0.2, z_clearance: 0.2, cover_magnet: 1, cover_nfc: 0.6, user_presets: []};
+const PRESETS = {builtin: [
+  {id: 'magnet-disc-6x3', name: '6x3 magnet', kind: 'magnet', shape: 'disc', d: 6, t: 3, builtin: true},
+  {id: 'nfc-sticker-25', name: '25 mm NFC sticker', kind: 'nfc', shape: 'disc', d: 25, t: 0.4, builtin: true}], user: []};
+// a 20 mm cube at x, y 90..110 (the same fixture as tests/unit/cube.ts), served in 48-byte chunks
+const POS = new Float32Array([90,90,0, 110,90,0, 110,110,0, 90,110,0, 90,90,20, 110,90,20, 110,110,20, 90,110,20]);
+const IDX = new Uint32Array([0,2,1, 0,3,2, 4,5,6, 4,6,7, 0,1,5, 0,5,4, 1,2,6, 1,6,5, 2,3,7, 2,7,6, 3,0,4, 3,4,7]);
+const CHUNK = 48;
+const part = (n) => ({part: n, id: String(n + 1), name: 'Cube', subtype: 'normal_part', embedder: false, vertices: 8, triangles: 12,
+  pos_bytes: 96, idx_bytes: 144, pos_chunks: 2, idx_chunks: 3});
+const object = (n, extra) => ({object: n, id: String(n + 1), name: n ? 'Lid' : 'Cube', item: n + 1, instance: 0, cut: false, embedded_block: null, parts: [part(0)], ...(extra || {})});
+const PROJECT = {job: 'j1', name: 'cube', plate: 1, plates: 2, config_source: 'project', chunk_bytes: CHUNK,
+  settings: {layer_height: 0.2, first_layer_height: 0.2, pause_gcode: true, print_sequence: 'by layer', raft_layers: 0},
+  blocks: [], objects: [object(0), object(1)],
+  existing: [{id: '9', object_id: '1', name: 'Embedder 6x3 magnet (embedded)', label: '6x3 magnet', mode: 'embedded'}], pauses: []};
+const PLAN = {mode: 'embedded', face: 'top', shape: 'cylinder', size: [6.4, 6.4, 3.2], transform: [1,0,0,100, 0,1,0,100, 0,0,1,15.6, 0,0,0,1],
+  floor: 15.6, top: 18.8, pause_z: 19, cover: 1.2, label: '6x3 magnet', kind: 'magnet',
+  preview: {positions: [100,100,15.6, 103,100,15.6, 100,103,18.8], indices: [0, 1, 2]}, warnings: [], blocked: null};
 async function ready() {
   await until(() => last('cmd', 'hello'), 'hello sent');
   await reply(last('cmd', 'hello'), {version: '0.1.0', settings: SETTINGS});
+  await until(() => last('cmd', 'presets.list'), 'presets asked');
+  await reply(last('cmd', 'presets.list'), PRESETS);
 }
 async function tab(name) { await click(q('[data-tab="' + name + '"]')); }
 const alerts = () => qa('[role=alert] .p-message').map(text).join(' | ');
+const answered = new Set();
+const open = name => cmds(name).filter(m => !answered.has(m.id));
+const b64 = u => btoa(String.fromCharCode(...u));
+/** Answer n mesh.chunk requests, checking that the page never has more than one in flight. */
+async function serveChunks(n) {
+  for (let k = 0; k < n; k++) {
+    await until(() => open('mesh.chunk').length, 'chunk request ' + k);
+    eq(open('mesh.chunk').length, 1, 'one chunk request at a time');
+    const m = open('mesh.chunk')[0];
+    answered.add(m.id);
+    const src = new Uint8Array((m.args.kind === 'pos' ? POS : IDX).buffer);
+    await reply(m, {i: m.args.i, chunks: Math.ceil(src.length / CHUNK), bytes: src.length, data: b64(src.subarray(m.args.i * CHUNK, (m.args.i + 1) * CHUNK))});
+  }
+}
+async function loaded(project) {
+  await ready();
+  await click(byTest('load'));
+  await until(() => last('cmd', 'project.load'), 'load sent');
+  await reply(last('cmd', 'project.load'), project || PROJECT);
+  await serveChunks(5);
+  await until(() => !byTest('fallback-place').disabled, 'meshes ready');
+}
+async function place(plan) {
+  const before = cmds('pocket.plan').length;
+  await click(byTest('fallback-place'));
+  await until(() => cmds('pocket.plan').length > before, 'plan sent');
+  if (plan) await reply(last('cmd', 'pocket.plan'), plan);
+  return last('cmd', 'pocket.plan');
+}
 `;
 
+// The page tests never rely on WebGL: every scenario runs as in a WebView without it (the numeric fallback).
+const NO_WEBGL = `
+const __getContext = HTMLCanvasElement.prototype.getContext;
+HTMLCanvasElement.prototype.getContext = function (type, ...rest) { return /webgl/i.test(type) ? null : __getContext.call(this, type, ...rest); };
+`;
 const scenarios = [];
 const test = (name, body, opts = {}) => scenarios.push({ name, body, ...opts });
 
@@ -48,7 +101,7 @@ test('the Embed tab starts with the empty state', `
 
 test('the tabs switch panels', `
   await ready();
-  await tab('settings'); assert(byTest('settings-empty'), 'settings panel');
+  await tab('settings'); assert(byTest('settings-form'), 'settings panel');
   await tab('embed'); assert(byTest('embed-empty'), 'embed panel');
 `);
 
@@ -78,6 +131,117 @@ test('theme follows the host colour while the page runs', `
   eq(getComputedStyle(document.body).backgroundColor, 'rgb(24, 28, 34)', 'dark palette background');
 `);
 
+test('load shows the progress of reading the project', `
+  await ready();
+  await click(byTest('load'));
+  await until(() => last('cmd', 'project.load'), 'load sent');
+  eq(last('cmd', 'project.load').args, {}, 'load has no arguments');
+  assert(text(byTest('loading')).includes('Exporting'), 'exporting first: ' + text(byTest('loading')));
+  await post({type: 'progress', job: 'j1', stage: 'meshes', done: 1, total: 3});
+  assert(text(byTest('loading')).includes('1 of 3'), 'progress text: ' + text(byTest('loading')));
+  eq(q('[data-test=loading] [role=progressbar]').getAttribute('aria-valuenow'), '33', 'progress bar');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  assert(!byTest('loading'), 'progress gone');
+  eq(text(byTest('project-name')), 'cube', 'project name');
+`);
+
+test('meshes are pulled one chunk at a time, for the selected object only', `
+  await loaded();
+  const asked = cmds('mesh.chunk').map(m => m.args);
+  eq(asked.map(a => a.kind + a.i), ['pos0', 'pos1', 'idx0', 'idx1', 'idx2'], 'chunk order');
+  eq(asked[0], {job: 'j1', object: 0, part: 0, kind: 'pos', i: 0}, 'chunk request shape');
+  assert(asked.every(a => a.object === 0), 'only the selected object');
+`);
+
+test('placing sends a plan request; the preview is listed and staged with its pause', `
+  await loaded();
+  const m = await place(PLAN);
+  const a = m.args;
+  eq([a.job, a.object, a.part, a.mode, a.preset], ['j1', 0, 0, 'embedded', 'magnet-disc-6x3'], 'plan arguments');
+  assert(a.tri === 2 || a.tri === 3, 'top triangle: ' + a.tri);
+  assert(Math.abs(a.point[0] - 100) < 1e-3 && Math.abs(a.point[1] - 100) < 1e-3 && Math.abs(a.point[2] - 20) < 1e-3, 'point at the top centre: ' + a.point);
+  eq(Object.keys(a).sort(), ['job', 'mode', 'object', 'part', 'point', 'preset', 'tri'], 'no unset options sent');
+  assert(text(byTest('plan-pause')).includes('19'), 'pause shown: ' + text(byTest('plan')));
+  await click(byTest('add'));
+  assert(text(byTest('staged')).includes('6x3 magnet'), 'staged: ' + text(byTest('staged')));
+  assert(text(byTest('pauses')).includes('Pause at Z 19.00 mm: insert 1 x 6x3 magnet'), 'pause summary: ' + text(byTest('pauses')));
+  const again = await place(null);
+  eq(again.args.others.length, 1, 'staged pockets go along for the proximity check');
+`);
+
+test('a blocked embedded plan says why and offers Open', `
+  await loaded();
+  await place({blocked: {code: 'tilted_face', detail: 'tilted'}, preview: null, mode: 'embedded'});
+  assert(text(byTest('plan-blocked')).includes('the face is tilted'), 'reason: ' + text(byTest('plan-blocked')));
+  assert(text(byTest('embedded-block')).includes('Use Open'), 'mode hint: ' + text(byTest('embedded-block')));
+  const embedded = qa('[data-test=mode] button').find(b => text(b) === 'Embedded');
+  assert(embedded && embedded.disabled, 'Embedded disabled');
+  assert(!byTest('add'), 'nothing to add');
+`);
+
+test('a project-level block shows the banner and starts in Open', `
+  const blocked = {...PROJECT, blocks: ['by_object'], objects: [object(0, {embedded_block: 'by_object'})]};
+  await loaded(blocked);
+  assert(text(byTest('blocks')).includes('By object'), 'banner: ' + text(byTest('blocks')));
+  const m = await place(null);
+  eq(m.args.mode, 'open', 'Open by default');
+`);
+
+test('warnings are shown in words', `
+  await loaded();
+  await place({...PLAN, warnings: ['thin_cover', 'nfc_near_magnet']});
+  const w = qa('[data-test=plan-warning]').map(text);
+  eq(w.length, 2, 'two warnings');
+  assert(w[0].includes('thinner than two layers') && w[1].includes('within 10 mm'), 'texts: ' + w);
+`);
+
+test('apply writes a copy with the staged and removed pockets; open asks OrcaSlicer', `
+  await loaded();
+  const m = await place(PLAN);
+  await click(byTest('add'));
+  await click(q('#rm-9'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  const { job, ...pocket } = m.args;
+  eq(last('cmd', 'project.apply').args, {job: 'j1', pockets: [pocket], remove: ['9']}, 'apply arguments');
+  const path = '/storage/cube-embedder-20261114-120000-j1.3mf';
+  await reply(last('cmd', 'project.apply'), {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 1, removed: 1,
+    pauses: [{top_z: 19, extra: 'Embedder: insert 1 x 6x3 magnet'}], warnings: ['existing_gcode_at_layer']});
+  assert(text(byTest('result')).includes('1 pockets added, 1 removed'), 'result: ' + text(byTest('result')));
+  assert(text(byTest('result')).includes('Save Project As'), 'save-as note');
+  assert(text(byTest('result')).includes('Your own custom G-code'), 'apply warning');
+  eq(text(byTest('result-path')), path, 'path shown');
+  assert(byTest('staged-empty'), 'staged list cleared');
+  await click(byTest('open'));
+  await until(() => last('cmd', 'project.open'), 'open sent');
+  eq(last('cmd', 'project.open').args, {path}, 'open arguments');
+  await reply(last('cmd', 'project.open'), {open: 'asked'});
+  assert(text(byTest('opened')).includes('asked to open'), 'opened: ' + text(byTest('opened')));
+`);
+
+test('a stale job error tells the user to load again', `
+  await loaded();
+  const m = await place(null);
+  await fail(m, {code: 'stale_job', detail: 'the project was loaded again; load it once more'});
+  assert(alerts().includes('The project was loaded again. Load it once more'), 'alert: ' + alerts());
+  assert(byTest('plan-empty') && !byTest('add'), 'no preview kept, the panel asks for a face again');
+`);
+
+test('without WebGL the page says so and keeps the face form', `
+  await loaded();
+  assert(text(byTest('no3d')).includes('not available'), 'notice: ' + text(byTest('no3d')));
+  eq(qa('[data-test=no3d] .em-spot svg').length, 1, 'illustration');
+  assert(!byTest('viewer'), 'no 3D view');
+`);
+
+test('settings show the saved values and the user presets', `
+  await ready();
+  await tab('settings');
+  eq(q('#set-xy_clearance').value, '0.2 mm', 'clearance shown');
+  assert(byTest('settings-save').disabled, 'nothing to save yet');
+  assert(byTest('presets-empty'), 'no user presets');
+`);
+
 // ------------------------------------------------------------------ runner
 const workers = Number(process.env.WORKERS ?? 4);
 if (!Number.isSafeInteger(workers) || workers < 1) throw new Error('WORKERS must be a positive integer');
@@ -99,7 +263,7 @@ try {
       const started = Date.now();
       try {
         await p.size(1280, 900);
-        await p.init(MOCK_HOST + 'try { localStorage.clear(); } catch {}');
+        await p.init(MOCK_HOST + NO_WEBGL + 'try { localStorage.clear(); } catch {}');
         await p.goto(pathToFileURL(file).href);
         const body = `(async () => { ${HELPERS} ${PRELUDE}
           await until(() => document.querySelector('#app > *'), 'app mounted');

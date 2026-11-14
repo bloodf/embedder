@@ -1,9 +1,108 @@
+// Shapes of the plugin's replies (src/embedder/plugin.py, session.py). Python is the single source of geometry truth.
+export type Kind = 'magnet' | 'nfc';
+export type Shape = 'disc' | 'block';
+export type Mode = 'open' | 'embedded';
+
+export interface Preset {
+  id: string;
+  name: string;
+  kind: Kind;
+  shape: Shape;
+  d?: number;
+  l?: number;
+  w?: number;
+  t: number;
+  builtin: boolean;
+}
+
 export interface Settings {
   ui_language: 'auto' | 'en' | 'pt-BR';
   xy_clearance: number;
   z_clearance: number;
   cover_magnet: number;
   cover_nfc: number;
-  user_presets: unknown[];
+  user_presets: Preset[];
 }
 export interface Hello { version: string; settings: Settings }
+
+export interface PartInfo {
+  part: number;
+  id: string;
+  name: string;
+  subtype: string;
+  embedder: boolean;
+  vertices: number;
+  triangles: number;
+  pos_bytes: number;
+  idx_bytes: number;
+  pos_chunks: number;
+  idx_chunks: number;
+}
+
+export interface ObjectInfo {
+  object: number;
+  id: string;
+  name: string;
+  item: number;
+  instance: number;
+  cut: boolean;
+  embedded_block: string | null;
+  parts: PartInfo[];
+}
+
+export interface Project {
+  job: string;
+  name: string;
+  plate: number;
+  plates: number;
+  config_source: string;
+  chunk_bytes: number;
+  settings: { layer_height: number | null; first_layer_height: number | null; pause_gcode: boolean; print_sequence: string; raft_layers: number };
+  blocks: string[];
+  objects: ObjectInfo[];
+  existing: { id: string; object_id: string; name: string; label: string; mode: Mode }[];
+  pauses: { top_z: number; type: number; extra: string; embedder: boolean }[];
+}
+
+export interface Custom { kind: Kind; shape: Shape; d: number; l: number; w: number; t: number }
+
+/** One pocket.plan / project.apply pocket, without the job id. */
+export interface PlanArgs {
+  object: number;
+  part: number;
+  tri: number;
+  point: [number, number, number];
+  preset?: string;
+  custom?: Record<string, unknown>;
+  mode: Mode;
+  spin?: number;
+  cover?: number;
+}
+
+export interface Plan {
+  mode: Mode;
+  face?: string;
+  shape?: string;
+  size?: number[];
+  transform?: number[];
+  floor?: number | null;
+  top?: number | null;
+  pause_z?: number | null;
+  cover?: number | null;
+  label?: string;
+  kind?: Kind;
+  preview: { positions: number[]; indices: number[] } | null;
+  warnings?: string[];
+  blocked: { code: string; detail: string } | null;
+}
+
+export interface Staged { key: number; args: PlanArgs; plan: Plan }
+
+export interface ApplyResult {
+  path: string;
+  name: string;
+  pockets: number;
+  removed: number;
+  pauses: { top_z: number; extra: string }[];
+  warnings: string[];
+}
