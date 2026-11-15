@@ -1,4 +1,3 @@
-<!-- The hero, feature icons and diagrams below come from docs/brand-images-prompt.md. Until they are generated, these image links are empty. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/readme/embedder-hero-dark.png">
@@ -122,6 +121,11 @@ Below the list of pockets, Embedder shows the inserts to have ready before you p
 
 ### Embedded and open pockets
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/pocket-types-dark.png">
+  <img src="assets/diagrams/pocket-types-light.png" alt="Embedded: the insert is sealed under a thin cover and the print pauses at the layer below the cover. Open: the pocket is open at the surface for press-fit after printing">
+</picture>
+
 | | Embedded | Open |
 |---|---|---|
 | Where | flat faces (top or bottom) and upright side faces | any face, including tilted ones |
@@ -214,6 +218,13 @@ python3 scripts/build.py     # writes dist/embedder_any.whl
 For a downloaded or built wheel, use **File > Plugins > Install local plugin** in OrcaSlicer, pick the
 wheel, then tick **Activate**. Allow the background thread when OrcaSlicer asks. The **Embedder** tab
 appears next to Prepare, Preview and Device.
+
+<p>
+  <img src="assets/install/embedder-install-01.png" width="400" alt="Step 1, Install: File > Plugins > Install local plugin, then Activate">
+  <img src="assets/install/embedder-install-02.png" width="400" alt="Step 2, Load: open the Embedder tab and load your project">
+  <img src="assets/install/embedder-install-03.png" width="400" alt="Step 3, Place: pick a magnet or NFC size and click a face">
+  <img src="assets/install/embedder-install-04.png" width="400" alt="Step 4, Print: slice the new copy; the printer pauses for each insert">
+</p>
 
 ## Usage
 

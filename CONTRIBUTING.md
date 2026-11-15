@@ -76,9 +76,26 @@ command line or the GUI and check the pocket and the pause in the G-code.
 
 ## Assets
 
-Images live in `assets/` and the UI icons in `src/embedder/ui/`. The art is generated from
-[docs/brand-images-prompt.md](docs/brand-images-prompt.md). Screenshots inside images are real renders of
-the built page (`node ui/tests/page/shots.mjs`), not edited by hand. Fonts stay with their licence files.
+Images live in `assets/` and the UI icons in `src/embedder/ui/`. The art comes from the Embedder brand kit,
+made from [docs/brand-images-prompt.md](docs/brand-images-prompt.md); each image has an SVG master and a PNG.
+The UI icons and empty-state spots use `currentColor`, so they follow both themes; keep that when you change
+one, and keep the file names, since the page looks icons up by name.
+
+Screenshots inside images are real renders of the built page, never drawn or edited by hand. The SVG masters
+keep their 16:10 screenshot frames empty; the PNGs get the renders:
+
+```sh
+node ui/tests/page/shots.mjs                                   # dist/shots/*.png: the built page and the real plugin
+uv run --no-project --with pillow python scripts/frames.py     # places them at the frames in assets/asset-manifest.json
+```
+
+`shots.mjs` drives headless Chrome (with `--use-mock-keychain --password-store=basic` and software WebGL)
+against `ui/tests/page/shots_host.py`, which runs `plugin.py` under the test double of `orca` on a project
+built in code, so every number on a screenshot is the plugin's own answer. Pillow is used only for this step;
+it is not a dependency of the plugin. Orca Cloud images must stay under 2 MB (`frames.py` checks).
+
+The fonts used in the artwork (Manrope and IBM Plex Mono, SIL Open Font License) live in `assets/fonts/`
+next to their licence texts; the plugin does not ship them.
 
 ## License
 

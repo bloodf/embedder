@@ -26,8 +26,26 @@ GitHub": `on: release: types: [published]`, `id-token: write`, audience `orcaclo
    repository publishes to exactly one plugin). A 401 from the publish step means this is missing.
 2. The version is higher than the one the hub lists (none yet for the first release).
 3. GitHub Actions is enabled and the release is not a draft.
-4. The store images from `docs/brand-images-prompt.md` are uploaded to the listing (`assets/orca-cloud/`), and the
-   description comes from [orca-cloud-description.md](orca-cloud-description.md).
+4. The store images in `assets/orca-cloud/` are uploaded to the listing by hand (all under 2 MB), and the
+   description comes from [orca-cloud-description.md](orca-cloud-description.md), with
+   [orca-cloud-related.md](orca-cloud-related.md) pasted at its end:
+
+   | Listing slot | File | Size |
+   |---|---|---|
+   | Plugin icon / store tile | `assets/orca-cloud/embedder-tile.png` | 512x512 |
+   | Main (cover) image | `assets/orca-cloud/embedder-main.png` | 1600x900 |
+   | Square thumbnail, where the listing asks for one | `assets/orca-cloud/embedder-main-square.png` | 900x900 |
+   | Gallery 1, "Click where it goes" | `assets/orca-cloud/embedder-01-placement.png` | 1600x900 |
+   | Gallery 2, "Magnet sizes built in" | `assets/orca-cloud/embedder-02-magnets.png` | 1600x900 |
+   | Gallery 3, "NFC stickers too" | `assets/orca-cloud/embedder-03-nfc.png` | 1600x900 |
+   | Gallery 4, "Pause at the right layer" | `assets/orca-cloud/embedder-04-pause.png` | 1600x900 |
+   | Gallery 5, "Your own sizes" | `assets/orca-cloud/embedder-05-custom-sizes.png` | 1600x900 |
+
+   The description also embeds these images from `raw.githubusercontent.com` on `main`, so they show there
+   once the commit that adds them is merged.
+5. The GitHub social preview (Settings > General > Social preview) is `assets/social/embedder-social-preview.png`
+   (1280x640). A release post can use `assets/releases/embedder-release-template.svg` (1280x320) with the
+   version typed over "vX.Y.Z".
 
 ## Steps
 
