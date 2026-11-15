@@ -89,6 +89,12 @@ node ui/tests/page/shots.mjs                                   # dist/shots/*.pn
 uv run --no-project --with pillow python scripts/frames.py     # places them at the frames in assets/asset-manifest.json
 ```
 
+`frames.py` also makes the store, social and install PNGs opaque on the background the manifest records for
+each (`#181c22` or `#f5f6f8`), since they are uploaded or shown where the page colour is unknown, and resizes
+the finished dark hero into `docs/related-plugins/embedder-preview.png` for the sibling plugins. Run on its own
+output it gives the same bytes. Identity marks, feature tiles and UI icons stay transparent; where one is
+shown in the README, use a `<picture>` with its light and dark variant.
+
 `shots.mjs` drives headless Chrome (with `--use-mock-keychain --password-store=basic` and software WebGL)
 against `ui/tests/page/shots_host.py`, which runs `plugin.py` under the test double of `orca` on a project
 built in code, so every number on a screenshot is the plugin's own answer. Pillow is used only for this step;

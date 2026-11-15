@@ -258,8 +258,8 @@ The 3MF reading and writing is adapted from [orca_organizer](https://github.com/
 (GPL-3.0). The 3D view uses [three.js](https://threejs.org) (MIT). The page uses Vue and PrimeVue
 through the shared Orca UI foundation. See [NOTICE.md](NOTICE.md).
 
-The brand art is pending: it is generated from [docs/brand-images-prompt.md](docs/brand-images-prompt.md),
-and `assets/embedder-icon.svg` is a placeholder until then.
+The brand art and its fonts are credited in [NOTICE.md](NOTICE.md); the brief is
+[docs/brand-images-prompt.md](docs/brand-images-prompt.md).
 
 Embedder is an independent project and is not made or supported by the OrcaSlicer team.
 
