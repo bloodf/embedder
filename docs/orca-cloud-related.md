@@ -12,7 +12,7 @@ Keep it in sync with the README's "Explore the other plugins" section.
 - **[Orca Print Calculator](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5f807b01-bfb8-4ad4-a77d-e85e337e4c7f)**: Price every build plate: Spoolman filament cost, energy, labor, fees and a suggested selling price.
 - **[Spooler](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5c523246-d53c-44bc-a129-fe2470da6368)**: Your Spoolman spools and filament presets in OrcaSlicer, with what is left on each spool.
 - **[U1 Control](https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f)**: The Snapmaker U1 in OrcaSlicer: print setup, camera, toolheads, RFID, Spoolman and a file manager.
-- **[Kobra Control](https://github.com/bloodf/kobracontrol)**: The Anycubic Kobra X in OrcaSlicer: Print and Send, the Device tab, ACE slots and a dashboard.
+- **[Kobra Control](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5d572581-28dc-4c72-a044-36a3d26f7982)**: The Anycubic Kobra X in OrcaSlicer: Print and Send, the Device tab, ACE slots and a dashboard.
 
 Each plugin works on its own; installed together they share data where it helps.
 ```
@@ -26,7 +26,7 @@ Each plugin works on its own; installed together they share data where it helps.
 - **[Orca Print Calculator](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5f807b01-bfb8-4ad4-a77d-e85e337e4c7f)**: Calcule o preço de cada mesa: filamento do Spoolman, energia, mão de obra, taxas e preço de venda.
 - **[Spooler](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5c523246-d53c-44bc-a129-fe2470da6368)**: Suas bobinas do Spoolman e os perfis de filamento no OrcaSlicer, com quanto resta em cada bobina.
 - **[U1 Control](https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f)**: A Snapmaker U1 no OrcaSlicer: configuração de impressão, câmera, cabeças, RFID, Spoolman e gerenciador de arquivos.
-- **[Kobra Control](https://github.com/bloodf/kobracontrol)**: A Anycubic Kobra X no OrcaSlicer: Print and Send, a aba Device, slots do ACE e um painel.
+- **[Kobra Control](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5d572581-28dc-4c72-a044-36a3d26f7982)**: A Anycubic Kobra X no OrcaSlicer: Print and Send, a aba Device, slots do ACE e um painel.
 
 Cada plugin funciona sozinho; instalados juntos, compartilham dados onde ajuda.
 ```
