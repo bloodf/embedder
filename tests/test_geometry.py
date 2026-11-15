@@ -64,6 +64,35 @@ class Matrices(unittest.TestCase):
         self.assertFalse(g.rigid_z(g.scale(-1, 1, 1)))
 
 
+class FaceCentre(unittest.TestCase):
+    @staticmethod
+    def flat(squares, z=0.0):
+        """Unit squares (x, y) at height z, two triangles each, vertices not shared (as an STL would have them)."""
+        pos, idx = [], []
+        for x, y in squares:
+            for a, b, c in (((x, y), (x + 1, y), (x + 1, y + 1)), ((x, y), (x + 1, y + 1), (x, y + 1))):
+                idx += [len(pos) // 3 + k for k in range(3)]
+                for px, py in (a, b, c):
+                    pos += [px, py, z]
+        return pos, idx
+
+    def test_centre_of_the_joined_flat_face(self):
+        pos, idx = self.flat([(0, 0), (1, 0), (2, 0), (5, 5)])
+        self.assertTrue(close(g.face_centre(pos, idx, 0, (0, 0, 1)), (1.5, 0.5, 0)))
+        self.assertTrue(close(g.face_centre(pos, idx, 7, (0, 0, 1)), (5.5, 5.5, 0)))   # a separate face
+
+    def test_a_centre_off_the_face_is_none(self):
+        ring = [(x, y) for x in range(3) for y in range(3) if (x, y) != (1, 1)]
+        pos, idx = self.flat(ring)
+        self.assertIsNone(g.face_centre(pos, idx, 0, (0, 0, 1)))
+
+    def test_other_planes_are_left_out(self):
+        pos, idx = self.flat([(0, 0)])
+        up, upi = self.flat([(1, 0)], z=1.0)
+        pos, idx = pos + up, idx + [i + 6 for i in upi]
+        self.assertTrue(close(g.face_centre(pos, idx, 0, (0, 0, 1)), (0.5, 0.5, 0)))
+
+
 class Meshes(unittest.TestCase):
     def test_cylinder_is_circumscribed_and_closed(self):
         v, t = g.cylinder_mesh(6.0, 3.0)

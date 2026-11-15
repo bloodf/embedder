@@ -173,3 +173,53 @@ def tilt(normal):
     if nz <= math.sin(math.radians(TILT_LIMIT_DEG)):
         return "side"
     return "tilted"
+
+
+def _inside_triangle(p, a, b, c, n, eps=1e-6):
+    """True when p (in the triangle's plane) lies inside or on triangle abc, whose unit normal is n."""
+    return all(_dot(n, _cross(tuple(q - o for o, q in zip(u, v)), tuple(q - o for o, q in zip(u, p)))) >= -eps
+               for u, v in ((a, b), (b, c), (c, a)))
+
+
+def face_centre(pos, idx, tri, normal, dist=1e-3, cos_tol=1 - 1e-4):
+    """Area-weighted centre of the flat face around triangle `tri` (flat position and index lists): the triangles
+    joined to it through shared edges that lie in its plane. None when that centre falls off the face (a ring, a U).
+    ponytail: a linear pass over the mesh per call; index the faces once if very large meshes make placing slow."""
+    n = normalize(normal)
+
+    def corners(k):
+        return [tuple(pos[3 * idx[3 * k + c] + a] for a in range(3)) for c in range(3)]
+
+    plane = _dot(n, corners(tri)[0])
+    flat, by_edge = {}, {}
+    for k in range(len(idx) // 3):
+        cs = corners(k)
+        try:
+            nk = triangle_normal(*cs)
+        except ValueError:
+            continue
+        if _dot(nk, n) < cos_tol or any(abs(_dot(n, c) - plane) > dist for c in cs):
+            continue
+        flat[k] = cs
+        keys = [tuple(round(v, 4) for v in c) for c in cs]
+        for e in ((keys[0], keys[1]), (keys[1], keys[2]), (keys[2], keys[0])):
+            by_edge.setdefault(frozenset(e), []).append(k)
+    if tri not in flat:
+        return None
+    face, todo = {tri}, [tri]
+    while todo:
+        cs = flat[todo.pop()]
+        keys = [tuple(round(v, 4) for v in c) for c in cs]
+        for e in ((keys[0], keys[1]), (keys[1], keys[2]), (keys[2], keys[0])):
+            for k in by_edge[frozenset(e)]:
+                if k not in face:
+                    face.add(k)
+                    todo.append(k)
+    total, acc = 0.0, [0.0, 0.0, 0.0]
+    for k in face:
+        a, b, c = flat[k]
+        area = math.sqrt(sum(v * v for v in _cross(tuple(q - p for p, q in zip(a, b)), tuple(q - p for p, q in zip(a, c))))) / 2
+        total += area
+        acc = [s + area * (a[i] + b[i] + c[i]) / 3 for i, s in enumerate(acc)]
+    centre = tuple(v / total for v in acc)
+    return centre if any(_inside_triangle(centre, *flat[k], n) for k in face) else None

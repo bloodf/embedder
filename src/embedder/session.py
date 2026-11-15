@@ -260,6 +260,11 @@ class Session:
         point = tuple(_number({"v": v}, "v") for v in point)
         if abs(sum((p - c) * n for p, c, n in zip(point, corners[0], normal))) > POINT_TOLERANCE:
             raise SessionError("bad_point", "the point is not on the face")
+        center = args.get("center", False)
+        if not isinstance(center, bool):
+            raise SessionError("bad_request", "center is true or false")
+        if center:   # the middle of the flat face that was clicked; the click itself when the middle is off the face
+            point = geometry.face_centre(pos, idx, t, normal) or point
         try:
             insert = presets.resolve(args, self.settings_fn().get("user_presets"))
         except presets.PresetError as e:
@@ -297,7 +302,7 @@ class Session:
             entry, p = self._plan_one(job, args)
         except pocket.Blocked as e:
             return {"blocked": {"code": e.code, "detail": e.detail}, "preview": None, "mode": args.get("mode")}
-        warnings = list(p.warnings)
+        warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], self._user_layers(job))[1]]
         others = args.get("others") or []
         if not isinstance(others, list):
             raise SessionError("bad_request", "others is a list")
@@ -316,6 +321,10 @@ class Session:
         return out
 
     # -------------------------------------------------------------- applying
+
+    def _user_layers(self, job):
+        """Heights on the job's plate that carry someone else's custom G-code."""
+        return [l.top_z for l in job.pkg.layers if l.plate == job.plate and not l.embedder]
 
     def _kept_pauses(self, job, removed):
         """Embedded Embedder parts that stay: ((Pocket, copies), ...); the pause is the layer after the cavity top."""
@@ -365,8 +374,7 @@ class Session:
                 raise SessionError("pocket_blocked", "pocket %d: %s" % (n + 1, e.code)) from None
         pockets = [p for _, p in planned]
         kept = self._kept_pauses(job, set(remove))
-        existing = [l.top_z for l in job.pkg.layers if l.plate == job.plate and not l.embedder]
-        pauses, pause_warnings = pocket.pauses(pockets + [k for k, _ in kept], existing,
+        pauses, pause_warnings = pocket.pauses(pockets + [k for k, _ in kept], self._user_layers(job),
                                                [job.copies(e.obj.id) for e, _ in planned] + [n for _, n in kept])
         adds = [threemf.Addition(e.obj.id, e.item.index, "Embedder %s (%s)" % (p.insert.label, p.mode), *p.mesh(), p.transform)
                 for e, p in planned]

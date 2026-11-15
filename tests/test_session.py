@@ -186,6 +186,28 @@ class Plan(Base):
         for kw, code in cases:
             self.assertEqual(self.error(self.plan, r["job"], **kw), code, kw)
 
+    def test_projects_that_cannot_take_a_pocket_say_why_before_apply(self):
+        r = self.load(fixtures.no_model_settings)
+        self.assertEqual(self.error(self.plan, r["job"]), "no_model_settings")
+        r = self.load(fixtures.plain_mesh)
+        self.assertEqual(self.error(self.plan, r["job"], point=[110, 110, 20]), "unsupported_object")
+
+    def test_centre_on_the_face(self):
+        r = self.load()
+        clicked = self.plan(r["job"], point=[105, 104, 20])
+        self.assertEqual(clicked["transform"][3::4][:2], [105, 104])
+        centred = self.plan(r["job"], point=[105, 104, 20], center=True)
+        self.assertEqual(centred["transform"][3::4][:2], [110, 110])
+        self.assertEqual(self.plan(r["job"], point=[105, 104, 20], center=True, mode="open")["transform"][3::4][:2], [110, 110])
+        side = self.plan(r["job"], tri=SIDE_TRI, point=[120, 103, 5], center=True, mode="open")
+        self.assertEqual([round(v, 6) for v in side["transform"][3::4][1:3]], [110, 10])
+        self.assertEqual(self.error(self.plan, r["job"], center="yes"), "bad_request")
+
+    def test_a_pause_on_someone_elses_gcode_warns_while_planning(self):
+        r = self.load(fixtures.user_pause, z=19.2)
+        self.assertIn("existing_gcode_at_layer", self.plan(r["job"])["warnings"])
+        self.assertNotIn("existing_gcode_at_layer", self.plan(r["job"], mode="open")["warnings"])
+
     def test_negative_part_cannot_be_picked(self):
         r = self.load(fixtures.multipart_with_negative)
         self.assertEqual(self.error(self.plan, r["job"], part=1), "bad_part")
