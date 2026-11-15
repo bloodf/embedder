@@ -245,6 +245,34 @@ test('settings show the saved values and the user presets', `
   assert(byTest('presets-empty'), 'no user presets');
 `);
 
+test('saving settings plans the staged pockets again; one that no longer fits is dropped, saying so', `
+  await loaded();
+  const m = await place(PLAN);
+  await click(byTest('add'));
+  const lid = await place(null);
+  await reply(lid, {...PLAN, label: 'Lid magnet'});
+  await click(byTest('add'));
+  await tab('settings');
+  await type(q('#set-xy_clearance'), '0.4');
+  q('#set-xy_clearance').blur();
+  await settle();
+  const before = cmds('pocket.plan').length;
+  await click(byTest('settings-save'));
+  await until(() => last('cmd', 'settings.save'), 'save sent');
+  await reply(last('cmd', 'settings.save'), {...SETTINGS, xy_clearance: 0.4});
+  await until(() => cmds('pocket.plan').length > before, 'first staged pocket planned again');
+  const { job, ...pocket } = m.args;
+  const first = last('cmd', 'pocket.plan');
+  eq([first.args.object, first.args.tri, first.args.preset, first.args.others.length], [pocket.object, pocket.tri, pocket.preset, 1], 'same pocket, the other one along');
+  await reply(first, {...PLAN, size: [6.8, 6.8, 3.2]});
+  await until(() => cmds('pocket.plan').length > before + 1, 'second staged pocket planned again');
+  await fail(last('cmd', 'pocket.plan'), {code: 'unknown_preset', detail: 'user-x'});
+  await until(() => alerts().includes('no longer fit'), 'drop notice');
+  assert(alerts().includes('Lid magnet'), 'names the dropped pocket: ' + alerts());
+  await tab('embed');
+  assert(text(byTest('staged')).includes('6x3 magnet') && !text(byTest('staged')).includes('Lid magnet'), 'staged: ' + text(byTest('staged')));
+`);
+
 // ------------------------------------------------------------------ runner
 const workers = Number(process.env.WORKERS ?? 4);
 if (!Number.isSafeInteger(workers) || workers < 1) throw new Error('WORKERS must be a positive integer');

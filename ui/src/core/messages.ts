@@ -113,6 +113,7 @@ export const en = {
   'list.apply': 'Apply',
   'list.summary_one': '{n} pocket to add, {removed} to remove',
   'list.summary_other': '{n} pockets to add, {removed} to remove',
+  'list.dropped': 'These pockets no longer fit and were taken off the list: {labels}',
   'pause.line': 'Pause at Z {z} mm: insert {items}',
   'pause.item': '{n} x {label}',
 
@@ -323,6 +324,7 @@ export const ptBR: Record<MessageKey, string> = {
   'list.apply': 'Aplicar',
   'list.summary_one': '{n} bolso a adicionar, {removed} a remover',
   'list.summary_other': '{n} bolsos a adicionar, {removed} a remover',
+  'list.dropped': 'Estes bolsos não cabem mais e foram retirados da lista: {labels}',
   'pause.line': 'Pausa em Z {z} mm: inserir {items}',
   'pause.item': '{n} x {label}',
 

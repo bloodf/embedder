@@ -6,7 +6,7 @@ import { pullPart, type PartMesh } from '../core/mesh';
 import type { Hit } from '../core/pick';
 import { planArgs, stage, unstage, toggle } from './logic';
 import { s, tracker, errorText } from './store';
-import type { ApplyResult, Plan, Project } from './types';
+import type { ApplyResult, Plan, Project, Staged } from './types';
 
 const LONG_MS = 300_000;   // loading or writing a big project copy
 const meshes = new Map<number, PartMesh[]>();
@@ -83,6 +83,27 @@ export async function replan(): Promise<void> {
     Object.assign(s, { plan: null, planArgs: null, hit: null });
     tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) }));
   }
+}
+
+/** After a settings change or a deleted preset: plan the staged pockets again, so the list, the previews and the
+ *  pauses match what Apply will write. A pocket that no longer plans would make Apply fail: it is dropped, saying so. */
+export async function replanStaged(): Promise<void> {
+  const project = s.project, before = s.staged;
+  if (!project || s.result || !before.length) return;
+  const kept: Staged[] = [], dropped: string[] = [];
+  for (const x of before) {
+    const others = before.filter(o => o !== x).map(o => o.args);
+    try {
+      const plan: Plan = await bridge.command('pocket.plan', { job: project.job, ...x.args, ...(others.length ? { others } : {}) });
+      if (plan.blocked) dropped.push(x.plan.label ?? '?'); else kept.push({ ...x, plan });
+    } catch {
+      dropped.push(x.plan.label ?? '?');
+    }
+  }
+  if (s.project !== project || s.staged !== before) return;   // reloaded or edited meanwhile: that state wins
+  s.staged = kept;
+  if (dropped.length) tracker.notify('error', t('list.dropped', { labels: dropped.join(', ') }));
+  await replan();
 }
 
 export function addStaged(): void {

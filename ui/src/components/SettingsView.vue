@@ -5,6 +5,7 @@ import Select from 'primevue/select';
 import InputNumber from 'primevue/inputnumber';
 import Icon from './Icon.vue';
 import { s, saveSettings, deletePreset, tracker } from '../app/store';
+import { replanStaged } from '../app/project';
 import { ask } from '../core/dialog';
 import { t, langPref, setLangPref, autoLocale, fmt } from '../core/i18n';
 import type { LangPref } from '../core/i18n-core';
@@ -22,13 +23,16 @@ const langOptions = computed(() => [
   { value: 'auto', label: t('lang.auto', { current: t(`lang.${autoLocale.value}`) }) },
   { value: 'en', label: t('lang.en') }, { value: 'pt-BR', label: t('lang.pt-BR') }]);
 
-function save() {
+async function save() {
   if (!valid.value) return;
-  void saveSettings(Object.fromEntries(knobs.map(k => [k.key, form[k.key]])));
+  if (await saveSettings(Object.fromEntries(knobs.map(k => [k.key, form[k.key]])))) await replanStaged();
 }
 const dims = (p: Preset) => [p.d ?? p.l, ...(p.shape === 'block' ? [p.w] : []), p.t].map(v => fmt.number(v ?? 0, 2)).join(' × ');
 async function remove(p: Preset) {
-  if (await ask({ title: t('preset.deleteTitle'), text: t('preset.deleteText', { name: p.name }), yes: t('preset.delete'), danger: true })) await deletePreset(p.id);
+  if (await ask({ title: t('preset.deleteTitle'), text: t('preset.deleteText', { name: p.name }), yes: t('preset.delete'), danger: true })) {
+    await deletePreset(p.id);
+    await replanStaged();
+  }
 }
 </script>
 
