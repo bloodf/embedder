@@ -24,9 +24,11 @@ export function findChrome() {
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
-export async function launch() {
+/** `gpu`: software WebGL (SwiftShader) instead of --disable-gpu, for the screenshots in shots.mjs. */
+export async function launch({ gpu = false } = {}) {
   const profile = await mkdtemp(join(tmpdir(), 'orca-page-test-'));
-  const proc = spawn(findChrome(), ['--headless=new', '--disable-extensions', '--disable-component-extensions-with-background-pages', '--use-mock-keychain', '--password-store=basic', '--disable-gpu',
+  const graphics = gpu ? ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] : ['--disable-gpu'];
+  const proc = spawn(findChrome(), ['--headless=new', '--disable-extensions', '--disable-component-extensions-with-background-pages', '--use-mock-keychain', '--password-store=basic', ...graphics,
     '--disable-background-networking', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0',
     '--allow-file-access-from-files', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
   let log = '';

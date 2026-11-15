@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-15
+
+### Changed
+
+- The Embedder brand artwork: logo, wordmark and lockups, README heroes, feature icons, the how-it-works
+  and pocket-types diagrams, install cards, Orca Cloud store images, social images and a release banner.
+  The README, Orca Cloud and install images show real screenshots of the Embedder tab.
+- New tab icon, UI icons and empty-state images in the Embedder tab. They follow the light and dark theme;
+  the cover row of a planned pocket and Save as preset now carry their icons.
+
 ## [0.1.0] - 2026-11-14
 
 ### Added

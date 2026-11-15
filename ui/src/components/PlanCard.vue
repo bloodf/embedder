@@ -28,7 +28,7 @@ const size = computed(() => (s.plan?.size ?? []).map(v => fmt.number(v, 2)).join
         <template v-if="s.plan.mode === 'embedded'">
           <dt>{{ t('plan.cavity') }}</dt><dd>{{ t('plan.cavityRange', { floor: mm(s.plan.floor), top: mm(s.plan.top) }) }}</dd>
           <dt><Icon name="icon/pause" /> {{ t('plan.pause') }}</dt><dd data-test="plan-pause">Z {{ mm(s.plan.pause_z) }} mm</dd>
-          <dt>{{ t('plan.cover') }}</dt><dd>{{ mm(s.plan.cover) }} mm</dd>
+          <dt><Icon name="icon/layers" /> {{ t('plan.cover') }}</dt><dd>{{ mm(s.plan.cover) }} mm</dd>
         </template>
       </dl>
       <Message v-for="w in s.plan.warnings ?? []" :key="w" severity="warn" data-test="plan-warning">

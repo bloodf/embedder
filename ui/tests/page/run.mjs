@@ -326,6 +326,16 @@ test('settings show the old copies and clear them after asking', `
   await until(() => cmds('copies.status').length === 2, 'asked again when the tab opens');
 `);
 
+test('the cover row and Save as preset carry their brand icons', `
+  await loaded();
+  await place(PLAN);
+  const cover = qa('[data-test=plan] dt').find(d => text(d) === 'Cover');
+  assert(cover && q('.em-icon svg', cover), 'layers icon on the cover row');
+  await click(q('#f-custom'));
+  const save = byTest('save-preset');
+  assert(q('.em-icon svg', save) && text(save) === 'Save as preset', 'add icon on Save as preset: ' + text(save));
+`);
+
 // ------------------------------------------------------------------ runner
 const workers = Number(process.env.WORKERS ?? 4);
 if (!Number.isSafeInteger(workers) || workers < 1) throw new Error('WORKERS must be a positive integer');

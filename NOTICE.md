@@ -13,6 +13,20 @@ Embedder is licensed under the GNU General Public License v3.0 only (see [LICENS
 - **Vue** (MIT), **PrimeVue** (MIT) and **PrimeUIX** (MIT) come in through the shared Orca UI foundation,
   vendored in `ui/shared/`. The licence texts are in [ui/shared/licenses](ui/shared/licenses).
 
+## Brand art and fonts
+
+The logo, icons, empty-state spots, diagrams and store, README, install, social and release images in
+`assets/` and `src/embedder/ui/` are original artwork made for Embedder and are covered by this project's
+licence. The fonts used in that artwork are free and open, under the SIL Open Font License 1.1, and sit
+with their licence texts in [assets/fonts](assets/fonts):
+
+- **Manrope**, copyright 2018 The Manrope Project Authors
+  ([licence](assets/fonts/Manrope-OFL.txt)). It is also embedded in the SVGs that keep live text.
+- **IBM Plex Mono**, copyright 2017 IBM Corp., Reserved Font Name "Plex"
+  ([licence](assets/fonts/IBMPlexMono-OFL.txt)).
+
+The fonts are only used for the artwork; the plugin and its page do not ship them.
+
 The page is built into one offline HTML file, and the licence notices of the bundled libraries are kept
 in that file.
 

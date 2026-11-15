@@ -1,4 +1,3 @@
-<!-- The hero, feature icons and diagrams below come from docs/brand-images-prompt.md. Until they are generated, these image links are empty. -->
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/readme/embedder-hero-dark.png">
@@ -64,15 +63,16 @@ Complete your OrcaSlicer workflow: arrange, price, manage filament and print. Ea
   </tr>
   <tr>
     <td width="33%" valign="top">
-      <a href="https://github.com/bloodf/u1control"><img src="docs/related-plugins/u1control-icon.svg" width="40" height="40" alt="U1 Control"></a>
-      <h3><a href="https://github.com/bloodf/u1control">U1 Control</a></h3>
-      <a href="https://github.com/bloodf/u1control"><img src="docs/related-plugins/u1control-preview.png" width="280" alt="U1 Control: preview"></a>
+      <a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f"><img src="docs/related-plugins/u1control-icon.svg" width="40" height="40" alt="U1 Control"></a>
+      <h3><a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f">U1 Control</a></h3>
+      <a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f"><img src="docs/related-plugins/u1control-preview.png" width="280" alt="U1 Control: preview"></a>
       <p>The Snapmaker U1 in OrcaSlicer: print setup, camera, toolheads, RFID, Spoolman and a file manager.</p>
-      <p><a href="https://github.com/bloodf/u1control">Source on GitHub →</a></p>
+      <p><a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f">Install from Orca Cloud →</a><br><a href="https://github.com/bloodf/u1control">Source on GitHub →</a></p>
     </td>
     <td width="33%" valign="top">
       <a href="https://github.com/bloodf/kobracontrol"><img src="docs/related-plugins/kobracontrol-icon.svg" width="40" height="40" alt="Kobra Control"></a>
       <h3><a href="https://github.com/bloodf/kobracontrol">Kobra Control</a></h3>
+      <a href="https://github.com/bloodf/kobracontrol"><img src="docs/related-plugins/kobracontrol-preview.png" width="280" alt="Kobra Control: preview"></a>
       <p>The Anycubic Kobra X in OrcaSlicer: Print and Send, the Device tab, ACE slots and a dashboard.</p>
       <p><a href="https://github.com/bloodf/kobracontrol">Source on GitHub →</a></p>
     </td>
@@ -120,6 +120,11 @@ Below the list of pockets, Embedder shows the inserts to have ready before you p
 "2 x 6x3 magnet, 1 x 25 mm NFC sticker". Open pockets count too, and so does every copy of an object.
 
 ### Embedded and open pockets
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/diagrams/pocket-types-dark.png">
+  <img src="assets/diagrams/pocket-types-light.png" alt="Embedded: the insert is sealed under a thin cover and the print pauses at the layer below the cover. Open: the pocket is open at the surface for press-fit after printing">
+</picture>
 
 | | Embedded | Open |
 |---|---|---|
@@ -214,6 +219,13 @@ For a downloaded or built wheel, use **File > Plugins > Install local plugin** i
 wheel, then tick **Activate**. Allow the background thread when OrcaSlicer asks. The **Embedder** tab
 appears next to Prepare, Preview and Device.
 
+<p>
+  <img src="assets/install/embedder-install-01.png" width="400" alt="Step 1, Install: File > Plugins > Install local plugin, then Activate">
+  <img src="assets/install/embedder-install-02.png" width="400" alt="Step 2, Load: open the Embedder tab and load your project">
+  <img src="assets/install/embedder-install-03.png" width="400" alt="Step 3, Place: pick a magnet or NFC size and click a face">
+  <img src="assets/install/embedder-install-04.png" width="400" alt="Step 4, Print: slice the new copy; the printer pauses for each insert">
+</p>
+
 ## Usage
 
 1. Open your project in OrcaSlicer and pick the plate with the part.
@@ -246,8 +258,8 @@ The 3MF reading and writing is adapted from [orca_organizer](https://github.com/
 (GPL-3.0). The 3D view uses [three.js](https://threejs.org) (MIT). The page uses Vue and PrimeVue
 through the shared Orca UI foundation. See [NOTICE.md](NOTICE.md).
 
-The brand art is pending: it is generated from [docs/brand-images-prompt.md](docs/brand-images-prompt.md),
-and `assets/embedder-icon.svg` is a placeholder until then.
+The brand art and its fonts are credited in [NOTICE.md](NOTICE.md); the brief is
+[docs/brand-images-prompt.md](docs/brand-images-prompt.md).
 
 Embedder is an independent project and is not made or supported by the OrcaSlicer team.
 

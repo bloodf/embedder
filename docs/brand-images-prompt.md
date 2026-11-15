@@ -1,5 +1,12 @@
 # Brand and image set prompt
 
+**Status: delivered.** Every asset in the table below is in the repository (59 SVG masters and their PNGs),
+plus the fonts in `assets/fonts/` and the frame coordinates in `assets/asset-manifest.json`. The screenshot
+frames of the README heroes, the five Orca Cloud gallery images, install cards 2 to 4 and the three social
+images hold real renders of the page (see CONTRIBUTING.md, Assets). Install card 1 shows OrcaSlicer's own
+Plugins dialog, which the page cannot render, so its frame stays empty until a capture from OrcaSlicer exists.
+The prompt below is kept as the brief for future changes.
+
 Paste the prompt below into an image model (ChatGPT with image generation or similar). Ask for the
 assets one at a time if it tries to cram everything into one image. Ask for SVG code for the mark,
 wordmark, icons, diagrams and anything with text, so they stay sharp.
@@ -20,6 +27,9 @@ Where each asset goes in this repo:
 The page looks icons up by file name, and the build inlines only the names it references, so a new
 icon or spot needs the same name as the placeholder it replaces. Run `python scripts/build.py` after
 dropping new files in.
+
+| Asset | File |
+|---|---|
 | README hero, light and dark | `assets/readme/embedder-hero-light.*`, `assets/readme/embedder-hero-dark.*` |
 | Feature icons | `assets/features/feature-*.svg` |
 | How it works diagram | `assets/diagrams/how-it-works-{light,dark}.*` |

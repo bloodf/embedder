@@ -1,0 +1,3442 @@
+{
+  "brand": "Embedder",
+  "repo": "embedder",
+  "palette": {
+    "dark": {
+      "bg": "#181c22",
+      "surface": "#222831",
+      "text": "#edf1f5",
+      "muted": "#b6c0cd",
+      "border": "#566273",
+      "primary": "#79d8c7",
+      "magnet": "#f2bc7a",
+      "nfc": "#c7b5ff",
+      "danger": "#ffaaa4",
+      "warning": "#f3cc70",
+      "success": "#7fdbab"
+    },
+    "light": {
+      "bg": "#f5f6f8",
+      "surface": "#ffffff",
+      "text": "#202731",
+      "muted": "#526171",
+      "border": "#ccd3dc",
+      "primary": "#00675b",
+      "magnet": "#8c4b08",
+      "nfc": "#6541a6",
+      "danger": "#b42318",
+      "warning": "#805300",
+      "success": "#0b6b3a"
+    }
+  },
+  "font_families": [
+    "Manrope",
+    "IBM Plex Mono"
+  ],
+  "assets": [
+    {
+      "filename": "assets/embedder-icon.svg",
+      "width": 1024,
+      "height": 1024,
+      "category": "01 Identity",
+      "title": "App icon",
+      "use": "Primary application icon and source for the related-plugin icon.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-icon.png",
+      "svg_bytes": 731,
+      "png_bytes": 30277
+    },
+    {
+      "filename": "assets/embedder-symbol-white.svg",
+      "width": 1024,
+      "height": 1024,
+      "category": "01 Identity",
+      "title": "Monochrome symbol \u00b7 white",
+      "use": "Single-color printing, engraving and monochrome layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#ffffff"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-symbol-white.png",
+      "svg_bytes": 664,
+      "png_bytes": 14880
+    },
+    {
+      "filename": "assets/embedder-symbol-dark.svg",
+      "width": 1024,
+      "height": 1024,
+      "category": "01 Identity",
+      "title": "Monochrome symbol \u00b7 dark",
+      "use": "Single-color printing, engraving and monochrome layouts.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        256,
+        256
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#202731"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-symbol-dark.png",
+      "svg_bytes": 664,
+      "png_bytes": 19409
+    },
+    {
+      "filename": "assets/embedder-wordmark.svg",
+      "width": 1000,
+      "height": 280,
+      "category": "01 Identity",
+      "title": "Wordmark \u00b7 for light backgrounds",
+      "use": "Standalone outlined wordmark; the suffix identifies the intended background.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1000,
+        280
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 160,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#202731"
+      ],
+      "text_strings": [
+        "Embedder"
+      ],
+      "png": "assets/embedder-wordmark.png",
+      "svg_bytes": 5222,
+      "png_bytes": 16795
+    },
+    {
+      "filename": "assets/embedder-lockup.svg",
+      "width": 1000,
+      "height": 280,
+      "category": "01 Identity",
+      "title": "Horizontal lockup \u00b7 for light backgrounds",
+      "use": "Primary horizontal signature with original symbol and outlined wordmark.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1000,
+        280
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 136,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731"
+      ],
+      "text_strings": [
+        "Embedder"
+      ],
+      "png": "assets/embedder-lockup.png",
+      "svg_bytes": 6147,
+      "png_bytes": 17791
+    },
+    {
+      "filename": "assets/embedder-micro-16.svg",
+      "width": 16,
+      "height": 16,
+      "category": "02 Interface",
+      "title": "16px micro mark \u00b7 light",
+      "use": "Hand-adjusted small symbol; use at its native pixel size.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-micro-16.png",
+      "svg_bytes": 527,
+      "png_bytes": 196
+    },
+    {
+      "filename": "assets/embedder-micro-20.svg",
+      "width": 20,
+      "height": 20,
+      "category": "02 Interface",
+      "title": "20px micro mark \u00b7 light",
+      "use": "Hand-adjusted small symbol; use at its native pixel size.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        20,
+        20
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-micro-20.png",
+      "svg_bytes": 531,
+      "png_bytes": 189
+    },
+    {
+      "filename": "assets/embedder-micro-24.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "24px micro mark \u00b7 light",
+      "use": "Hand-adjusted small symbol; use at its native pixel size.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-micro-24.png",
+      "svg_bytes": 531,
+      "png_bytes": 273
+    },
+    {
+      "filename": "assets/embedder-wordmark-dark.svg",
+      "width": 1000,
+      "height": 280,
+      "category": "01 Identity",
+      "title": "Wordmark \u00b7 for dark backgrounds",
+      "use": "Standalone outlined wordmark; the suffix identifies the intended background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1000,
+        280
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 160,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder"
+      ],
+      "png": "assets/embedder-wordmark-dark.png",
+      "svg_bytes": 5222,
+      "png_bytes": 16087
+    },
+    {
+      "filename": "assets/embedder-lockup-dark.svg",
+      "width": 1000,
+      "height": 280,
+      "category": "01 Identity",
+      "title": "Horizontal lockup \u00b7 for dark backgrounds",
+      "use": "Primary horizontal signature with original symbol and outlined wordmark.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1000,
+        280
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 136,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder"
+      ],
+      "png": "assets/embedder-lockup-dark.png",
+      "svg_bytes": 6147,
+      "png_bytes": 17429
+    },
+    {
+      "filename": "assets/embedder-micro-dark-16.svg",
+      "width": 16,
+      "height": 16,
+      "category": "02 Interface",
+      "title": "16px micro mark \u00b7 dark",
+      "use": "Hand-adjusted small symbol; use at its native pixel size.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        16,
+        16
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-micro-dark-16.png",
+      "svg_bytes": 527,
+      "png_bytes": 204
+    },
+    {
+      "filename": "assets/embedder-micro-dark-20.svg",
+      "width": 20,
+      "height": 20,
+      "category": "02 Interface",
+      "title": "20px micro mark \u00b7 dark",
+      "use": "Hand-adjusted small symbol; use at its native pixel size.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        20,
+        20
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-micro-dark-20.png",
+      "svg_bytes": 531,
+      "png_bytes": 193
+    },
+    {
+      "filename": "assets/embedder-micro-dark-24.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "24px micro mark \u00b7 dark",
+      "use": "Hand-adjusted small symbol; use at its native pixel size.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [],
+      "png": "assets/embedder-micro-dark-24.png",
+      "svg_bytes": 531,
+      "png_bytes": 284
+    },
+    {
+      "filename": "src/embedder/ui/icon.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "Tab icon",
+      "use": "Fixed white 1.5px line icon for the OrcaSlicer tab.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"#FEFEFE\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#fefefe"
+      ],
+      "text_strings": [],
+      "png": "src/embedder/ui/icon.png",
+      "svg_bytes": 277,
+      "png_bytes": 270
+    },
+    {
+      "filename": "src/embedder/ui/icons/magnet.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 magnet",
+      "use": "Magnet presets and magnet pockets.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/magnet.png",
+      "svg_bytes": 272,
+      "png_bytes": 581
+    },
+    {
+      "filename": "src/embedder/ui/icons/nfc.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 nfc",
+      "use": "NFC presets and NFC pockets.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/nfc.png",
+      "svg_bytes": 270,
+      "png_bytes": 494
+    },
+    {
+      "filename": "src/embedder/ui/icons/pause.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 pause",
+      "use": "Pause height.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/pause.png",
+      "svg_bytes": 278,
+      "png_bytes": 309
+    },
+    {
+      "filename": "src/embedder/ui/icons/layers.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 layers",
+      "use": "Layer height and cover thickness.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/layers.png",
+      "svg_bytes": 205,
+      "png_bytes": 121
+    },
+    {
+      "filename": "src/embedder/ui/icons/fit-view.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 fit-view",
+      "use": "Fit the part in the 3D view.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/fit-view.png",
+      "svg_bytes": 268,
+      "png_bytes": 341
+    },
+    {
+      "filename": "src/embedder/ui/icons/add.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 add",
+      "use": "Add a pocket or save a preset.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/add.png",
+      "svg_bytes": 198,
+      "png_bytes": 175
+    },
+    {
+      "filename": "src/embedder/ui/icons/delete.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 delete",
+      "use": "Remove a pocket or saved preset.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/delete.png",
+      "svg_bytes": 232,
+      "png_bytes": 462
+    },
+    {
+      "filename": "src/embedder/ui/icons/check.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 check",
+      "use": "Plan valid or apply finished.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/check.png",
+      "svg_bytes": 200,
+      "png_bytes": 243
+    },
+    {
+      "filename": "src/embedder/ui/icons/warning.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 warning",
+      "use": "Pocket warning or blocked plan.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/warning.png",
+      "svg_bytes": 216,
+      "png_bytes": 624
+    },
+    {
+      "filename": "src/embedder/ui/icons/folder.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 folder",
+      "use": "Open the new copy in OrcaSlicer.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/folder.png",
+      "svg_bytes": 218,
+      "png_bytes": 304
+    },
+    {
+      "filename": "src/embedder/ui/icons/settings.svg",
+      "width": 24,
+      "height": 24,
+      "category": "02 Interface",
+      "title": "UI icon \u00b7 settings",
+      "use": "Clearances and defaults.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        24,
+        24
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#202731",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/icons/settings.png",
+      "svg_bytes": 319,
+      "png_bytes": 305
+    },
+    {
+      "filename": "src/embedder/ui/spot-no-project.svg",
+      "width": 160,
+      "height": 120,
+      "category": "02 Interface",
+      "title": "Empty state \u00b7 no-project",
+      "use": "Build plate and dashed part: no project loaded.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        160,
+        120
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#526171",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/spot-no-project.png",
+      "svg_bytes": 398,
+      "png_bytes": 1253
+    },
+    {
+      "filename": "src/embedder/ui/spot-no-3d.svg",
+      "width": 160,
+      "height": 120,
+      "category": "02 Interface",
+      "title": "Empty state \u00b7 no-3d",
+      "use": "Crossed orbit: 3D view unavailable; numeric fields remain usable.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        160,
+        120
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#526171",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/spot-no-3d.png",
+      "svg_bytes": 393,
+      "png_bytes": 4103
+    },
+    {
+      "filename": "src/embedder/ui/spot-done.svg",
+      "width": 160,
+      "height": 120,
+      "category": "02 Interface",
+      "title": "Empty state \u00b7 done",
+      "use": "Sealed insert and check: new copy written and opened.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        160,
+        120
+      ],
+      "root_attrs": "stroke=\"currentColor\" fill=\"none\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": "#526171",
+      "colors": [],
+      "text_strings": [],
+      "png": "src/embedder/ui/spot-done.png",
+      "svg_bytes": 376,
+      "png_bytes": 1601
+    },
+    {
+      "filename": "assets/features/feature-3d-placement.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 3d-placement",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#79d8c7",
+        "#b6c0cd"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-3d-placement.png",
+      "svg_bytes": 433,
+      "png_bytes": 2535
+    },
+    {
+      "filename": "assets/features/feature-magnets.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 magnets",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#f2bc7a"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-magnets.png",
+      "svg_bytes": 434,
+      "png_bytes": 2376
+    },
+    {
+      "filename": "assets/features/feature-nfc.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 nfc",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#c7b5ff"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-nfc.png",
+      "svg_bytes": 379,
+      "png_bytes": 2441
+    },
+    {
+      "filename": "assets/features/feature-auto-pause.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 auto-pause",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#79d8c7",
+        "#b6c0cd"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-auto-pause.png",
+      "svg_bytes": 446,
+      "png_bytes": 1220
+    },
+    {
+      "filename": "assets/features/feature-pocket-modes.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 pocket-modes",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-pocket-modes.png",
+      "svg_bytes": 376,
+      "png_bytes": 1581
+    },
+    {
+      "filename": "assets/features/feature-custom-sizes.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 custom-sizes",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#79d8c7",
+        "#b6c0cd"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-custom-sizes.png",
+      "svg_bytes": 429,
+      "png_bytes": 1663
+    },
+    {
+      "filename": "assets/features/feature-safe-copy.svg",
+      "width": 96,
+      "height": 96,
+      "category": "03 Features",
+      "title": "Feature \u00b7 safe-copy",
+      "use": "Feature tile for documentation, store and social layouts.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        96,
+        96
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#79d8c7",
+        "#b6c0cd"
+      ],
+      "text_strings": [],
+      "png": "assets/features/feature-safe-copy.png",
+      "svg_bytes": 431,
+      "png_bytes": 2046
+    },
+    {
+      "filename": "assets/readme/embedder-hero-light.svg",
+      "width": 1600,
+      "height": 640,
+      "category": "04 README",
+      "title": "README hero \u00b7 light",
+      "use": "README header; insert a real 16:10 screenshot into the empty right-hand frame.",
+      "theme": "light",
+      "background": "#ffffff",
+      "intended_background": "#ffffff",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        640
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 80,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnet and NFC pockets for OrcaSlicer",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 30,
+          "weight": 600,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer",
+          "foreground": "#526171",
+          "background": "#ffffff",
+          "size_px": 23,
+          "weight": 400,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 6.35,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 768,
+          "y": 80,
+          "width": 768,
+          "height": 480,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#ccd3dc",
+        "#ffffff"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnet and NFC pockets for OrcaSlicer",
+        "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer"
+      ],
+      "png": "assets/readme/embedder-hero-light.png",
+      "svg_bytes": 49146,
+      "png_bytes": 44288
+    },
+    {
+      "filename": "assets/readme/embedder-hero-dark.svg",
+      "width": 1600,
+      "height": 640,
+      "category": "04 README",
+      "title": "README hero \u00b7 dark",
+      "use": "README header; insert a real 16:10 screenshot into the empty right-hand frame.",
+      "theme": "dark",
+      "background": "#181c22",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        640
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 80,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnet and NFC pockets for OrcaSlicer",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 30,
+          "weight": 600,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 23,
+          "weight": 400,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 768,
+          "y": 80,
+          "width": 768,
+          "height": 480,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnet and NFC pockets for OrcaSlicer",
+        "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer"
+      ],
+      "png": "assets/readme/embedder-hero-dark.png",
+      "svg_bytes": 49147,
+      "png_bytes": 44832
+    },
+    {
+      "filename": "assets/diagrams/how-it-works-light.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "05 Diagrams",
+      "title": "How it works \u00b7 light",
+      "use": "Editable workflow showing the new-copy boundary and printer pauses.",
+      "theme": "light",
+      "background": "#f5f6f8",
+      "intended_background": "#f5f6f8",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Your project",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Embedder",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 24.0,
+          "weight": "700",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "New project copy",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Printer",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "export",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 18.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pockets + pause",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 18.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "slice & print",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 18.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pauses for each insert",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 22.0,
+          "weight": "400",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Your original project is never changed",
+          "foreground": "#202731",
+          "background": "#ffffff",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.043,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#ccd3dc",
+        "#f5f6f8",
+        "#ffffff"
+      ],
+      "text_strings": [
+        "Your project",
+        "Embedder",
+        "New project copy",
+        "Printer",
+        "export",
+        "pockets + pause",
+        "slice & print",
+        "pauses for each insert",
+        "Your original project is never changed"
+      ],
+      "png": "assets/diagrams/how-it-works-light.png",
+      "svg_bytes": 95468,
+      "png_bytes": 54371
+    },
+    {
+      "filename": "assets/diagrams/pocket-types-light.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "05 Diagrams",
+      "title": "Pocket types \u00b7 light",
+      "use": "Editable 2D sections explain an embedded insert and a pocket left open.",
+      "theme": "light",
+      "background": "#f5f6f8",
+      "intended_background": "#f5f6f8",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedded",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 48.0,
+          "weight": "700",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Open",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 48.0,
+          "weight": "700",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "insert",
+          "foreground": "#ffffff",
+          "background": "#8c4b08",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.72,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pause here",
+          "foreground": "#00675b",
+          "background": "#f5f6f8",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.283,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "cover",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "press-fit after printing",
+          "foreground": "#00675b",
+          "background": "#f5f6f8",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.283,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "clearance",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#8c4b08",
+        "#ccd3dc",
+        "#f5f6f8",
+        "#ffffff"
+      ],
+      "text_strings": [
+        "Embedded",
+        "Open",
+        "insert",
+        "pause here",
+        "cover",
+        "press-fit after printing",
+        "clearance"
+      ],
+      "png": "assets/diagrams/pocket-types-light.png",
+      "svg_bytes": 95519,
+      "png_bytes": 37962
+    },
+    {
+      "filename": "assets/diagrams/how-it-works-dark.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "05 Diagrams",
+      "title": "How it works \u00b7 dark",
+      "use": "Editable workflow showing the new-copy boundary and printer pauses.",
+      "theme": "dark",
+      "background": "#181c22",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Your project",
+          "foreground": "#edf1f5",
+          "background": "#222831",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.067,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#222831",
+          "size_px": 24.0,
+          "weight": "700",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.067,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "New project copy",
+          "foreground": "#edf1f5",
+          "background": "#222831",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.067,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Printer",
+          "foreground": "#edf1f5",
+          "background": "#222831",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.067,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "export",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 18.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pockets + pause",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 18.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "slice & print",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 18.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pauses for each insert",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 22.0,
+          "weight": "400",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Your original project is never changed",
+          "foreground": "#edf1f5",
+          "background": "#222831",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.067,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Your project",
+        "Embedder",
+        "New project copy",
+        "Printer",
+        "export",
+        "pockets + pause",
+        "slice & print",
+        "pauses for each insert",
+        "Your original project is never changed"
+      ],
+      "png": "assets/diagrams/how-it-works-dark.png",
+      "svg_bytes": 95468,
+      "png_bytes": 55277
+    },
+    {
+      "filename": "assets/diagrams/pocket-types-dark.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "05 Diagrams",
+      "title": "Pocket types \u00b7 dark",
+      "use": "Editable 2D sections explain an embedded insert and a pocket left open.",
+      "theme": "dark",
+      "background": "#181c22",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedded",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 48.0,
+          "weight": "700",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Open",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 48.0,
+          "weight": "700",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "insert",
+          "foreground": "#181c22",
+          "background": "#f2bc7a",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.975,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pause here",
+          "foreground": "#79d8c7",
+          "background": "#181c22",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 10.146,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "cover",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "press-fit after printing",
+          "foreground": "#79d8c7",
+          "background": "#181c22",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 10.146,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "clearance",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24.0,
+          "weight": "600",
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5",
+        "#f2bc7a"
+      ],
+      "text_strings": [
+        "Embedded",
+        "Open",
+        "insert",
+        "pause here",
+        "cover",
+        "press-fit after printing",
+        "clearance"
+      ],
+      "png": "assets/diagrams/pocket-types-dark.png",
+      "svg_bytes": 95519,
+      "png_bytes": 37843
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-01-placement.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "Click where it goes",
+      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Click where it goes",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Rotate the part and click a face.",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 640,
+          "y": 168,
+          "width": 896,
+          "height": 560,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Click where it goes",
+        "Rotate the part and click a face."
+      ],
+      "png": "assets/orca-cloud/embedder-01-placement.png",
+      "svg_bytes": 91766,
+      "png_bytes": 34351
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-02-magnets.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "Magnet sizes built in",
+      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Magnet sizes",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Magnet sizes built in",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "built in",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Magnet sizes built in",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Common disc and block magnets,",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Common disc and block magnets, with clearance.",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "with clearance.",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Common disc and block magnets, with clearance.",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 640,
+          "y": 168,
+          "width": 896,
+          "height": 560,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#b6c0cd",
+        "#edf1f5",
+        "#f2bc7a"
+      ],
+      "text_strings": [
+        "Magnet sizes built in",
+        "Common disc and block magnets, with clearance."
+      ],
+      "png": "assets/orca-cloud/embedder-02-magnets.png",
+      "svg_bytes": 92070,
+      "png_bytes": 39966
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-03-nfc.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "NFC stickers too",
+      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "NFC stickers too",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Round tags and cards under a",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Round tags and cards under a thin cover.",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "thin cover.",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Round tags and cards under a thin cover.",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 640,
+          "y": 168,
+          "width": 896,
+          "height": 560,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#b6c0cd",
+        "#c7b5ff",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "NFC stickers too",
+        "Round tags and cards under a thin cover."
+      ],
+      "png": "assets/orca-cloud/embedder-03-nfc.png",
+      "svg_bytes": 91853,
+      "png_bytes": 35536
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-04-pause.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "Pause at the right layer",
+      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Pause at the",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Pause at the right layer",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "right layer",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "Pause at the right layer",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "The print stops right before the",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "The print stops right before the pocket closes.",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "pocket closes.",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "source_string": "The print stops right before the pocket closes.",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 640,
+          "y": 168,
+          "width": 896,
+          "height": 560,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Pause at the right layer",
+        "The print stops right before the pocket closes."
+      ],
+      "png": "assets/orca-cloud/embedder-04-pause.png",
+      "svg_bytes": 92094,
+      "png_bytes": 39228
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-05-custom-sizes.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "Your own sizes",
+      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Your own sizes",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Save any insert as a preset.",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 640,
+          "y": 168,
+          "width": 896,
+          "height": 560,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Your own sizes",
+        "Save any insert as a preset."
+      ],
+      "png": "assets/orca-cloud/embedder-05-custom-sizes.png",
+      "svg_bytes": 91732,
+      "png_bytes": 30439
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-main.svg",
+      "width": 1600,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "Main store image",
+      "use": "Centered store signature; transparent artwork for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 120,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+"
+      ],
+      "png": "assets/orca-cloud/embedder-main.png",
+      "svg_bytes": 96946,
+      "png_bytes": 40016
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-main-square.svg",
+      "width": 900,
+      "height": 900,
+      "category": "06 Orca Cloud",
+      "title": "Main store image \u00b7 square",
+      "use": "Centered store signature; transparent artwork for the dark family background.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        900,
+        900
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 120,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 28,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+"
+      ],
+      "png": "assets/orca-cloud/embedder-main-square.png",
+      "svg_bytes": 96991,
+      "png_bytes": 34877
+    },
+    {
+      "filename": "assets/orca-cloud/embedder-tile.svg",
+      "width": 512,
+      "height": 512,
+      "category": "06 Orca Cloud",
+      "title": "512px store tile",
+      "use": "Store thumbnail with generous protected padding.",
+      "theme": "dark",
+      "background": "#222831",
+      "intended_background": "#222831",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "root_attrs": "",
+      "text_records": [],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#222831",
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [],
+      "png": "assets/orca-cloud/embedder-tile.png",
+      "svg_bytes": 801,
+      "png_bytes": 10474
+    },
+    {
+      "filename": "assets/install/embedder-install-01.svg",
+      "width": 800,
+      "height": 500,
+      "category": "07 Install",
+      "title": "Step 1 \u00b7 Install",
+      "use": "Editable instruction card; place a real screenshot in the lower 16:10 frame.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        800,
+        500
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "1",
+          "foreground": "#00675b",
+          "background": "#f5f6f8",
+          "size_px": 88,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.283,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Install",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 40,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "File > Plugins > Install local plugin, then Activate.",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 22,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 176,
+          "y": 208,
+          "width": 448,
+          "height": 280,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#ccd3dc"
+      ],
+      "text_strings": [
+        "1",
+        "Install",
+        "File > Plugins > Install local plugin, then Activate."
+      ],
+      "png": "assets/install/embedder-install-01.png",
+      "svg_bytes": 91448,
+      "png_bytes": 15840
+    },
+    {
+      "filename": "assets/install/embedder-install-02.svg",
+      "width": 800,
+      "height": 500,
+      "category": "07 Install",
+      "title": "Step 2 \u00b7 Load",
+      "use": "Editable instruction card; place a real screenshot in the lower 16:10 frame.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        800,
+        500
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "2",
+          "foreground": "#00675b",
+          "background": "#f5f6f8",
+          "size_px": 88,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.283,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Load",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 40,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Open the Embedder tab and load your project.",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 22,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 176,
+          "y": 208,
+          "width": 448,
+          "height": 280,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#ccd3dc"
+      ],
+      "text_strings": [
+        "2",
+        "Load",
+        "Open the Embedder tab and load your project."
+      ],
+      "png": "assets/install/embedder-install-02.png",
+      "svg_bytes": 91412,
+      "png_bytes": 17475
+    },
+    {
+      "filename": "assets/install/embedder-install-03.svg",
+      "width": 800,
+      "height": 500,
+      "category": "07 Install",
+      "title": "Step 3 \u00b7 Place",
+      "use": "Editable instruction card; place a real screenshot in the lower 16:10 frame.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        800,
+        500
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "3",
+          "foreground": "#00675b",
+          "background": "#f5f6f8",
+          "size_px": 88,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.283,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Place",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 40,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Pick a magnet or NFC size and click a face.",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 22,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 176,
+          "y": 208,
+          "width": 448,
+          "height": 280,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#ccd3dc"
+      ],
+      "text_strings": [
+        "3",
+        "Place",
+        "Pick a magnet or NFC size and click a face."
+      ],
+      "png": "assets/install/embedder-install-03.png",
+      "svg_bytes": 91412,
+      "png_bytes": 16875
+    },
+    {
+      "filename": "assets/install/embedder-install-04.svg",
+      "width": 800,
+      "height": 500,
+      "category": "07 Install",
+      "title": "Step 4 \u00b7 Print",
+      "use": "Editable instruction card; place a real screenshot in the lower 16:10 frame.",
+      "theme": "light",
+      "background": "transparent",
+      "intended_background": "#f5f6f8",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        800,
+        500
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "4",
+          "foreground": "#00675b",
+          "background": "#f5f6f8",
+          "size_px": 88,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 6.283,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Print",
+          "foreground": "#202731",
+          "background": "#f5f6f8",
+          "size_px": 40,
+          "weight": 700,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 13.912,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Slice the new copy. The printer pauses for each insert.",
+          "foreground": "#526171",
+          "background": "#f5f6f8",
+          "size_px": 22,
+          "weight": 400,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 5.872,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 176,
+          "y": 208,
+          "width": 448,
+          "height": 280,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#202731",
+        "#526171",
+        "#ccd3dc"
+      ],
+      "text_strings": [
+        "4",
+        "Print",
+        "Slice the new copy. The printer pauses for each insert."
+      ],
+      "png": "assets/install/embedder-install-04.png",
+      "svg_bytes": 91436,
+      "png_bytes": 17416
+    },
+    {
+      "filename": "assets/social/embedder-social-wide.svg",
+      "width": 1200,
+      "height": 675,
+      "category": "08 Social",
+      "title": "Social image \u00b7 wide",
+      "use": "Transparent promotional composition for a dark background; seven features and a real-screenshot slot.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1200,
+        675
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 68,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnet and NFC pockets",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 32,
+          "weight": 600,
+          "live": false,
+          "font": "Manrope",
+          "source_string": "Magnet and NFC pockets for OrcaSlicer",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "for OrcaSlicer",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 32,
+          "weight": 600,
+          "live": false,
+          "font": "Manrope",
+          "source_string": "Magnet and NFC pockets for OrcaSlicer",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Free and open source",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24,
+          "weight": 400,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 624,
+          "y": 104,
+          "width": 512,
+          "height": 320,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#c7b5ff",
+        "#edf1f5",
+        "#f2bc7a"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnet and NFC pockets for OrcaSlicer",
+        "Free and open source"
+      ],
+      "png": "assets/social/embedder-social-wide.png",
+      "svg_bytes": 38906,
+      "png_bytes": 45800
+    },
+    {
+      "filename": "assets/social/embedder-social-square.svg",
+      "width": 1080,
+      "height": 1080,
+      "category": "08 Social",
+      "title": "Social image \u00b7 square",
+      "use": "Transparent promotional composition for a dark background; seven features and a real-screenshot slot.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1080,
+        1080
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 80,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnet and NFC pockets for OrcaSlicer",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 32,
+          "weight": 600,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Free and open source",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24,
+          "weight": 400,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 220,
+          "y": 352,
+          "width": 640,
+          "height": 400,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#c7b5ff",
+        "#edf1f5",
+        "#f2bc7a"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnet and NFC pockets for OrcaSlicer",
+        "Free and open source"
+      ],
+      "png": "assets/social/embedder-social-square.png",
+      "svg_bytes": 38760,
+      "png_bytes": 48096
+    },
+    {
+      "filename": "assets/social/embedder-social-vertical.svg",
+      "width": 1080,
+      "height": 1350,
+      "category": "08 Social",
+      "title": "Social image \u00b7 vertical",
+      "use": "Transparent promotional composition for a dark background; seven features and a real-screenshot slot.",
+      "theme": "dark",
+      "background": "transparent",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1080,
+        1350
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 80,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnet and NFC pockets for OrcaSlicer",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 32,
+          "weight": 600,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Free and open source",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24,
+          "weight": 400,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [
+        {
+          "x": 156,
+          "y": 352,
+          "width": 768,
+          "height": 480,
+          "aspect_ratio": "16:10",
+          "content": "empty"
+        }
+      ],
+      "png_color": null,
+      "colors": [
+        "#222831",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#c7b5ff",
+        "#edf1f5",
+        "#f2bc7a"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnet and NFC pockets for OrcaSlicer",
+        "Free and open source"
+      ],
+      "png": "assets/social/embedder-social-vertical.png",
+      "svg_bytes": 38763,
+      "png_bytes": 50823
+    },
+    {
+      "filename": "assets/social/embedder-social-preview.svg",
+      "width": 1280,
+      "height": 640,
+      "category": "08 Social",
+      "title": "GitHub social preview",
+      "use": "Opaque GitHub repository social preview; all main elements respect the 40px safe margin.",
+      "theme": "dark",
+      "background": "#181c22",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1280,
+        640
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 112,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Magnets and NFC, built into your prints",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 32,
+          "weight": 400,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#566273",
+        "#79d8c7",
+        "#b6c0cd",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Magnets and NFC, built into your prints"
+      ],
+      "png": "assets/social/embedder-social-preview.png",
+      "svg_bytes": 26132,
+      "png_bytes": 33965
+    },
+    {
+      "filename": "assets/releases/embedder-release-template.svg",
+      "width": 1280,
+      "height": 320,
+      "category": "09 Release",
+      "title": "Release banner template",
+      "use": "Edit the live version placeholder for a release announcement.",
+      "theme": "dark",
+      "background": "#181c22",
+      "intended_background": "#181c22",
+      "live_text": true,
+      "viewbox": [
+        0,
+        0,
+        1280,
+        320
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 88,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "vX.Y.Z",
+          "foreground": "#79d8c7",
+          "background": "#181c22",
+          "size_px": 56,
+          "weight": 600,
+          "live": true,
+          "font": "Manrope",
+          "contrast": 10.146,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#181c22",
+        "#79d8c7",
+        "#edf1f5"
+      ],
+      "text_strings": [
+        "Embedder",
+        "vX.Y.Z"
+      ],
+      "png": "assets/releases/embedder-release-template.png",
+      "svg_bytes": 97024,
+      "png_bytes": 19118
+    },
+    {
+      "filename": "assets/embedder-brand-sheet.svg",
+      "width": 1600,
+      "height": 1000,
+      "category": "01 Identity",
+      "title": "Brand sheet",
+      "use": "Reference sheet: master mark, signature, palette, typography and visual usage rules.",
+      "theme": "dark",
+      "background": "#181c22",
+      "intended_background": "#181c22",
+      "live_text": false,
+      "viewbox": [
+        0,
+        0,
+        1600,
+        1000
+      ],
+      "root_attrs": "",
+      "text_records": [
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 112,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Manrope",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24,
+          "weight": 500,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 48,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "IBM Plex Mono",
+          "foreground": "#b6c0cd",
+          "background": "#181c22",
+          "size_px": 24,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 9.292,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "Embedder",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 80,
+          "weight": 700,
+          "live": false,
+          "font": "Manrope",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#79d8c7",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#00675b",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#181c22",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#222831",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#edf1f5",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#b6c0cd",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#566273",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#f5f6f8",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#ffffff",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#202731",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#526171",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#ccd3dc",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#f2bc7a",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#8c4b08",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#c7b5ff",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#6541a6",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#b42318",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#ffaaa4",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#805300",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#f3cc70",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#0b6b3a",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        },
+        {
+          "text": "#7fdbab",
+          "foreground": "#edf1f5",
+          "background": "#181c22",
+          "size_px": 19,
+          "weight": 400,
+          "live": false,
+          "font": "IBM Plex Mono",
+          "contrast": 15.066,
+          "wcag_aa_normal": true
+        }
+      ],
+      "screenshot_frames": [],
+      "png_color": null,
+      "colors": [
+        "#00675b",
+        "#0b6b3a",
+        "#181c22",
+        "#202731",
+        "#222831",
+        "#526171",
+        "#566273",
+        "#6541a6",
+        "#79d8c7",
+        "#7fdbab",
+        "#805300",
+        "#8c4b08",
+        "#b42318",
+        "#b6c0cd",
+        "#c7b5ff",
+        "#ccd3dc",
+        "#edf1f5",
+        "#f2bc7a",
+        "#f3cc70",
+        "#f5f6f8",
+        "#ffaaa4",
+        "#ffffff"
+      ],
+      "text_strings": [
+        "Embedder",
+        "Manrope",
+        "embedder",
+        "IBM Plex Mono",
+        "#79d8c7",
+        "#00675b",
+        "#181c22",
+        "#222831",
+        "#edf1f5",
+        "#b6c0cd",
+        "#566273",
+        "#f5f6f8",
+        "#ffffff",
+        "#202731",
+        "#526171",
+        "#ccd3dc",
+        "#f2bc7a",
+        "#8c4b08",
+        "#c7b5ff",
+        "#6541a6",
+        "#b42318",
+        "#ffaaa4",
+        "#805300",
+        "#f3cc70",
+        "#0b6b3a",
+        "#7fdbab"
+      ],
+      "png": "assets/embedder-brand-sheet.png",
+      "svg_bytes": 131267,
+      "png_bytes": 105269
+    }
+  ],
+  "notes": {
+    "naming": "-dark denotes use on dark backgrounds, except symbol-dark which is #202731 ink.",
+    "screenshots": "All screenshot frames are empty, unlabeled 16:10 rectangles; no generated or invented UI.",
+    "transparency": "Unspecified canvases remain transparent. The intended compositing background is recorded for every asset.",
+    "integration": "Repository files were not supplied. Copy assets/ and src/ to the actual Embedder checkout, then run python scripts/build.py there. The repository build has not been run.",
+    "text": "Brand sheet, logos, hero and social typography is outlined. Requested diagram, store, install and release copy remains live; brand wordmarks stay outlined.",
+    "grid": "Master layout uses an 8px grid. Explicit micro/icon grids take precedence for native pixel clarity."
+  },
+  "derived_assets": [
+    {
+      "filename": "docs/related-plugins/embedder-icon.png",
+      "width": 80,
+      "height": 80,
+      "source": "assets/embedder-icon.png",
+      "background": "transparent outside #181c22 rounded tile",
+      "text_strings": [],
+      "use": "Related-plugin icon; resized from the app icon."
+    },
+    {
+      "filename": "docs/related-plugins/embedder-preview.png",
+      "width": 560,
+      "height": 224,
+      "source": "assets/readme/embedder-hero-dark.png",
+      "background": "#181c22",
+      "text_strings": [
+        "Embedder",
+        "Magnet and NFC pockets for OrcaSlicer",
+        "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer"
+      ],
+      "use": "Related-plugin preview; resized from the dark README hero."
+    }
+  ]
+}

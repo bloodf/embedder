@@ -93,7 +93,7 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
       </template>
       <label for="f-t">{{ t('form.t') }}</label>
       <InputNumber input-id="f-t" :model-value="s.insert.custom.t" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" @update:model-value="setDim('t', $event)" />
-      <span /><Button severity="secondary" outlined :label="t('preset.saveAs')" data-test="save-preset" @click="saveAsPreset" />
+      <span /><Button severity="secondary" outlined data-test="save-preset" @click="saveAsPreset"><Icon name="icon/add" /><span>{{ t('preset.saveAs') }}</span></Button>
     </div>
 
     <div class="oui-field">

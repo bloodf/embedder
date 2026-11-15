@@ -9,28 +9,29 @@ the print covers it. It works on a copy of your project. Your original is never 
 
 ## Click where it goes
 
-![Click where it goes](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/frame-click-where-it-goes.png){align=center}
+![Click where it goes](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-01-placement.png){align=center}
 
 The Embedder tab shows the parts on your current plate in 3D. Rotate the part and click a face. The pocket
-appears in the view before anything is written.
+appears in the view before anything is written. Tick **Centre on the face** to put it in the middle of a
+lid or a base.
 
 ## Magnet sizes built in
 
-![Magnet sizes built in](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/frame-magnet-sizes.png){align=center}
+![Magnet sizes built in](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-02-magnets.png){align=center}
 
 Fifteen disc magnets (3x1 up to 20x3 mm) and four block magnets, with XY and Z clearance you can tune for your
 printer.
 
 ## NFC stickers too
 
-![NFC stickers too](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/frame-nfc-stickers.png){align=center}
+![NFC stickers too](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-03-nfc.png){align=center}
 
 Round stickers from 10 to 38 mm, two coin tags and a card, under a thin cover (0.6 mm by default). Embedder
 warns when an NFC pocket is close to a magnet.
 
 ## Pause at the right layer
 
-![Pause at the right layer](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/frame-pause.png){align=center}
+![Pause at the right layer](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-04-pause.png){align=center}
 
 Embedded pockets get OrcaSlicer's own layer pause on the first layer above the cavity. You see it on the layer
 slider, and the printer runs your profile's pause G-code. Open pockets, for press-fit after printing, need no
@@ -38,9 +39,10 @@ pause and work on any face.
 
 ## Your own sizes
 
-![Your own sizes](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/frame-own-sizes.png){align=center}
+![Your own sizes](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-05-custom-sizes.png){align=center}
 
-Enter any disc or block size and save it as a preset.
+Enter any disc or block size and save it as a preset. Before you print, the list of pockets tells you which
+inserts to have ready.
 
 ## Good to know
 
@@ -69,7 +71,7 @@ Source, documentation and issues: [github.com/bloodf/embedder](https://github.co
 - **[Organizer](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5bae3da1-7fcc-4cbd-ae25-53678e392d54)**: Arrange objects by their real outline and fill a build plate with more copies.
 - **[Orca Print Calculator](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5f807b01-bfb8-4ad4-a77d-e85e337e4c7f)**: Price every build plate: Spoolman filament cost, energy, labor, fees and a suggested selling price.
 - **[Spooler](https://cloud.orcaslicer.com/app/plugins/shared-plugins/5c523246-d53c-44bc-a129-fe2470da6368)**: Your Spoolman spools and filament presets in OrcaSlicer, with what is left on each spool.
-- **[U1 Control](https://github.com/bloodf/u1control)**: The Snapmaker U1 in OrcaSlicer: print setup, camera, toolheads, RFID, Spoolman and a file manager.
+- **[U1 Control](https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f)**: The Snapmaker U1 in OrcaSlicer: print setup, camera, toolheads, RFID, Spoolman and a file manager.
 - **[Kobra Control](https://github.com/bloodf/kobracontrol)**: The Anycubic Kobra X in OrcaSlicer: Print and Send, the Device tab, ACE slots and a dashboard.
 
 Each plugin works on its own; installed together they share data where it helps.
