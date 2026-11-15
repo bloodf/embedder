@@ -64,15 +64,16 @@ Complete your OrcaSlicer workflow: arrange, price, manage filament and print. Ea
   </tr>
   <tr>
     <td width="33%" valign="top">
-      <a href="https://github.com/bloodf/u1control"><img src="docs/related-plugins/u1control-icon.svg" width="40" height="40" alt="U1 Control"></a>
-      <h3><a href="https://github.com/bloodf/u1control">U1 Control</a></h3>
-      <a href="https://github.com/bloodf/u1control"><img src="docs/related-plugins/u1control-preview.png" width="280" alt="U1 Control: preview"></a>
+      <a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f"><img src="docs/related-plugins/u1control-icon.svg" width="40" height="40" alt="U1 Control"></a>
+      <h3><a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f">U1 Control</a></h3>
+      <a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f"><img src="docs/related-plugins/u1control-preview.png" width="280" alt="U1 Control: preview"></a>
       <p>The Snapmaker U1 in OrcaSlicer: print setup, camera, toolheads, RFID, Spoolman and a file manager.</p>
-      <p><a href="https://github.com/bloodf/u1control">Source on GitHub →</a></p>
+      <p><a href="https://cloud.orcaslicer.com/app/plugins/shared-plugins/544a836a-bcbe-4517-ae33-90f33930682f">Install from Orca Cloud →</a><br><a href="https://github.com/bloodf/u1control">Source on GitHub →</a></p>
     </td>
     <td width="33%" valign="top">
       <a href="https://github.com/bloodf/kobracontrol"><img src="docs/related-plugins/kobracontrol-icon.svg" width="40" height="40" alt="Kobra Control"></a>
       <h3><a href="https://github.com/bloodf/kobracontrol">Kobra Control</a></h3>
+      <a href="https://github.com/bloodf/kobracontrol"><img src="docs/related-plugins/kobracontrol-preview.png" width="280" alt="Kobra Control: preview"></a>
       <p>The Anycubic Kobra X in OrcaSlicer: Print and Send, the Device tab, ACE slots and a dashboard.</p>
       <p><a href="https://github.com/bloodf/kobracontrol">Source on GitHub →</a></p>
     </td>

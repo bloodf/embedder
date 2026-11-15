@@ -12,7 +12,10 @@ Resized copies of artwork and interface previews from the linked projects (mock 
 | [spooler-preview.png](spooler-preview.png) | [Original](https://github.com/bloodf/spooler/blob/main/assets/orca-cloud/spooler-store-image-spool-list.png) |
 | [u1control-icon.svg](u1control-icon.svg) | [Original](https://github.com/bloodf/u1control/blob/main/assets/u1control-icon.svg) |
 | [u1control-preview.png](u1control-preview.png) | [Original](https://github.com/bloodf/u1control/blob/main/assets/orca-cloud/u1control-main.png) |
-| [kobracontrol-icon.svg](kobracontrol-icon.svg) | [Original](https://github.com/bloodf/kobracontrol/blob/main/assets/kobracontrol-icon.svg) (placeholder icon) |
+| [kobracontrol-icon.svg](kobracontrol-icon.svg) | [Original](https://github.com/bloodf/kobracontrol/blob/main/assets/kobracontrol-icon.svg) |
+| [kobracontrol-preview.png](kobracontrol-preview.png) | [Original](https://github.com/bloodf/kobracontrol/blob/main/assets/readme/kobracontrol-hero-dark.png) |
+| [embedder-icon.png](embedder-icon.png) | This project: [assets/embedder-icon.png](../../assets/embedder-icon.png), resized |
+| [embedder-preview.png](embedder-preview.png) | This project: [assets/readme/embedder-hero-dark.png](../../assets/readme/embedder-hero-dark.png) before its screenshot, resized |
 
 License texts:
 
