@@ -23,3 +23,12 @@ All notable changes to this project are documented here. The format follows
 - Apply writes a new project copy with the pockets as negative parts and opens it in OrcaSlicer.
   The original project is never changed. Earlier Embedder pockets and pauses in a project can be
   removed or re-applied.
+
+### Fixed
+
+- A project copy without `Metadata/model_settings.config` loads instead of failing with an internal error;
+  malformed numbers in the project files report "bad package".
+- Very long project names (non-Latin scripts) no longer make the new copy's file name too long on Linux.
+- Staged pockets are planned again after a settings change or a deleted preset, so the list and the pauses
+  match what Apply writes; a pocket that no longer fits is taken off the list with a notice.
+- A language choice that cannot be saved is logged instead of raising into OrcaSlicer.
