@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import Button from 'primevue/button';
-import Message from 'primevue/message';
 import ProgressBar from 'primevue/progressbar';
-import Icon from './Icon.vue';
+import { OuiBanner, OuiEmpty, OuiIcon, OuiPanel } from '../../shared/src/components';
+import { box, folder, warning } from '../../shared/src/icons';
+import insertArt from '../assets/embedder-insert.webp';
 import Viewer from './Viewer.vue';
 import PlaceFallback from './PlaceFallback.vue';
 import PocketForm from './PocketForm.vue';
-import PlanCard from './PlanCard.vue';
 import PocketList from './PocketList.vue';
 import ResultCard from './ResultCard.vue';
 import { s } from '../app/store';
@@ -19,53 +19,59 @@ const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`bloc
 </script>
 
 <template>
-  <div v-if="s.loading" class="em-card em-loading" data-test="loading" role="status">
-    <p>{{ s.loading.total ? t('load.progress', { done: s.loading.done, total: s.loading.total }) : t('load.exporting') }}</p>
-    <ProgressBar :mode="s.loading.total ? 'determinate' : 'indeterminate'" :value="percent" :aria-label="t('load.label')" />
-  </div>
+  <OuiPanel v-if="s.loading" class="em-solo" flush data-test="loading" role="status">
+    <OuiEmpty state="loading" :title="s.loading.total ? t('load.progress', { done: s.loading.done, total: s.loading.total }) : t('load.exporting')">
+      <template #actions>
+        <ProgressBar class="em-loadbar" :mode="s.loading.total ? 'determinate' : 'indeterminate'" :value="percent" :show-value="false" :aria-label="t('load.label')" />
+      </template>
+    </OuiEmpty>
+  </OuiPanel>
 
-  <section v-else-if="!s.project" class="em-card em-empty" data-test="embed-empty" aria-labelledby="embed-h">
-    <Icon name="spot/no-project" class="em-spot" />
-    <h2 id="embed-h">{{ t('embed.empty.title') }}</h2>
-    <p>{{ t('embed.empty.body') }}</p>
-    <Button data-test="load" @click="loadProject"><Icon name="icon/folder" /><span>{{ t('load.button') }}</span></Button>
-    <p v-if="s.webgl === false" class="oui-meta" data-test="no3d-hint"><Icon name="icon/warning" /> {{ t('embed.no3d') }}</p>
-  </section>
+  <OuiPanel v-else-if="!s.project" class="em-solo" flush data-test="embed-empty">
+    <OuiEmpty :image="insertArt" :title="t('embed.empty.title')" :text="t('embed.empty.body')">
+      <template #actions>
+        <Button :label="t('load.button')" data-test="load" @click="loadProject"><template #icon><OuiIcon :icon="folder" :size="14" /></template></Button>
+      </template>
+    </OuiEmpty>
+    <template v-if="s.webgl === false" #footer>
+      <p class="oui-meta em-note" data-test="no3d-hint"><OuiIcon :icon="warning" tone="warn" :size="14" />{{ t('embed.no3d') }}</p>
+    </template>
+  </OuiPanel>
 
-  <div v-else class="em-work">
-    <header class="em-card em-project em-row" data-test="project">
-      <strong data-test="project-name">{{ s.project.name }}</strong>
-      <span class="oui-meta">{{ t('load.plate', { plate: s.project.plate, plates: s.project.plates }) }}</span>
-      <span class="em-spacer" />
-      <Button severity="secondary" outlined size="small" data-test="reload" @click="loadProject"><Icon name="icon/folder" /><span>{{ t('load.again') }}</span></Button>
-    </header>
-    <Message v-if="blocks.length" severity="warn" data-test="blocks">
-      <strong>{{ t('block.title') }}</strong>
-      <ul class="em-blocks"><li v-for="b in blocks" :key="b">{{ b }}</li></ul>
-    </Message>
+  <template v-else>
+    <OuiBanner v-if="blocks.length" id="em-blocks" tone="warn" :title="t('block.title')" data-test="blocks">{{ blocks.join('; ') }}.</OuiBanner>
     <ResultCard v-if="s.result" />
-    <p v-else-if="!s.project.objects.length" class="em-card oui-muted" data-test="no-objects">{{ t('load.noObjects') }}</p>
+    <OuiPanel v-else-if="!s.project.objects.length" class="em-solo" flush data-test="no-objects">
+      <OuiEmpty :icon="box" :title="t('load.noObjects')" />
+    </OuiPanel>
     <div v-else class="em-grid">
-      <div class="em-side">
-        <PocketForm />
-        <PlanCard />
-        <PocketList />
-      </div>
-      <Viewer v-if="s.webgl !== false" />
-      <PlaceFallback v-else />
+      <PocketForm class="em-form" />
+      <Viewer v-if="s.webgl !== false" class="em-stage-panel" />
+      <PlaceFallback v-else class="em-stage-panel" />
+      <PocketList class="em-list" />
     </div>
-  </div>
+  </template>
 </template>
 
-<style scoped>
-.em-loading { display: grid; gap: 12px; }
-.em-empty { display: grid; justify-items: center; gap: 12px; text-align: center; }
-.em-empty > * { margin: 0; }
-.em-work { display: grid; gap: 16px; }
-.em-spacer { flex: 1; }
-.em-blocks { margin: 4px 0 0; padding-left: 20px; }
-.em-grid { display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 16px; align-items: start; }
-.em-side { display: grid; gap: 16px; min-width: 0; }
-.em-grid > :last-child { position: sticky; top: 72px; }
-@media (max-width: 860px) { .em-grid { grid-template-columns: minmax(0, 1fr); } .em-grid > :last-child { position: static; order: -1; } }
+<style>
+/* One panel alone on the page (no project yet, loading, nothing on the plate): centred, as wide as its sentence needs. */
+.em-solo { justify-self: center; width: min(100%, 560px); margin-top: var(--oui-s8); }
+.em-solo .oui-empty { padding-block: var(--oui-s8); }
+.em-solo .oui-empty-image { width: 176px; height: 176px; }
+.em-loadbar { width: 240px; max-width: 100%; height: 8px; }
+
+/* Form, 3D view, list: three columns when there is room (the view takes what is left and stays in sight while the page
+   scrolls), form beside the view with the list under them, then one column. */
+.em-grid { display: grid; gap: var(--oui-s3); grid-template-columns: minmax(0, 1fr); align-items: start; }
+.em-stage-panel { height: 440px; }
+@container oui-page (min-width: 860px) {
+  .em-grid { grid-template-columns: 320px minmax(0, 1fr); align-items: stretch; }
+  .em-stage-panel { height: auto; min-height: 440px; }
+  .em-list { grid-column: 1 / -1; }
+}
+@container oui-page (min-width: 1240px) {
+  .em-grid { grid-template-columns: 320px minmax(0, 1fr) 380px; min-height: calc(100vh - 88px); }
+  .em-stage-panel { position: sticky; top: 64px; align-self: start; height: calc(100vh - 88px); min-height: 360px; }
+  .em-list { grid-column: auto; }
+}
 </style>
