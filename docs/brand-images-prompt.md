@@ -14,8 +14,12 @@ Where each asset goes in this repo:
 | Micro marks | `assets/embedder-micro-{16,20,24}.*`, `assets/embedder-micro-dark-{16,20,24}.*` |
 | Brand sheet | `assets/embedder-brand-sheet.*` |
 | Tab icon (24x24) | `src/embedder/ui/icon.svg` |
-| UI icons | `src/embedder/ui/icons/*.svg` |
-| Empty-state spots | `src/embedder/ui/spot-*.svg` |
+| UI icons (11, names fixed by the page) | `src/embedder/ui/icons/*.svg` |
+| Empty-state spots (3) | `src/embedder/ui/spot-{no-project,no-3d,done}.svg` |
+
+The page looks icons up by file name, and the build inlines only the names it references, so a new
+icon or spot needs the same name as the placeholder it replaces. Run `python scripts/build.py` after
+dropping new files in.
 | README hero, light and dark | `assets/readme/embedder-hero-light.*`, `assets/readme/embedder-hero-dark.*` |
 | Feature icons | `assets/features/feature-*.svg` |
 | How it works diagram | `assets/diagrams/how-it-works-{light,dark}.*` |
@@ -94,17 +98,27 @@ DELIVERABLES (each as its own image, exact sizes, transparent background unless 
 6. Tab icon: monochrome line icon on a 24x24 grid, 1.5 px strokes, round caps and joins,
    no fills thicker than the stroke, readable at 20 px. SVG code with width="24"
    height="24" viewBox="0 0 24 24", stroke="#FEFEFE", fill="none".
-7. UI icon set, one SVG each: 24x24 grid, 1.5 px strokes, round caps and joins,
-   stroke="currentColor", fill="none", consistent with the tab icon. In this order, saved
-   to `src/embedder/ui/icons/<name>.svg`: magnet-disc, magnet-block, nfc-round, nfc-card,
-   insert-custom, pocket-open, pocket-embedded, pause, layers, cover-thickness, clearance,
-   place, rotate-view, reset-view, fit-view, load-project, apply, add, remove, duplicate,
-   edit, flip, warning, info, settings, check.
-8. Empty-state illustrations, five SVGs, 160x120, single-stroke line art, 2 px strokes,
+7. UI icon set, eleven SVGs: 24x24 grid, 1.5 px strokes, round caps and joins,
+   stroke="currentColor", fill="none", no width/height attributes, consistent with the
+   tab icon, readable at 16 px next to text. Each name and what it marks in the tab:
+   - magnet: magnet presets and magnet pockets (a disc seen at an angle, not a horseshoe)
+   - nfc: NFC presets and NFC pockets (a flat tag with one or two radio arcs)
+   - pause: the pause height ("Pause at Z ... mm")
+   - layers: layer height and cover thickness
+   - fit-view: fit the part in the 3D view
+   - add: add a pocket or save a preset
+   - delete: remove a pocket or a saved preset
+   - check: plan is valid, apply finished
+   - warning: a warning on a pocket or a blocked plan
+   - folder: open the new copy in OrcaSlicer
+   - settings: clearances and defaults
+   Save each as `src/embedder/ui/icons/<name>.svg`, with exactly these names.
+8. Empty-state illustrations, three SVGs, 160x120, single-stroke line art, 2 px strokes,
    stroke="currentColor", secondary lines at 40% opacity, no fills, no text:
-   no project loaded (`spot-no-project.svg`), empty build plate (`spot-empty-plate.svg`),
-   part with no pockets yet (`spot-no-pockets.svg`), 3D view unavailable
-   (`spot-no-3d.svg`), copy opened in the slicer (`spot-done.svg`).
+   no project loaded yet (`spot-no-project.svg`: a build plate with a dashed part outline),
+   3D view unavailable (`spot-no-3d.svg`: a part with a crossed-out orbit arc; the tab then
+   shows number fields instead), copy written and opened in the slicer (`spot-done.svg`:
+   a layered part with a sealed insert and a check).
 9. README hero, 1600x640, two versions (background #181c22 and #ffffff): left the lockup,
    the line "Magnet and NFC pockets for OrcaSlicer" and the line
    "Click a face · Pick a size · Pause at the right layer"; right an empty rounded
@@ -160,8 +174,8 @@ items, give me a single table: filename, size, background, text strings, where u
 
 ## Screenshots
 
-Any UI screenshot inside these images is a real render of the built page (`node ui/tests/page/shots.mjs`), not
-generated art. The image model must not draw fake UI. Wherever a screenshot belongs (hero, store
+Any UI screenshot inside these images is a real capture of the Embedder tab in OrcaSlicer (or of
+the built page `src/embedder/ui/app.html` open in a browser), not generated art. The image model must not draw fake UI. Wherever a screenshot belongs (hero, store
 frames, install cards, social images), leave a clearly marked empty rounded frame, with a thin
 border and no content, at the stated position and 16:10 ratio, so the renderer can place the real
 page there.
