@@ -79,6 +79,9 @@ of the object's first part, which names the file the new mesh went into.
 ### Not supported
 
 - An object that is a bare mesh without a parts list (`unsupported_object`).
+- A project without `Metadata/model_settings.config` (`no_model_settings`): part names and the `negative_part`
+  subtype live there, so a pocket could not be marked as a cut. OrcaSlicer always writes that file; saving the
+  project from OrcaSlicer adds it. Both are refused when a pocket is planned, before Apply.
 - An object cut with connectors (`cut_object`).
 - Nested components (`nested_components`) and files that are not millimetre (`bad_unit`).
 - Parts whose subtype is not `normal_part`: pockets go on model parts only.

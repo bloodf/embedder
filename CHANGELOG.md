@@ -23,6 +23,12 @@ All notable changes to this project are documented here. The format follows
 - Apply writes a new project copy with the pockets as negative parts and opens it in OrcaSlicer.
   The original project is never changed. Earlier Embedder pockets and pauses in a project can be
   removed or re-applied.
+- Centre on the face: a pocket can go in the middle of the flat face that was clicked.
+- The pocket list shows the inserts to have ready (every pocket, open ones too, once per copy).
+- Old applied copies are cleaned up: the newest copy of each project and this session's copies are kept,
+  older ones beyond 10 or older than 30 days are deleted after Apply, and Settings has a Clear old copies
+  button that shows the space it frees.
+- The warning about someone else's custom G-code on the pause layer now shows while placing a pocket.
 
 ### Fixed
 
@@ -32,3 +38,6 @@ All notable changes to this project are documented here. The format follows
 - Staged pockets are planned again after a settings change or a deleted preset, so the list and the pauses
   match what Apply writes; a pocket that no longer fits is taken off the list with a notice.
 - A language choice that cannot be saved is logged instead of raising into OrcaSlicer.
+- Projects without OrcaSlicer's part list (`model_settings.config`) and bare mesh objects are refused, with
+  a translated reason, when a pocket is placed instead of failing at Apply with an internal error.
+- Every error code the plugin sends has a translation.
