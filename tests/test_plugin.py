@@ -80,6 +80,11 @@ class Bridge(Base):
         self.page.on_message({"type": "cmd", "id": 99, "cmd": "hello", "args": "x"})
         self.assertNotIn("error", self.reply(99))
 
+    def test_a_language_that_cannot_be_saved_does_not_raise_into_the_host(self):
+        os.makedirs(os.path.join(self.storage, "settings.json.tmp"))   # the settings file can't be written
+        self.page.on_message({"type": "ui_language", "value": "en"})
+        self.assertEqual(self.error("settings.save", settings={"xy_clearance": 0.3}), "internal")
+
     def test_presets(self):
         r = self.call("presets.list")
         self.assertEqual(len(r["builtin"]), 15 + 4 + 7 + 2 + 1)
@@ -129,6 +134,18 @@ class RoundTrip(Base):
         self.assertEqual(self.call("project.open", path=applied["path"]), {"open": "asked"})
         self.assertEqual(opened, [os.path.realpath(applied["path"])])
         self.assertEqual(self.error("project.open", path=self.src), "bad_request")
+
+    def test_old_copies_status_and_clear(self):
+        old = os.path.join(self.storage, "Cube-embedder-20250101-000000-abcdef.3mf")
+        new = os.path.join(self.storage, "Cube-embedder-20260101-000000-abcdef.3mf")
+        for path, t in ((old, 1), (new, 2)):
+            with open(path, "wb") as f:
+                f.write(b"x" * 300)
+            os.utime(path, (t, t))
+        self.assertEqual(self.call("copies.status"), {"count": 1, "bytes": 300, "kept": 1})
+        self.assertEqual(self.call("copies.clear"), {"removed": 1, "freed": 300, "failed": 0, "count": 0, "bytes": 0, "kept": 1})
+        self.assertFalse(os.path.exists(old))
+        self.assertTrue(os.path.exists(new))
 
     def test_storage_is_only_asked_inside_callbacks(self):
         plugin._storage_dir = None

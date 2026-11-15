@@ -4,7 +4,7 @@ import Message from 'primevue/message';
 import Icon from './Icon.vue';
 import { s, tracker } from '../app/store';
 import { openResult } from '../app/project';
-import { t, tMaybe, fmt } from '../core/i18n';
+import { t, tn, tMaybe, fmt } from '../core/i18n';
 </script>
 
 <!-- After Apply the job is over: the new copy is the project now, so the page offers to open it and asks for
@@ -17,6 +17,7 @@ import { t, tMaybe, fmt } from '../core/i18n';
     <p v-for="p in s.result.pauses" :key="p.top_z" class="oui-meta"><Icon name="icon/pause" /> Z {{ fmt.number(p.top_z, 2) }} mm · {{ p.extra }}</p>
     <Message v-for="w in s.result.warnings" :key="w" severity="warn"><Icon name="icon/warning" /> {{ tMaybe(`warn.${w}`, w) }}</Message>
     <p class="oui-meta">{{ t('result.copy') }}</p>
+    <p v-if="s.result.pruned" class="oui-meta" data-test="result-pruned">{{ tn('result.pruned', s.result.pruned) }}</p>
     <p class="oui-meta" data-test="result-next">{{ t('result.next') }}</p>
     <p class="oui-error-detail" data-test="result-path">{{ s.result.path }}</p>
     <Button :loading="tracker.isBusy('open')" data-test="open" @click="openResult"><Icon name="icon/folder" /><span>{{ t('result.open') }}</span></Button>

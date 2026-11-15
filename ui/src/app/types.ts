@@ -61,7 +61,7 @@ export interface Project {
   blocks: string[];
   objects: ObjectInfo[];
   existing: { id: string; object_id: string; name: string; label: string; mode: Mode }[];
-  pauses: { top_z: number; type: number; extra: string; embedder: boolean }[];
+  pauses: { top_z: number; type: string; extra: string; embedder: boolean }[];
 }
 
 export interface Custom { kind: Kind; shape: Shape; d: number; l: number; w: number; t: number }
@@ -77,6 +77,7 @@ export interface PlanArgs {
   mode: Mode;
   spin?: number;
   cover?: number;
+  center?: boolean;
 }
 
 export interface Plan {
@@ -106,4 +107,8 @@ export interface ApplyResult {
   removed: number;
   pauses: { top_z: number; extra: string }[];
   warnings: string[];
+  pruned: number;            // older copies deleted from the plugin folder after this apply
 }
+
+export interface CopiesStatus { count: number; bytes: number; kept: number }
+export interface CopiesCleared extends CopiesStatus { removed: number; freed: number; failed: number }

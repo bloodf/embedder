@@ -59,8 +59,15 @@ was still reading a dropped job answers `stale_job`.
 <storage>/<stem>-embedder-<YYYYmmdd-HHMMSS>-<id6>.3mf   an applied copy (-2, -3 if the name exists)
 ```
 
-Starting a new load deletes the older job folders. Applied copies are kept; they are the files the
-user opens and saves.
+Starting a new load deletes the older job folders.
+
+Applied copies are the files the user opens and saves, so some are always kept: the newest copy of each
+project (a copy of a copy counts as the same project, by the name before the first `-embedder-`) and every
+copy written since the plugin loaded (`Session.written`), since OrcaSlicer may have any of those open. The
+others are "old copies". After each apply, old copies past the `KEEP_COPIES` (10) most recent, or older
+than `KEEP_DAYS` (30), are deleted; the apply reply counts them in `pruned`. A copy that cannot be deleted
+is tried again after the next apply. `copies.status` reports the old copies and `copies.clear` deletes all
+of them. Only names of the applied-copy form directly in the storage folder are touched, never links.
 
 ## Page protocol
 
@@ -93,8 +100,10 @@ Plugin to page:
 | `project.load` | | the job description below (asynchronous) |
 | `mesh.chunk` | `job`, `object`, `part`, `kind` (`pos` or `idx`), `i` | `{i, chunks, bytes, data}` (base64) |
 | `pocket.plan` | see below | the planned pocket or a block |
-| `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings}` (asynchronous) |
+| `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings, pruned}` (asynchronous) |
 | `project.open` | `path` | `{open: "asked" or "none"}` |
+| `copies.status` | | `{count, bytes, kept}`: the old applied copies that may be deleted, and how many are kept |
+| `copies.clear` | | `{removed, freed, failed}` plus the status afterwards |
 
 `project.open` only accepts a `.3mf` that sits directly in the storage folder.
 
@@ -130,14 +139,20 @@ bounding boxes of its parts.
 
 `pocket.plan` takes `job`, `object` (index into the job's objects), `part`, `tri` (the clicked triangle),
 `point` (plate frame), `preset` (id) or `custom` (`{kind, shape, d, t}` or `{kind, shape, l, w, t}`),
-`mode` (`open` or `embedded`), and optionally `cover`, `spin` (degrees about the pocket axis) and
-`others` (the other pockets already placed, for the NFC-near-magnet check).
+`mode` (`open` or `embedded`), and optionally `cover`, `spin` (degrees about the pocket axis), `center`
+(`true`: move the point to the area-weighted middle of the flat face around `tri`, the coplanar triangles
+joined to it through shared edges; the clicked point stays when that middle is off the face) and `others`
+(the other pockets already placed, for the NFC-near-magnet check).
 
 Python is the single source of geometry. The page only draws the primitive Python returns. The point must
 lie within 1 mm of the triangle's plane. The reply carries the pocket's mode, face class, shape, size,
 transform, cavity `floor` and `top`, `pause_z`, the actual cover (never thinner than asked), label, kind,
 `copies` (instances of the object on the plate; each gets the insert), a preview mesh and `warnings`, or
-a `blocked` object with a stable `code`.
+a `blocked` object with a stable `code`. An embedded pocket whose pause height already carries someone
+else's custom G-code gets the `existing_gcode_at_layer` warning here too, not only from apply.
+
+Projects without `model_settings.config` (`no_model_settings`) and bare mesh objects (`unsupported_object`)
+are refused while planning, so a pocket that apply could not write is never staged.
 
 ### Applying
 
@@ -155,7 +170,7 @@ exclusive create where links are not supported); a name already taken gets `-2`,
 ### Error codes
 
 Errors reach the page as `{code, detail}`. Codes seen from the session and plugin include `stale_job`,
-`bad_request`, `bad_part`, `cut_object`, `bad_triangle`, `bad_point`, `pocket_blocked`, `export_failed`,
+`bad_request`, `bad_part`, `cut_object`, `no_model_settings`, `unsupported_object`, `bad_triangle`, `bad_point`, `pocket_blocked`, `export_failed`,
 `open_failed`, `unknown_command` and `internal`, plus the 3MF codes in [3mf.md](3mf.md) and the preset
 codes (`no_preset`, `unknown_preset`, `bad_dimension`, ...).
 

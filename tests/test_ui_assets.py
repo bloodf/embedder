@@ -30,6 +30,16 @@ class UiAssets(unittest.TestCase):
         self.assertIsNotNone(match)
         return html, json.loads(match.group(1))
 
+    def test_every_error_and_block_code_is_translated(self):
+        """Codes raised in Python reach the page as err.<code> (refusals) or block.<code> (plan blocks)."""
+        source = "".join(p.read_text("utf-8") for p in (ROOT / "src" / "embedder").glob("*.py"))
+        messages = (ROOT / "ui" / "src" / "core" / "messages.ts").read_text("utf-8")
+        errors = set(re.findall(r'(?:SessionError|ThreeMFError|PresetError|CommandError)\("([a-z_]+)"', source))
+        blocks = set(re.findall(r'Blocked\("([a-z_]+)"', source))
+        for prefix, codes in (("err", errors), ("block", blocks)):
+            for code in sorted(codes):
+                self.assertEqual(messages.count("'%s.%s':" % (prefix, code)), 2, "%s.%s in en and pt-BR" % (prefix, code))
+
     def test_every_referenced_icon_is_inlined(self):
         source = (UI / "app.html").read_text("utf-8")
         html, icons = self.page_icons()

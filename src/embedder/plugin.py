@@ -292,6 +292,8 @@ COMMANDS = {
     "mesh.chunk": lambda page, args: get_session(page).mesh_chunk(args),
     "pocket.plan": lambda page, args: get_session(page).plan(args),
     "project.open": _cmd_project_open,
+    "copies.status": lambda page, args: get_session(page).copies_status(),
+    "copies.clear": lambda page, args: get_session(page).clear_copies(),
 }
 ASYNC_COMMANDS = {"project.load": _cmd_project_load, "project.apply": _cmd_project_apply}
 
@@ -339,7 +341,10 @@ class EmbedderPage(orca.pages.PagesPluginCapabilityBase):
         _storage()
         kind, msg_id = data.get("type"), data.get("id")
         if kind == "ui_language":
-            get_store(self).update({"ui_language": data.get("value")})
+            try:
+                get_store(self).update({"ui_language": data.get("value")})
+            except Exception as e:   # a notice with no reply: log it, never raise into OrcaSlicer's callback
+                log("ui_language not saved: %r" % e)
             return
         if kind != "cmd":
             return

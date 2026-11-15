@@ -206,7 +206,8 @@ test('apply writes a copy with the staged and removed pockets; open asks OrcaSli
   eq(last('cmd', 'project.apply').args, {job: 'j1', pockets: [pocket], remove: ['9']}, 'apply arguments');
   const path = '/storage/cube-embedder-20261114-120000-j1.3mf';
   await reply(last('cmd', 'project.apply'), {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 1, removed: 1,
-    pauses: [{top_z: 19, extra: 'Embedder: insert 1 x 6x3 magnet'}], warnings: ['existing_gcode_at_layer']});
+    pauses: [{top_z: 19, extra: 'Embedder: insert 1 x 6x3 magnet'}], warnings: ['existing_gcode_at_layer'], pruned: 2});
+  eq(text(byTest('result-pruned')), '2 older copies were deleted from the plugin folder.', 'pruned shown');
   assert(text(byTest('result')).includes('1 pockets added, 1 removed'), 'result: ' + text(byTest('result')));
   assert(text(byTest('result')).includes('Save Project As'), 'save-as note');
   assert(text(byTest('result')).includes('Your own custom G-code'), 'apply warning');
@@ -243,6 +244,86 @@ test('settings show the saved values and the user presets', `
   eq(q('#set-xy_clearance').value, '0.2 mm', 'clearance shown');
   assert(byTest('settings-save').disabled, 'nothing to save yet');
   assert(byTest('presets-empty'), 'no user presets');
+`);
+
+test('saving settings plans the staged pockets again; one that no longer fits is dropped, saying so', `
+  await loaded();
+  const m = await place(PLAN);
+  await click(byTest('add'));
+  const lid = await place(null);
+  await reply(lid, {...PLAN, label: 'Lid magnet'});
+  await click(byTest('add'));
+  await tab('settings');
+  await type(q('#set-xy_clearance'), '0.4');
+  q('#set-xy_clearance').blur();
+  await settle();
+  const before = cmds('pocket.plan').length;
+  await click(byTest('settings-save'));
+  await until(() => last('cmd', 'settings.save'), 'save sent');
+  await reply(last('cmd', 'settings.save'), {...SETTINGS, xy_clearance: 0.4});
+  await until(() => cmds('pocket.plan').length > before, 'first staged pocket planned again');
+  const { job, ...pocket } = m.args;
+  const first = last('cmd', 'pocket.plan');
+  eq([first.args.object, first.args.tri, first.args.preset, first.args.others.length], [pocket.object, pocket.tri, pocket.preset, 1], 'same pocket, the other one along');
+  await reply(first, {...PLAN, size: [6.8, 6.8, 3.2]});
+  await until(() => cmds('pocket.plan').length > before + 1, 'second staged pocket planned again');
+  await fail(last('cmd', 'pocket.plan'), {code: 'unknown_preset', detail: 'user-x'});
+  await until(() => alerts().includes('no longer fit'), 'drop notice');
+  assert(alerts().includes('Lid magnet'), 'names the dropped pocket: ' + alerts());
+  await tab('embed');
+  assert(text(byTest('staged')).includes('6x3 magnet') && !text(byTest('staged')).includes('Lid magnet'), 'staged: ' + text(byTest('staged')));
+`);
+
+test('Centre on the face plans again with center and keeps it for Apply', `
+  await loaded();
+  const m = await place(PLAN);
+  assert(!('center' in m.args), 'off by default');
+  const before = cmds('pocket.plan').length;
+  await click(q('#f-center'));
+  await until(() => cmds('pocket.plan').length > before, 'planned again');
+  eq(last('cmd', 'pocket.plan').args.center, true, 'center sent');
+  await reply(last('cmd', 'pocket.plan'), PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  eq(last('cmd', 'project.apply').args.pockets[0].center, true, 'center kept for Apply');
+`);
+
+test('the list says which inserts to have ready, open pockets and copies included', `
+  await loaded();
+  await place({...PLAN, copies: 2});
+  await click(byTest('add'));
+  await place({...PLAN, mode: 'open', pause_z: null, label: '25 mm NFC sticker', kind: 'nfc'});
+  await click(byTest('add'));
+  eq(text(byTest('inserts')), 'Inserts to have ready: 2 x 6x3 magnet, 1 x 25 mm NFC sticker', 'inserts line');
+`);
+
+test('a project without a part list says why in words', `
+  await loaded();
+  const m = await place(null);
+  await fail(m, {code: 'no_model_settings', detail: 'the project has no model_settings.config'});
+  assert(alerts().includes('no OrcaSlicer part list'), 'alert: ' + alerts());
+`);
+
+test('settings show the old copies and clear them after asking', `
+  await ready();
+  await tab('settings');
+  await until(() => last('cmd', 'copies.status'), 'status asked');
+  await reply(last('cmd', 'copies.status'), {count: 3, bytes: 3 * 1024 * 1024, kept: 2});
+  eq(text(byTest('copies-status')), '3 old copies can be deleted (3.0 MB).', 'status');
+  await click(byTest('copies-clear'));
+  await no();
+  assert(!last('cmd', 'copies.clear'), 'nothing cleared when the answer is no');
+  await click(byTest('copies-clear'));
+  await yes();
+  await until(() => last('cmd', 'copies.clear'), 'clear sent');
+  await reply(last('cmd', 'copies.clear'), {removed: 2, freed: 2 * 1024 * 1024, failed: 1, count: 1, bytes: 1024 * 1024, kept: 2});
+  assert(alerts().includes('could not be deleted'), 'failure said: ' + alerts());
+  assert(text(document.body).includes('Deleted 2 old copies, 2.0 MB freed.'), 'freed shown');
+  eq(text(byTest('copies-status')), '1 old copy can be deleted (1.0 MB).', 'status after');
+  await tab('embed');
+  await tab('settings');
+  await until(() => cmds('copies.status').length === 2, 'asked again when the tab opens');
 `);
 
 // ------------------------------------------------------------------ runner

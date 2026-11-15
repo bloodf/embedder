@@ -1,7 +1,7 @@
 # Contributing
 
-Thanks for helping. Bug reports, projects that fail to load and pull requests are all welcome. The plugin
-is in development and has not been released yet.
+Thanks for helping. Bug reports, projects that fail to load and pull requests are all welcome. Releases
+are listed on the [releases page](../../releases) and on Orca Cloud.
 
 ## Reporting a problem
 

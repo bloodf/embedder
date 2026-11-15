@@ -111,6 +111,14 @@ The Embedder tab has a 3D view of the objects on the current plate. Rotate the p
 insert and a pocket type, and click the face. The pocket appears in the view before anything is
 written. Clearance and cover thickness are settings you can tune for your printer.
 
+Tick **Centre on the face** to put the pocket in the middle of the flat face you click instead of at the
+exact spot, which is what you want for a lid, a base or a tile. The middle is taken over the whole flat
+face around the click; when that middle falls outside the face (a ring, a U shape), the clicked spot is
+kept.
+
+Below the list of pockets, Embedder shows the inserts to have ready before you print, for example
+"2 x 6x3 magnet, 1 x 25 mm NFC sticker". Open pockets count too, and so does every copy of an object.
+
 ### Embedded and open pockets
 
 | | Embedded | Open |
@@ -162,7 +170,8 @@ negative part cuts every copy.
 Embedder warns, without blocking, when the cover is thin (less than two layers, or under 0.8 mm for a
 side wall), when the pocket reaches outside the part, when an NFC pocket is within 10 mm of a magnet
 pocket (the tag may not read), and when another custom G-code already sits on the pause layer (Embedder
-leaves it alone and adds no pause there).
+leaves it alone and adds no pause there). That last warning shows as soon as you place the pocket, not only
+after Apply.
 
 Things to know:
 
@@ -170,7 +179,15 @@ Things to know:
   the right side up (check the pole before you place it), and look before you resume the print.
 - **Changing the layer height after Apply moves the layers.** The pause is tied to a height. If you
   change the layer height in the new project, load it again and re-apply.
-- **Cut objects with connectors** and **bare mesh objects** without a parts list are not supported.
+- **Cut objects with connectors** and **bare mesh objects** without a parts list are not supported, and
+  neither is a hand-made 3MF without OrcaSlicer's part list (`model_settings.config`). Embedder says so when
+  you click, before anything is written. Save the project from OrcaSlicer once to add the part list.
+- **Old copies are cleaned up.** Each Apply writes a new copy into the plugin folder. Embedder always keeps
+  the newest copy of each project and every copy written since OrcaSlicer started, since OrcaSlicer may
+  have those open. After each Apply it deletes older copies beyond the 10 most recent, and any older than
+  30 days. **Settings > Old project copies** shows how many can go and how much space they take, and
+  **Clear old copies** deletes them all at once (after asking). Files you put in the folder yourself are
+  never touched.
 - **One Apply per load.** After Apply the new copy is the project; open it and load it again to add more.
 - **Linux:** "Open in OrcaSlicer" starts the OrcaSlicer executable (or the AppImage) with the file, which
   may open a second OrcaSlicer window instead of reusing the running one. Close the old window, or open
@@ -186,18 +203,16 @@ Things to know:
 
 ## Install
 
-There is no release yet. Build the wheel and install it:
+Subscribe to Embedder on Orca Cloud, or download `embedder_any.whl` from the
+[latest release](../../releases/latest). To build the wheel from the source instead:
 
 ```sh
 python3 scripts/build.py     # writes dist/embedder_any.whl
 ```
 
-In OrcaSlicer use **File > Plugins > Install local plugin**, pick the wheel, then tick **Activate**.
-Allow the background thread when OrcaSlicer asks. The **Embedder** tab appears next to Prepare,
-Preview and Device.
-
-Once a release exists, download `embedder_any.whl` from the [latest release](../../releases/latest) or
-subscribe on Orca Cloud.
+For a downloaded or built wheel, use **File > Plugins > Install local plugin** in OrcaSlicer, pick the
+wheel, then tick **Activate**. Allow the background thread when OrcaSlicer asks. The **Embedder** tab
+appears next to Prepare, Preview and Device.
 
 ## Usage
 

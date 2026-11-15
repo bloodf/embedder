@@ -132,6 +132,13 @@ class Load(Base):
             f.write(b"junk")
         self.assertEqual(self.error(self.s.load, job_id, "", 1, {}), "bad_package")
 
+    def test_long_names_fit_a_file_name(self):
+        """A file name is at most 255 bytes on Linux: the stem leaves room for the suffix and the temporary name."""
+        for name in ("日" * 200, "a" * 300, "🧲" * 90):
+            stem = session._stem("/p/%s.3mf" % name)
+            self.assertLessEqual(len(stem.encode("utf-8")), 150, name[:3])
+            self.assertTrue(stem and name.startswith(stem))
+
 
 class Plan(Base):
     def test_embedded_on_top(self):
@@ -174,9 +181,32 @@ class Plan(Base):
     def test_bad_requests(self):
         r = self.load()
         cases = [({"tri": 99}, "bad_request"), ({"point": [110, 110, 25]}, "bad_point"), ({"point": "x"}, "bad_request"),
-                 ({"preset": "nope"}, "unknown_preset"), ({"object": 3}, "bad_request"), ({"spin": "a"}, "bad_request")]
+                 ({"preset": "nope"}, "unknown_preset"), ({"object": 3}, "bad_request"), ({"spin": "a"}, "bad_request"),
+                 ({"others": 5}, "bad_request")]
         for kw, code in cases:
             self.assertEqual(self.error(self.plan, r["job"], **kw), code, kw)
+
+    def test_projects_that_cannot_take_a_pocket_say_why_before_apply(self):
+        r = self.load(fixtures.no_model_settings)
+        self.assertEqual(self.error(self.plan, r["job"]), "no_model_settings")
+        r = self.load(fixtures.plain_mesh)
+        self.assertEqual(self.error(self.plan, r["job"], point=[110, 110, 20]), "unsupported_object")
+
+    def test_centre_on_the_face(self):
+        r = self.load()
+        clicked = self.plan(r["job"], point=[105, 104, 20])
+        self.assertEqual(clicked["transform"][3::4][:2], [105, 104])
+        centred = self.plan(r["job"], point=[105, 104, 20], center=True)
+        self.assertEqual(centred["transform"][3::4][:2], [110, 110])
+        self.assertEqual(self.plan(r["job"], point=[105, 104, 20], center=True, mode="open")["transform"][3::4][:2], [110, 110])
+        side = self.plan(r["job"], tri=SIDE_TRI, point=[120, 103, 5], center=True, mode="open")
+        self.assertEqual([round(v, 6) for v in side["transform"][3::4][1:3]], [110, 10])
+        self.assertEqual(self.error(self.plan, r["job"], center="yes"), "bad_request")
+
+    def test_a_pause_on_someone_elses_gcode_warns_while_planning(self):
+        r = self.load(fixtures.user_pause, z=19.2)
+        self.assertIn("existing_gcode_at_layer", self.plan(r["job"])["warnings"])
+        self.assertNotIn("existing_gcode_at_layer", self.plan(r["job"], mode="open")["warnings"])
 
     def test_negative_part_cannot_be_picked(self):
         r = self.load(fixtures.multipart_with_negative)
@@ -259,6 +289,54 @@ class Apply(Base):
         r = self.load(fixtures.build, settings=dict(fixtures.SETTINGS, machine_pause_gcode=""))
         self.assertEqual(self.error(self.apply, r["job"], [self.pocket()]), "pocket_blocked")
         self.assertEqual([n for n in os.listdir(self.storage) if n.endswith(".3mf")], [])
+
+    def copy(self, name, days_old=0, size=10):
+        path = os.path.join(self.storage, name)
+        with open(path, "wb") as f:
+            f.write(b"x" * size)
+        t = time.time() - days_old * 86400
+        os.utime(path, (t, t))
+        return path
+
+    def names(self):
+        return sorted(n for n in os.listdir(self.storage) if n.endswith(".3mf"))
+
+    def test_old_copies_are_pruned_after_apply(self):
+        newest = self.copy("Old-embedder-20260101-000000-aaaaaa.3mf", days_old=40)
+        stale = self.copy("Old-embedder-20250101-000000-bbbbbb.3mf", days_old=50)
+        chain = self.copy("Old-embedder-20250101-000000-bbbbbb-embedder-20250102-000000-cccccc-2.3mf", days_old=45)
+        many = [self.copy("Many-embedder-20261101-0000%02d-dddddd.3mf" % n, days_old=1 + n / 100) for n in range(14)]
+        mine = self.copy("notes.3mf", days_old=400)
+        r = self.load()
+        out = self.apply(r["job"], [self.pocket()])
+        left = set(self.names())
+        self.assertIn(os.path.basename(newest), left)                 # the newest copy of a project stays, however old
+        self.assertNotIn(os.path.basename(stale), left)               # older than KEEP_DAYS
+        self.assertNotIn(os.path.basename(chain), left)               # a copy of a copy counts as the same project
+        self.assertIn(os.path.basename(many[0]), left)
+        self.assertEqual(sum(os.path.basename(m) in left for m in many), 1 + session.KEEP_COPIES)
+        self.assertIn(os.path.basename(mine), left)                   # not an Embedder copy: never touched
+        self.assertIn(out["name"], left)
+        self.assertEqual(out["pruned"], 2 + 14 - 1 - session.KEEP_COPIES)
+
+    def test_clear_old_copies_keeps_what_orca_may_have_open(self):
+        r = self.load()
+        first = self.apply(r["job"], [self.pocket()])
+        r = self.load()
+        second = self.apply(r["job"], [self.pocket()])
+        older = self.copy("My Part-embedder-20250101-000000-eeeeee.3mf", size=1000)
+        other = self.copy("Other-embedder-20250101-000000-ffffff.3mf", size=7)
+        os.utime(older, (1, 1))
+        status = self.s.copies_status()
+        self.assertEqual((status["count"], status["bytes"]), (1, 1000))
+        self.assertEqual(status["kept"], 3)
+        cleared = self.s.clear_copies()
+        self.assertEqual((cleared["removed"], cleared["freed"], cleared["failed"], cleared["count"]), (1, 1000, 0, 0))
+        self.assertEqual(self.names(), sorted([first["name"], second["name"], os.path.basename(other)]))
+        fresh = session.Session(self.storage, self.store.effective)   # a new OrcaSlicer session
+        self.assertEqual(fresh.copies_status()["count"], 1)
+        fresh.clear_copies()
+        self.assertEqual(self.names(), sorted([second["name"], os.path.basename(other)]))
 
     def test_bad_apply_args(self):
         r = self.load()

@@ -12,6 +12,7 @@ import urllib.parse
 import uuid
 import xml.etree.ElementTree as ET
 import zipfile
+import zlib
 from array import array
 from dataclasses import dataclass, field
 from xml.sax.saxutils import quoteattr
@@ -127,6 +128,7 @@ class Package:
     ranges: frozenset     # model object indexes with a layer_height range
     cut: frozenset        # model object indexes with cut connectors
     bed: tuple = None     # ((min x, min y), (max x, max y)) of the printable area
+    has_settings: bool = True   # model_settings.config is present (part names and subtypes live there)
     config_source: str = field(default="project")
 
     def setting(self, key):
@@ -274,9 +276,9 @@ def _mesh(oid, verts, tris):
 
 
 def _model_settings(text):
-    objects, plates = {}, {}
+    objects, plates, listed = {}, {}, {}
     if not text:
-        return objects, plates
+        return objects, plates, listed
     root = ET.fromstring(text)
     for obj in root.iter("object"):
         meta = {m.get("key"): m.get("value", "") for m in obj.findall("metadata")}
@@ -287,7 +289,6 @@ def _model_settings(text):
                                   "extruder": pm.get("extruder", "")}
         objects[obj.get("id")] = {"name": meta.get("name", ""), "extruder": meta.get("extruder") or "1",
                                   "layer_height": meta.get("layer_height", ""), "parts": parts}
-    listed = {}
     for n, plate in enumerate(root.iter("plate"), 1):
         meta = {m.get("key"): m.get("value", "") for m in plate.findall("metadata")}
         pid = int(meta.get("plater_id") or n)
@@ -388,7 +389,9 @@ def read(path, fallback=None):
     with zf:
         try:
             return _read(zf, path, dict(fallback or {}))
-        except (ET.ParseError, KeyError, zipfile.BadZipFile) as e:
+        except ThreeMFError:
+            raise
+        except (ET.ParseError, KeyError, zipfile.BadZipFile, ValueError, TypeError, EOFError, zlib.error) as e:
             raise ThreeMFError("bad_package", "%s: %s" % (type(e).__name__, e)) from None
 
 
@@ -412,7 +415,7 @@ def _read(zf, path, fallback):
                   profile=PROFILE in names and bool(_text(zf, PROFILE).strip()),
                   ranges=_indexes(_text(zf, RANGES) if RANGES in names else "", _has_layer_range),
                   cut=_indexes(_text(zf, CUT) if CUT in names else "", _has_connectors),
-                  config_source="project" if project else "preset")
+                  config_source="project" if project else "preset", has_settings=SETTINGS in names)
     pkg = Package(**{**pkg.__dict__, "bed": _bed(project.get("printable_area", fallback.get("printable_area")))})
     seen, items = {}, []
     for it in pkg.items:
@@ -670,6 +673,8 @@ def write(pkg, out, plate, additions=(), removals=(), pauses=()):
             ed = _Edit(zin)
             for pid in removals:
                 _remove_part(pkg, ed, pid)
+            if additions and not pkg.has_settings:
+                raise ThreeMFError("no_model_settings", "the project has no model_settings.config to mark a part negative")
             if additions:
                 models = {pkg.main_name, SETTINGS, *(p.file for o in pkg.objects.values() for p in o.parts)}
                 next_id = _max_id([ed.get(n) for n in sorted(models) if n in zin.namelist()]) + 1

@@ -53,7 +53,7 @@ async function saveAsPreset() {
   if (id) s.insert = { preset: id, custom: null };
 }
 
-watch(() => [s.insert, s.mode, s.spin, s.cover], () => { void replan(); });
+watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan(); });
 </script>
 
 <template>
@@ -110,6 +110,11 @@ watch(() => [s.insert, s.mode, s.spin, s.cover], () => { void replan(); });
       <label for="f-cover">{{ t('form.cover') }}</label>
       <InputNumber v-model="s.cover" input-id="f-cover" :min="0" :max="10" :max-fraction-digits="2" suffix=" mm"
                    :placeholder="t('form.coverDefault', { mm: fmt.number(coverDefault, 1) })" :disabled="s.mode !== 'embedded'" />
+    </div>
+    <div class="oui-field">
+      <span class="em-row"><Checkbox v-model="s.center" binary input-id="f-center" data-test="center" aria-describedby="f-center-help" />
+        <label for="f-center">{{ t('form.center') }}</label></span>
+      <span id="f-center-help" class="oui-meta">{{ t('form.centerHelp') }}</span>
     </div>
   </section>
 </template>

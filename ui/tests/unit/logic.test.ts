@@ -1,7 +1,7 @@
 // Pure Embed-panel rules: plan arguments, the Embedded block reason, pause summary, preset groups, staging.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { embeddedBlock, groupPresets, pauseSummary, planArgs, previewsFor, stage, toggle, unstage } from '../../src/app/logic.ts';
+import { embeddedBlock, groupPresets, insertsNeeded, pauseSummary, planArgs, previewsFor, stage, toggle, unstage } from '../../src/app/logic.ts';
 import type { ObjectInfo, Plan, Preset, Staged } from '../../src/app/types.ts';
 
 const hit = { part: 1, tri: 7, point: [1, 2, 3] as [number, number, number] };
@@ -14,6 +14,8 @@ test('plan arguments name the hit, the insert and only the options that are set'
   assert.deepEqual(planArgs(0, hit, { preset: null, custom: { kind: 'magnet', shape: 'disc', d: 8, l: 1, w: 1, t: 2 } }, { mode: 'open', spin: 0, cover: null })?.custom,
     { kind: 'magnet', shape: 'disc', d: 8, t: 2 });
   assert.equal(planArgs(0, hit, { preset: null, custom: null }, { mode: 'open', spin: null, cover: null }), null);
+  assert.equal(planArgs(0, hit, { preset: 'x', custom: null }, { mode: 'open', spin: null, cover: null, center: true })?.center, true);
+  assert.equal('center' in (planArgs(0, hit, { preset: 'x', custom: null }, { mode: 'open', spin: null, cover: null, center: false }) ?? {}), false);
 });
 
 test('Embedded is blocked by the object first, then by an embedded plan', () => {
@@ -68,4 +70,13 @@ test('staging and removal lists never mutate their input', () => {
   assert.deepEqual(toggle(ids, 'b', true), ['a', 'b']);
   assert.deepEqual(toggle(ids, 'a', false), []);
   assert.deepEqual(toggle(ids, 'a', true), ['a']);
+});
+
+test('the inserts to have ready count every pocket, open ones too, once per copy, by kind then label', () => {
+  const list = [staged(1, 5.4, '6x3 magnet'), staged(2, null, '25 mm NFC sticker', 'open'), staged(3, null, '6x3 magnet', 'open'),
+    { ...staged(4, 2.2, '8x2 magnet'), plan: { ...staged(4, 2.2, '8x2 magnet').plan, copies: 3 } }];
+  list[1].plan.kind = 'nfc';
+  assert.deepEqual(insertsNeeded(list), [
+    { label: '6x3 magnet', kind: 'magnet', n: 2 }, { label: '8x2 magnet', kind: 'magnet', n: 3 }, { label: '25 mm NFC sticker', kind: 'nfc', n: 1 }]);
+  assert.deepEqual(insertsNeeded([]), []);
 });
