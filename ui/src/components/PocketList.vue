@@ -5,11 +5,12 @@ import Checkbox from 'primevue/checkbox';
 import Icon from './Icon.vue';
 import { s, tracker } from '../app/store';
 import { apply, markRemove, removeStaged } from '../app/project';
-import { pauseSummary } from '../app/logic';
+import { insertsNeeded, pauseSummary } from '../app/logic';
 import { t, tn, tMaybe, fmt } from '../core/i18n';
 
 const pauses = computed(() => pauseSummary(s.staged).map(g => t('pause.line', {
   z: fmt.number(g.z, 2), items: g.items.map(i => t('pause.item', { n: i.n, label: i.label })).join(', ') })));
+const inserts = computed(() => insertsNeeded(s.staged).map(i => t('pause.item', { n: i.n, label: i.label })).join(', '));
 const existing = computed(() => s.project?.existing ?? []);
 const canApply = computed(() => !!(s.staged.length || s.remove.length) && !tracker.isBusy('apply'));
 const objectName = (k: number) => s.project?.objects[k]?.name ?? '';
@@ -30,6 +31,8 @@ const objectName = (k: number) => s.project?.objects[k]?.name ?? '';
         <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: p.plan.label })" @click="removeStaged(p.key)"><Icon name="icon/delete" /></Button>
       </li>
     </ul>
+
+    <p v-if="inserts" class="oui-meta" data-test="inserts">{{ t('list.inserts', { items: inserts }) }}</p>
 
     <div v-if="pauses.length" class="em-pauses" data-test="pauses">
       <p v-for="line in pauses" :key="line"><Icon name="icon/pause" /> {{ line }}</p>

@@ -1,5 +1,5 @@
 // Pure rules of the Embed panel (no Vue, no bridge), unit-tested in tests/unit/logic.test.ts.
-import type { Custom, Mode, ObjectInfo, Plan, PlanArgs, Preset, Staged } from './types.ts';
+import type { Custom, Kind, Mode, ObjectInfo, Plan, PlanArgs, Preset, Staged } from './types.ts';
 import type { Hit } from '../core/pick.ts';
 
 export interface InsertChoice { preset: string | null; custom: Custom | null }
@@ -38,6 +38,19 @@ export function pauseSummary(staged: readonly Staged[]): PauseGroup[] {
   }
   return [...groups.entries()].sort((a, b) => a[0] - b[0])
     .map(([z, labels]) => ({ z, items: [...labels.entries()].map(([label, n]) => ({ label, n })) }));
+}
+
+export interface InsertCount { label: string; kind: Kind; n: number }
+
+/** Every insert the staged pockets need (open ones too, once per copy of the object): magnets first, then NFC. */
+export function insertsNeeded(staged: readonly Staged[]): InsertCount[] {
+  const counts = new Map<string, InsertCount>();
+  for (const s of staged) {
+    const label = s.plan.label ?? '?', kind = s.plan.kind ?? 'magnet', key = `${kind}\u0000${label}`;
+    const n = (counts.get(key)?.n ?? 0) + (s.plan.copies ?? 1);
+    counts.set(key, { label, kind, n });
+  }
+  return [...counts.values()].sort((a, b) => (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === 'magnet' ? -1 : 1));
 }
 
 /** Previews of the staged pockets on one object (the viewer shows one object at a time). */

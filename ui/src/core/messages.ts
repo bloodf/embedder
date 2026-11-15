@@ -118,6 +118,7 @@ export const en = {
   'list.dropped': 'These pockets no longer fit and were taken off the list: {labels}',
   'pause.line': 'Pause at Z {z} mm: insert {items}',
   'pause.item': '{n} x {label}',
+  'list.inserts': 'Inserts to have ready: {items}',
 
   'result.title': 'New copy written',
   'result.body': '{name}: {pockets} pockets added, {removed} removed.',
@@ -333,6 +334,7 @@ export const ptBR: Record<MessageKey, string> = {
   'list.dropped': 'Estes bolsos não cabem mais e foram retirados da lista: {labels}',
   'pause.line': 'Pausa em Z {z} mm: inserir {items}',
   'pause.item': '{n} x {label}',
+  'list.inserts': 'Insertos a separar: {items}',
 
   'result.title': 'Nova cópia gravada',
   'result.body': '{name}: {pockets} bolsos adicionados, {removed} removidos.',
