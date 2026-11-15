@@ -107,4 +107,8 @@ export interface ApplyResult {
   removed: number;
   pauses: { top_z: number; extra: string }[];
   warnings: string[];
+  pruned: number;            // older copies deleted from the plugin folder after this apply
 }
+
+export interface CopiesStatus { count: number; bytes: number; kept: number }
+export interface CopiesCleared extends CopiesStatus { removed: number; freed: number; failed: number }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
 import InputNumber from 'primevue/inputnumber';
@@ -7,9 +7,9 @@ import Icon from './Icon.vue';
 import { s, saveSettings, deletePreset, tracker } from '../app/store';
 import { replanStaged } from '../app/project';
 import { ask } from '../core/dialog';
-import { t, langPref, setLangPref, autoLocale, fmt } from '../core/i18n';
+import { t, tn, langPref, setLangPref, autoLocale, fmt } from '../core/i18n';
 import type { LangPref } from '../core/i18n-core';
-import type { Preset } from '../app/types';
+import type { CopiesCleared, CopiesStatus, Preset } from '../app/types';
 
 type Knob = 'xy_clearance' | 'z_clearance' | 'cover_magnet' | 'cover_nfc';
 const knobs: { key: Knob; max: number }[] = [
@@ -28,6 +28,25 @@ async function save() {
   if (await saveSettings(Object.fromEntries(knobs.map(k => [k.key, form[k.key]])))) await replanStaged();
 }
 const dims = (p: Preset) => [p.d ?? p.l, ...(p.shape === 'block' ? [p.w] : []), p.t].map(v => fmt.number(v ?? 0, 2)).join(' × ');
+// Old applied copies in the plugin folder: asked each time the tab opens, since an Apply may have pruned some.
+const copies = ref<CopiesStatus | null>(null);
+const size = (b: number) => (b < 1024 * 1024 ? `${fmt.number(b / 1024, 0)} KB` : `${fmt.number(b / (1024 * 1024), 1)} MB`);
+async function loadCopies() {
+  const r = await tracker.run<CopiesStatus>({ key: 'copies', label: t('act.copies'), cmd: 'copies.status' });
+  if (r.ok) copies.value = r.result;
+}
+async function clearCopies() {
+  const c = copies.value;
+  if (!c?.count) return;
+  if (!(await ask({ title: t('copies.clearTitle'), text: t('copies.clearText', { n: c.count, size: size(c.bytes) }), yes: t('copies.clear'), danger: true }))) return;
+  const r = await tracker.run<CopiesCleared>({ key: 'copies-clear', label: t('act.copiesClear'), cmd: 'copies.clear' });
+  if (!r.ok) return;
+  copies.value = r.result;
+  if (r.result.removed) tracker.notify('success', t('copies.cleared', { n: r.result.removed, size: size(r.result.freed) }));
+  if (r.result.failed) tracker.notify('error', t('copies.failed', { n: r.result.failed }));
+}
+watch(() => s.tab, tab => { if (tab === 'settings') void loadCopies(); }, { immediate: true });
+
 async function remove(p: Preset) {
   if (await ask({ title: t('preset.deleteTitle'), text: t('preset.deleteText', { name: p.name }), yes: t('preset.delete'), danger: true })) {
     await deletePreset(p.id);
@@ -63,6 +82,16 @@ async function remove(p: Preset) {
           <Button text severity="danger" size="small" :aria-label="t('preset.deleteNamed', { name: p.name })" @click="remove(p)"><Icon name="icon/delete" /></Button>
         </li>
       </ul>
+    </section>
+
+    <section class="em-card" aria-labelledby="copies-h" data-test="copies">
+      <h2 id="copies-h">{{ t('copies.title') }}</h2>
+      <p class="oui-meta">{{ t('copies.help') }}</p>
+      <div class="em-row">
+        <span role="status" data-test="copies-status">{{ copies?.count ? tn('copies.status', copies.count, { size: size(copies.bytes) }) : copies ? t('copies.none') : '' }}</span>
+        <Button severity="secondary" outlined :label="t('copies.clear')" :disabled="!copies?.count" :loading="tracker.isBusy('copies-clear')"
+                data-test="copies-clear" @click="clearCopies" />
+      </div>
     </section>
 
     <section class="em-card" aria-labelledby="lang-h">
