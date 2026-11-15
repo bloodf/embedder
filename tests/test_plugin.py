@@ -135,6 +135,18 @@ class RoundTrip(Base):
         self.assertEqual(opened, [os.path.realpath(applied["path"])])
         self.assertEqual(self.error("project.open", path=self.src), "bad_request")
 
+    def test_old_copies_status_and_clear(self):
+        old = os.path.join(self.storage, "Cube-embedder-20250101-000000-abcdef.3mf")
+        new = os.path.join(self.storage, "Cube-embedder-20260101-000000-abcdef.3mf")
+        for path, t in ((old, 1), (new, 2)):
+            with open(path, "wb") as f:
+                f.write(b"x" * 300)
+            os.utime(path, (t, t))
+        self.assertEqual(self.call("copies.status"), {"count": 1, "bytes": 300, "kept": 1})
+        self.assertEqual(self.call("copies.clear"), {"removed": 1, "freed": 300, "failed": 0, "count": 0, "bytes": 0, "kept": 1})
+        self.assertFalse(os.path.exists(old))
+        self.assertTrue(os.path.exists(new))
+
     def test_storage_is_only_asked_inside_callbacks(self):
         plugin._storage_dir = None
         orca.storage_calls["inside"] = True

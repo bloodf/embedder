@@ -292,6 +292,8 @@ COMMANDS = {
     "mesh.chunk": lambda page, args: get_session(page).mesh_chunk(args),
     "pocket.plan": lambda page, args: get_session(page).plan(args),
     "project.open": _cmd_project_open,
+    "copies.status": lambda page, args: get_session(page).copies_status(),
+    "copies.clear": lambda page, args: get_session(page).clear_copies(),
 }
 ASYNC_COMMANDS = {"project.load": _cmd_project_load, "project.apply": _cmd_project_apply}
 

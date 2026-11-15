@@ -23,6 +23,10 @@ POINT_TOLERANCE = 1.0        # mm a clicked point may sit off its triangle's pla
 LIVE_KEYS = ("layer_height", "initial_layer_print_height", "machine_pause_gcode", "print_sequence", "raft_layers",
              "printable_area")
 GLOBAL_BLOCKS = ("by_object", "no_pause_gcode", "raft")
+# Applied copies: <project>-embedder-<YYYYmmdd-HHMMSS>-<id6>[-n].3mf; a copy of a copy keeps the first project name.
+COPY_RE = re.compile(r"^(.*?)(?:-embedder-\d{8}-\d{6}-[0-9a-f]{6}(?:-\d+)?)+\.3mf$")
+KEEP_COPIES = 10             # older copies kept after an apply, besides the ones OrcaSlicer may have open
+KEEP_DAYS = 30               # ...and none of them older than this
 
 
 class SessionError(Exception):
@@ -99,6 +103,7 @@ class Session:
         self.storage, self.settings_fn = storage, settings_fn
         self.lock = threading.Lock()
         self.job = None
+        self.written = set()     # copies applied in this OrcaSlicer session: any of them may be open
 
     # -------------------------------------------------------------- lifecycle
 
@@ -380,12 +385,71 @@ class Session:
                 for e, p in planned]
         out = self._write(job, adds, remove, pauses)
         with self.lock:
+            self.written.add(out)
             if self.job is not None and self.job.id == job.id:
                 self.job = replace(self.job, applied=True)
+        pruned = self._prune()
         warnings = sorted({w for p in pockets for w in p.warnings} | {w[0] for w in pause_warnings}
                           | {w[0] for w in pocket.proximity_warnings(pockets)})
         return {"path": out, "name": os.path.basename(out), "pockets": len(pockets), "removed": len(remove),
-                "pauses": [{"top_z": z, "extra": x} for z, x in pauses], "warnings": warnings}
+                "pauses": [{"top_z": z, "extra": x} for z, x in pauses], "warnings": warnings,
+                "pruned": pruned}
+
+    # -------------------------------------------------------------- applied copies
+
+    def _old_copies(self):
+        """The applied copies that may be deleted, newest first: (path, mtime, size). Kept: the newest copy of each
+        project and every copy written in this session, since OrcaSlicer may have any of those open."""
+        found = []
+        for name in os.listdir(self.storage):
+            m, path = COPY_RE.match(name), os.path.join(self.storage, name)
+            if m and os.path.isfile(path) and not os.path.islink(path):
+                st = os.stat(path)
+                found.append((path, m.group(1), st.st_mtime, st.st_size))
+        found.sort(key=lambda c: c[2], reverse=True)
+        with self.lock:
+            written = set(self.written)
+        seen, old = set(), []
+        for path, project, mtime, size in found:
+            if project not in seen:
+                seen.add(project)
+            elif path not in written:
+                old.append((path, mtime, size))
+        return old, len(found) - len(old)
+
+    @staticmethod
+    def _delete(copies):
+        """(removed, bytes freed, failed) for deleting these copies."""
+        removed = freed = failed = 0
+        for path, _, size in copies:
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                continue
+            except OSError:
+                failed += 1
+                continue
+            removed, freed = removed + 1, freed + size
+        return removed, freed, failed
+
+    def _prune(self):
+        """After an apply: drop old copies past KEEP_COPIES or KEEP_DAYS. Best effort: a copy that can't be deleted
+        now is tried again after the next apply. Returns how many went."""
+        try:
+            old, _ = self._old_copies()
+        except OSError:
+            return 0
+        cutoff = time.time() - KEEP_DAYS * 86400
+        return self._delete([c for n, c in enumerate(old) if n >= KEEP_COPIES or c[1] < cutoff])[0]
+
+    def copies_status(self):
+        old, kept = self._old_copies()
+        return {"count": len(old), "bytes": sum(c[2] for c in old), "kept": kept}
+
+    def clear_copies(self):
+        """Delete every copy that may go; {removed, freed, failed} plus the status afterwards."""
+        removed, freed, failed = self._delete(self._old_copies()[0])
+        return {"removed": removed, "freed": freed, "failed": failed, **self.copies_status()}
 
 
 def _round(v):

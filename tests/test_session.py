@@ -290,6 +290,54 @@ class Apply(Base):
         self.assertEqual(self.error(self.apply, r["job"], [self.pocket()]), "pocket_blocked")
         self.assertEqual([n for n in os.listdir(self.storage) if n.endswith(".3mf")], [])
 
+    def copy(self, name, days_old=0, size=10):
+        path = os.path.join(self.storage, name)
+        with open(path, "wb") as f:
+            f.write(b"x" * size)
+        t = time.time() - days_old * 86400
+        os.utime(path, (t, t))
+        return path
+
+    def names(self):
+        return sorted(n for n in os.listdir(self.storage) if n.endswith(".3mf"))
+
+    def test_old_copies_are_pruned_after_apply(self):
+        newest = self.copy("Old-embedder-20260101-000000-aaaaaa.3mf", days_old=40)
+        stale = self.copy("Old-embedder-20250101-000000-bbbbbb.3mf", days_old=50)
+        chain = self.copy("Old-embedder-20250101-000000-bbbbbb-embedder-20250102-000000-cccccc-2.3mf", days_old=45)
+        many = [self.copy("Many-embedder-20261101-0000%02d-dddddd.3mf" % n, days_old=1 + n / 100) for n in range(14)]
+        mine = self.copy("notes.3mf", days_old=400)
+        r = self.load()
+        out = self.apply(r["job"], [self.pocket()])
+        left = set(self.names())
+        self.assertIn(os.path.basename(newest), left)                 # the newest copy of a project stays, however old
+        self.assertNotIn(os.path.basename(stale), left)               # older than KEEP_DAYS
+        self.assertNotIn(os.path.basename(chain), left)               # a copy of a copy counts as the same project
+        self.assertIn(os.path.basename(many[0]), left)
+        self.assertEqual(sum(os.path.basename(m) in left for m in many), 1 + session.KEEP_COPIES)
+        self.assertIn(os.path.basename(mine), left)                   # not an Embedder copy: never touched
+        self.assertIn(out["name"], left)
+        self.assertEqual(out["pruned"], 2 + 14 - 1 - session.KEEP_COPIES)
+
+    def test_clear_old_copies_keeps_what_orca_may_have_open(self):
+        r = self.load()
+        first = self.apply(r["job"], [self.pocket()])
+        r = self.load()
+        second = self.apply(r["job"], [self.pocket()])
+        older = self.copy("My Part-embedder-20250101-000000-eeeeee.3mf", size=1000)
+        other = self.copy("Other-embedder-20250101-000000-ffffff.3mf", size=7)
+        os.utime(older, (1, 1))
+        status = self.s.copies_status()
+        self.assertEqual((status["count"], status["bytes"]), (1, 1000))
+        self.assertEqual(status["kept"], 3)
+        cleared = self.s.clear_copies()
+        self.assertEqual((cleared["removed"], cleared["freed"], cleared["failed"], cleared["count"]), (1, 1000, 0, 0))
+        self.assertEqual(self.names(), sorted([first["name"], second["name"], os.path.basename(other)]))
+        fresh = session.Session(self.storage, self.store.effective)   # a new OrcaSlicer session
+        self.assertEqual(fresh.copies_status()["count"], 1)
+        fresh.clear_copies()
+        self.assertEqual(self.names(), sorted([second["name"], os.path.basename(other)]))
+
     def test_bad_apply_args(self):
         r = self.load()
         self.assertEqual(self.error(self.s.apply, {"job": r["job"], "pockets": "x"}), "bad_request")
