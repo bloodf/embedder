@@ -477,7 +477,9 @@ test('three columns side by side: the form, the view and the list fill the windo
   eq([form.top, list.top], [view.top, view.top], 'on one line');
   eq(Math.round(view.height), innerHeight - 88, 'the view takes the window height under the bar');
   assert(form.bottom >= view.bottom - 1 && list.bottom >= view.bottom - 1, 'the side panels reach as far');
-  eq(document.documentElement.scrollWidth, innerWidth, 'nothing wider than the window');
+  // the window less the scrollbar gutter, which a classic scrollbar keeps reserved (scrollbar-gutter: stable)
+  eq(document.documentElement.scrollWidth, document.documentElement.clientWidth, 'nothing wider than the window');
+  eq(getComputedStyle(document.documentElement).scrollbarGutter, 'stable', 'a scrollbar appearing does not narrow the page');
   const foot = r('.em-list .oui-panel-foot');
   assert(Math.abs(foot.bottom - list.bottom) < 2, 'Apply sits at the foot of the list');
   document.documentElement.style.setProperty('--orca-bg', '#151515');   // the host's theme, not the runner's
