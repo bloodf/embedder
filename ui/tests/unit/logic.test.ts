@@ -14,6 +14,8 @@ test('plan arguments name the hit, the insert and only the options that are set'
   assert.deepEqual(planArgs(0, hit, { preset: null, custom: { kind: 'magnet', shape: 'disc', d: 8, l: 1, w: 1, t: 2 } }, { mode: 'open', spin: 0, cover: null })?.custom,
     { kind: 'magnet', shape: 'disc', d: 8, t: 2 });
   assert.equal(planArgs(0, hit, { preset: null, custom: null }, { mode: 'open', spin: null, cover: null }), null);
+  assert.equal(planArgs(0, hit, { preset: 'x', custom: null }, { mode: 'open', spin: null, cover: null, center: true })?.center, true);
+  assert.equal('center' in (planArgs(0, hit, { preset: 'x', custom: null }, { mode: 'open', spin: null, cover: null, center: false }) ?? {}), false);
 });
 
 test('Embedded is blocked by the object first, then by an embedded plan', () => {

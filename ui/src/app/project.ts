@@ -70,7 +70,7 @@ export function placeAt(hit: Hit | null): Promise<void> {
 export async function replan(): Promise<void> {
   const project = s.project;
   if (!project || s.object == null || !s.hit) return;
-  const args = planArgs(s.object, s.hit, s.insert, { mode: s.mode, spin: s.spin, cover: s.cover });
+  const args = planArgs(s.object, s.hit, s.insert, { mode: s.mode, spin: s.spin, cover: s.cover, center: s.center });
   if (!args) return;
   const token = ++planToken;
   try {

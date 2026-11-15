@@ -3,7 +3,7 @@ import type { Custom, Mode, ObjectInfo, Plan, PlanArgs, Preset, Staged } from '.
 import type { Hit } from '../core/pick.ts';
 
 export interface InsertChoice { preset: string | null; custom: Custom | null }
-export interface Options { mode: Mode; spin: number | null; cover: number | null }
+export interface Options { mode: Mode; spin: number | null; cover: number | null; center?: boolean }
 
 export function customDims(c: Custom): Record<string, unknown> {
   return c.shape === 'disc' ? { kind: c.kind, shape: c.shape, d: c.d, t: c.t } : { kind: c.kind, shape: c.shape, l: c.l, w: c.w, t: c.t };
@@ -14,7 +14,7 @@ export function planArgs(object: number, hit: Hit, insert: InsertChoice, o: Opti
   const base: PlanArgs = { object, part: hit.part, tri: hit.tri, point: hit.point, mode: o.mode };
   const which = insert.custom ? { custom: customDims(insert.custom) } : insert.preset ? { preset: insert.preset } : null;
   if (!which) return null;
-  return { ...base, ...which, ...(o.spin ? { spin: o.spin } : {}), ...(o.cover != null ? { cover: o.cover } : {}) };
+  return { ...base, ...which, ...(o.spin ? { spin: o.spin } : {}), ...(o.cover != null ? { cover: o.cover } : {}), ...(o.center ? { center: true } : {}) };
 }
 
 /** Why Embedded is not offered: the object's (or project's) block first, then the last plan's. */

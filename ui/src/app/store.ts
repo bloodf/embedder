@@ -28,6 +28,7 @@ export const s = reactive({
   mode: 'embedded' as Mode,
   spin: null as number | null,
   cover: null as number | null,
+  center: false,
   // the last click, its plan, the staged pockets and the applied copy
   hit: null as Hit | null,
   plan: null as Plan | null,

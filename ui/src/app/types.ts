@@ -77,6 +77,7 @@ export interface PlanArgs {
   mode: Mode;
   spin?: number;
   cover?: number;
+  center?: boolean;
 }
 
 export interface Plan {
