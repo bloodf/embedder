@@ -256,7 +256,7 @@ Questions and ideas: [Discussions](https://github.com/bloodf/embedder/discussion
 
 The 3MF reading and writing is adapted from [orca_organizer](https://github.com/bloodf/orca_organizer)
 (GPL-3.0). The 3D view uses [three.js](https://threejs.org) (MIT). The page uses Vue and PrimeVue
-through the shared Orca UI foundation. See [NOTICE.md](NOTICE.md).
+through the shared Orca UI foundation 4.0.1, with its Lucide icons (ISC) and the Manrope typeface (SIL OFL 1.1). See [NOTICE.md](NOTICE.md).
 
 The brand art and its fonts are credited in [NOTICE.md](NOTICE.md); the brief is
 [docs/brand-images-prompt.md](docs/brand-images-prompt.md).

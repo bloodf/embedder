@@ -37,7 +37,7 @@ To try a build in OrcaSlicer: **File > Plugins > Install local plugin**, pick
 
 ```text
 src/embedder/          plugin sources
-src/embedder/ui/       the tab page and icons
+src/embedder/ui/       the built tab page and the tab icon
 scripts/build.py       builds the single-file plugin
 tests/                 unit tests, a fake `orca` module and 3MF fixtures built in the tests
 ui/                    the Vue 3 + PrimeVue project for the tab, with the three.js viewer
@@ -76,10 +76,11 @@ command line or the GUI and check the pocket and the pause in the G-code.
 
 ## Assets
 
-Images live in `assets/` and the UI icons in `src/embedder/ui/`. The art comes from the Embedder brand kit,
-made from [docs/brand-images-prompt.md](docs/brand-images-prompt.md); each image has an SVG master and a PNG.
-The UI icons and empty-state spots use `currentColor`, so they follow both themes; keep that when you change
-one, and keep the file names, since the page looks icons up by name.
+Images live in `assets/` and the tab icon in `src/embedder/ui/icon.svg`. The art comes from the Embedder brand
+kit, made from [docs/brand-images-prompt.md](docs/brand-images-prompt.md); each image has an SVG master and a PNG.
+The icons inside the page come from the shared Orca UI foundation (`ui/shared/src/icons.ts`), and the no-project
+illustration (`ui/src/assets/embedder-insert.webp`) is the foundation's Embedder illustration; neither is drawn
+here. The app bar carries the brand kit's micro mark (`assets/embedder-micro-24.svg`), inlined in `ui/src/App.vue`.
 
 Screenshots inside images are real renders of the built page, never drawn or edited by hand. The SVG masters
 keep their 16:10 screenshot frames empty; the PNGs get the renders:

@@ -11,11 +11,13 @@ Embedder is licensed under the GNU General Public License v3.0 only (see [LICENS
 - **three.js** (MIT, copyright three.js authors) draws the 3D view. The licence text is in
   [ui/licenses/Three.txt](ui/licenses/Three.txt).
 - **Vue** (MIT), **PrimeVue** (MIT) and **PrimeUIX** (MIT) come in through the shared Orca UI foundation,
-  vendored in `ui/shared/`. The licence texts are in [ui/shared/licenses](ui/shared/licenses).
+  vendored in `ui/shared/`, together with its icons from **Lucide** (ISC) and the **Manrope** typeface
+  (SIL OFL 1.1), which the page embeds. The licence texts are in [ui/shared/licenses](ui/shared/licenses)
+  and travel in the wheel.
 
 ## Brand art and fonts
 
-The logo, icons, empty-state spots, diagrams and store, README, install, social and release images in
+The logo, tab icon, diagrams and store, README, install, social and release images in
 `assets/` and `src/embedder/ui/` are original artwork made for Embedder and are covered by this project's
 licence. The fonts used in that artwork are free and open, under the SIL Open Font License 1.1, and sit
 with their licence texts in [assets/fonts](assets/fonts):
@@ -25,7 +27,8 @@ with their licence texts in [assets/fonts](assets/fonts):
 - **IBM Plex Mono**, copyright 2017 IBM Corp., Reserved Font Name "Plex"
   ([licence](assets/fonts/IBMPlexMono-OFL.txt)).
 
-The fonts are only used for the artwork; the plugin and its page do not ship them.
+These copies of the fonts are only used for the artwork. The page embeds its own subset of Manrope through the
+shared foundation (above).
 
 The page is built into one offline HTML file, and the licence notices of the bundled libraries are kept
 in that file.

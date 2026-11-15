@@ -21,12 +21,10 @@ Where each asset goes in this repo:
 | Micro marks | `assets/embedder-micro-{16,20,24}.*`, `assets/embedder-micro-dark-{16,20,24}.*` |
 | Brand sheet | `assets/embedder-brand-sheet.*` |
 | Tab icon (24x24) | `src/embedder/ui/icon.svg` |
-| UI icons (11, names fixed by the page) | `src/embedder/ui/icons/*.svg` |
-| Empty-state spots (3) | `src/embedder/ui/spot-{no-project,no-3d,done}.svg` |
 
-The page looks icons up by file name, and the build inlines only the names it references, so a new
-icon or spot needs the same name as the placeholder it replaces. Run `python scripts/build.py` after
-dropping new files in.
+Since 0.2.0 the page takes its UI icons from the shared Orca UI foundation and its empty-state picture
+from the foundation's Embedder illustration, so the UI icon set and the empty-state spots described
+below (items 7 and 8) are no longer shipped; they are kept here as the record of how the kit was made.
 
 | Asset | File |
 |---|---|
