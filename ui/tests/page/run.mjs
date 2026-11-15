@@ -1,6 +1,6 @@
 // Behaviour tests of the built Embedder page (src/embedder/ui/app.html), in owned headless Chrome under a
 // host-like CSP, with a scripted OrcaSlicer bridge. Each scenario gets a fresh page.
-//   node tests/page/run.mjs [name-filter]          PAGE=<page with icons> is set by tests/test_ui_page.py
+//   node tests/page/run.mjs [name-filter]          PAGE=<the page as the wheel carries it> is set by tests/test_ui_page.py
 import { readFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
@@ -13,7 +13,7 @@ import { launch, MOCK_HOST, HELPERS, preparePage } from './cdp.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
 
-async function pageWithIcons() {
+async function builtPage() {
   if (process.env.PAGE) return readFile(process.env.PAGE, 'utf8');
   return execFileSync('python3', ['-c', 'import sys; sys.path.insert(0, "scripts"); import build; sys.stdout.write(build.page_html("app.html"))'],
     { cwd: repo, encoding: 'utf8', maxBuffer: 64 << 20 });
@@ -45,7 +45,9 @@ async function ready() {
   await reply(last('cmd', 'presets.list'), PRESETS);
 }
 async function tab(name) { await click(q('[data-tab="' + name + '"]')); }
-const alerts = () => qa('[role=alert] .p-message').map(text).join(' | ');
+/** The rows of a list as [name, second line] pairs. */
+const rows = name => qa('[data-test=' + name + '] li').map(li => qa('.em-row-id > p', li).map(text));
+const alerts = () => qa('[role=alert] .oui-banner').map(text).join(' | ');
 const answered = new Set();
 const open = name => cmds(name).filter(m => !answered.has(m.id));
 const b64 = u => btoa(String.fromCharCode(...u));
@@ -90,7 +92,10 @@ test('hello is the first command; the version shows once it answers', `
   eq(sent()[0].cmd, 'hello', 'first message');
   eq(last('cmd', 'hello').args, {}, 'hello has no arguments');
   await ready();
-  eq(text(byTest('version')), '0.1.0', 'version shown');
+  eq(text(byTest('state')), 'No project', 'the bar says what the plugin holds');
+  await tab('settings');
+  eq(text(byTest('version')), '0.1.0', 'version shown under Settings, About');
+  assert(byTest('version').getClientRects().length, 'version visible');
 `);
 
 test('the Embed tab starts with the empty state', `
@@ -101,14 +106,28 @@ test('the Embed tab starts with the empty state', `
 
 test('the tabs switch panels', `
   await ready();
-  await tab('settings'); assert(byTest('settings-form'), 'settings panel');
-  await tab('embed'); assert(byTest('embed-empty'), 'embed panel');
+  const shown = name => byTest(name).getClientRects().length > 0;
+  assert(shown('embed-empty') && !shown('settings-form'), 'Embed first');
+  await tab('settings'); assert(shown('settings-form') && !shown('embed-empty'), 'settings panel');
+  eq(q('[data-tab=settings]').getAttribute('aria-selected'), 'true', 'tab selected');
+  eq(q('#em-view-settings').getAttribute('aria-labelledby'), q('[data-tab=settings]').id, 'the panel is named by its tab');
+  await tab('embed'); assert(shown('embed-empty') && !shown('settings-form'), 'embed panel');
+  q('[data-tab=embed]').focus();
+  await press('ArrowRight');
+  assert(shown('settings-form') && document.activeElement === q('[data-tab=settings]'), 'arrow keys move between the tabs');
 `);
 
 test('an error reply with a code does not break the page', `
   await until(() => last('cmd', 'hello'), 'hello sent');
   await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
   assert(byTest('embed-empty'), 'page still usable');
+  eq(text(byTest('state')), 'Not ready', 'the bar says so');
+  assert(alerts().includes('Internal plugin error (boom)'), 'and why: ' + alerts());
+  await click(byTest('hello-retry'));
+  await until(() => cmds('hello').length === 2, 'asks again');
+  await reply(last('cmd', 'hello'), {version: '0.1.0', settings: SETTINGS});
+  assert(!byTest('hello-error'), 'the error goes once the plugin answers');
+  eq(text(byTest('state')), 'No project', 'state after the answer');
 `);
 
 test('Portuguese from the host language', `
@@ -117,9 +136,22 @@ test('Portuguese from the host language', `
   eq(document.documentElement.lang, 'pt-BR', 'document language');
 `, { lang: 'pt_BR' });
 
-test('icons are drawn from the injected map', `
+test('icons come from the shared set; the bar carries the brand mark', `
   await ready();
-  assert(qa('.em-icon svg').length >= 2, 'tab icons drawn');
+  eq(qa('[role=tab] svg.oui-icon').length, 2, 'tab icons drawn');
+  eq(qa('.oui-appbar-mark svg rect').length, 6, 'the micro mark: six bars');
+  eq(qa('.oui-appbar-mark svg circle').length, 1, 'and the insert');
+  assert(q('[data-test=load] svg.oui-icon'), 'the primary action carries its icon');
+  eq(q('[data-test=embed-empty] img').naturalWidth > 0, true, 'the illustration is in the page');
+  assert(!q('#embedder-icons') && !document.documentElement.innerHTML.includes('__ICONS__'), 'no icon map is injected any more');
+`);
+
+test('the embedded typeface loads under the page policy', `
+  await ready();
+  await document.fonts.ready;
+  assert(document.fonts.check('13px Manrope'), 'Manrope is available');
+  assert(getComputedStyle(document.body).fontFamily.startsWith('Manrope'), 'and is the page font: ' + getComputedStyle(document.body).fontFamily);
+  eq(getComputedStyle(document.body).fontSize, '13px', 'body size');
 `);
 
 test('theme follows the host colour while the page runs', `
@@ -128,7 +160,13 @@ test('theme follows the host colour while the page runs', `
   await until(() => !root.classList.contains('orca-dark'), 'light', 15000);
   root.style.setProperty('--orca-bg', '#151515');
   await until(() => root.classList.contains('orca-dark'), 'dark after the host changed', 15000);
-  eq(getComputedStyle(document.body).backgroundColor, 'rgb(24, 28, 34)', 'dark palette background');
+  eq(getComputedStyle(document.body).backgroundColor, 'rgb(11, 26, 28)', 'dark palette background, tinted teal');
+  eq(document.documentElement.dataset.orcaUiAccent, 'teal', 'Embedder accent');
+  eq(getComputedStyle(q('.oui-appbar')).backgroundColor, 'rgb(0, 103, 91)', 'the bar is the teal band in both themes');
+  root.style.setProperty('--orca-bg', '#f4f4f4');
+  await until(() => !root.classList.contains('orca-dark'), 'light again', 15000);
+  eq(getComputedStyle(document.body).backgroundColor, 'rgb(214, 226, 229)', 'light palette background');
+  eq(getComputedStyle(q('.oui-appbar')).backgroundColor, 'rgb(0, 103, 91)', 'same band');
 `);
 
 test('load shows the progress of reading the project', `
@@ -143,6 +181,8 @@ test('load shows the progress of reading the project', `
   await reply(last('cmd', 'project.load'), PROJECT);
   assert(!byTest('loading'), 'progress gone');
   eq(text(byTest('project-name')), 'cube', 'project name');
+  eq(text(byTest('project')), 'cube · plate 1 of 2 · 2 objects', 'project line in the bar');
+  eq(text(byTest('state')), 'Project loaded', 'state');
 `);
 
 test('meshes are pulled one chunk at a time, for the selected object only', `
@@ -162,9 +202,15 @@ test('placing sends a plan request; the preview is listed and staged with its pa
   assert(Math.abs(a.point[0] - 100) < 1e-3 && Math.abs(a.point[1] - 100) < 1e-3 && Math.abs(a.point[2] - 20) < 1e-3, 'point at the top centre: ' + a.point);
   eq(Object.keys(a).sort(), ['job', 'mode', 'object', 'part', 'point', 'preset', 'tri'], 'no unset options sent');
   assert(text(byTest('plan-pause')).includes('19'), 'pause shown: ' + text(byTest('plan')));
+  assert(q('#em-plan-state').classList.contains('oui-on-band'), 'a planned pocket is the accent block');
+  assert(byTest('staged-empty') && byTest('apply').disabled, 'nothing staged yet');
   await click(byTest('add'));
-  assert(text(byTest('staged')).includes('6x3 magnet'), 'staged: ' + text(byTest('staged')));
-  assert(text(byTest('pauses')).includes('Pause at Z 19.00 mm: insert 1 x 6x3 magnet'), 'pause summary: ' + text(byTest('pauses')));
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm']], 'one row: the name, then where and how on its second line');
+  eq(text(byTest('staged-count')), '1', 'count in the panel header');
+  eq(text(q('#em-pauses-l')), 'The print will pause', 'pause heading');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × 6x3 magnet'], 'pause summary');
+  eq(text(byTest('summary')), '1 pocket to add, 0 to remove. Writes a new copy.', 'what Apply will do');
+  assert(byTest('add').disabled && byTest('plan-empty'), 'Add waits for the next face');
   const again = await place(null);
   eq(again.args.others.length, 1, 'staged pockets go along for the proximity check');
 `);
@@ -176,13 +222,17 @@ test('a blocked embedded plan says why and offers Open', `
   assert(text(byTest('embedded-block')).includes('Use Open'), 'mode hint: ' + text(byTest('embedded-block')));
   const embedded = qa('[data-test=mode] button').find(b => text(b) === 'Embedded');
   assert(embedded && embedded.disabled, 'Embedded disabled');
-  assert(!byTest('add'), 'nothing to add');
+  assert(byTest('add').disabled, 'nothing to add');
+  eq(byTest('add').getAttribute('aria-describedby'), 'em-plan-state', 'the disabled button points at the reason');
+  assert(q('#em-plan-state').contains(byTest('plan-blocked')), 'which is the blocked plan');
 `);
 
 test('a project-level block shows the banner and starts in Open', `
   const blocked = {...PROJECT, blocks: ['by_object'], objects: [object(0, {embedded_block: 'by_object'})]};
   await loaded(blocked);
   assert(text(byTest('blocks')).includes('By object'), 'banner: ' + text(byTest('blocks')));
+  assert(!byTest('embedded-block'), 'the reason is said once, in the banner');
+  eq(byTest('mode').getAttribute('aria-describedby'), byTest('blocks').id, 'the disabled choice points at the banner');
   const m = await place(null);
   eq(m.args.mode, 'open', 'Open by default');
 `);
@@ -228,14 +278,15 @@ test('a stale job error tells the user to load again', `
   const m = await place(null);
   await fail(m, {code: 'stale_job', detail: 'the project was loaded again; load it once more'});
   assert(alerts().includes('The project was loaded again. Load it once more'), 'alert: ' + alerts());
-  assert(byTest('plan-empty') && !byTest('add'), 'no preview kept, the panel asks for a face again');
+  assert(byTest('plan-empty') && byTest('add').disabled, 'no preview kept, the panel asks for a face again');
 `);
 
 test('without WebGL the page says so and keeps the face form', `
   await loaded();
   assert(text(byTest('no3d')).includes('not available'), 'notice: ' + text(byTest('no3d')));
-  eq(qa('[data-test=no3d] .em-spot svg').length, 1, 'illustration');
+  eq(qa('[data-test=no3d] .oui-empty .oui-tile svg').length, 1, 'its icon tile');
   assert(!byTest('viewer'), 'no 3D view');
+  eq(text(byTest('plan-empty')), 'Choose a face and press Place.', 'the plan asks for the face form');
 `);
 
 test('settings show the saved values and the user presets', `
@@ -295,7 +346,10 @@ test('the list says which inserts to have ready, open pockets and copies include
   await click(byTest('add'));
   await place({...PLAN, mode: 'open', pause_z: null, label: '25 mm NFC sticker', kind: 'nfc'});
   await click(byTest('add'));
-  eq(text(byTest('inserts')), 'Inserts to have ready: 2 x 6x3 magnet, 1 x 25 mm NFC sticker', 'inserts line');
+  eq(text(q('#em-inserts-l')), 'Have ready at the printer', 'inserts heading');
+  eq(qa('[data-test=inserts] li').map(text), ['2 × 6x3 magnet', '1 × 25 mm NFC sticker'], 'inserts lines');
+  eq(qa('[data-test=inserts] .em-kind').map(e => e.dataset.kind), ['magnet', 'nfc'], 'each with the mark of its kind');
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm'], ['25 mm NFC sticker', 'Cube · top · open']], 'rows');
 `);
 
 test('a project without a part list says why in words', `
@@ -326,22 +380,131 @@ test('settings show the old copies and clear them after asking', `
   await until(() => cmds('copies.status').length === 2, 'asked again when the tab opens');
 `);
 
-test('the cover row and Save as preset carry their brand icons', `
+test('the cover row and Save as preset carry their icons', `
   await loaded();
   await place(PLAN);
   const cover = qa('[data-test=plan] dt').find(d => text(d) === 'Cover');
-  assert(cover && q('.em-icon svg', cover), 'layers icon on the cover row');
+  assert(cover && q('svg.oui-icon', cover), 'layers icon on the cover row');
   await click(q('#f-custom'));
   const save = byTest('save-preset');
-  assert(q('.em-icon svg', save) && text(save) === 'Save as preset', 'add icon on Save as preset: ' + text(save));
+  assert(q('svg.oui-icon', save) && text(save) === 'Save as preset', 'save icon on Save as preset: ' + text(save));
 `);
+
+test('a custom size is saved as a preset through a dialog with one field; going back saves nothing', `
+  await loaded();
+  await click(q('#f-custom'));
+  assert(byTest('custom-dims') && !byTest('preset'), 'custom fields replace the preset list');
+  await type(q('#f-d'), '12'); q('#f-d').blur(); await settle();
+  byTest('save-preset').focus();
+  await click(byTest('save-preset'));
+  await until(dialogOpen, 'dialog');
+  assert(dialogText().includes('Give this size a name'), 'dialog text: ' + dialogText());
+  assert(q('[data-dlg=confirm]').disabled, 'no name, no save');
+  await no();
+  assert(!last('cmd', 'presets.save'), 'nothing saved when the answer is Go back');
+  await until(() => document.activeElement === byTest('save-preset'), 'focus returns to the button that asked');
+  await click(byTest('save-preset'));
+  await until(() => q('#dlg-input'), 'dialog again');
+  await type(q('#dlg-input'), 'Fridge 12');
+  await press('Enter');
+  await until(() => last('cmd', 'presets.save'), 'save sent');
+  eq(last('cmd', 'presets.save').args, {preset: {name: 'Fridge 12', kind: 'magnet', shape: 'disc', d: 12, t: 3}}, 'preset arguments');
+  const mine = {id: 'user-1', name: 'Fridge 12', kind: 'magnet', shape: 'disc', d: 12, t: 3, builtin: false};
+  await reply(last('cmd', 'presets.save'), {id: 'user-1', user: [mine]});
+  await until(() => byTest('preset'), 'back to the preset list');
+  eq(text(byTest('preset')), 'Fridge 12', 'the new preset is chosen');
+  eq(q('[data-test=preset] .em-kind').dataset.kind, 'magnet', 'with the mark of its kind');
+`);
+
+test('deleting a preset asks first, with the way back focused', `
+  await until(() => last('cmd', 'hello'), 'hello sent');
+  await reply(last('cmd', 'hello'), {version: '0.1.0', settings: SETTINGS});
+  await until(() => last('cmd', 'presets.list'), 'presets asked');
+  const mine = {id: 'user-1', name: 'Fridge 12', kind: 'nfc', shape: 'block', l: 30, w: 20, t: 1, builtin: false};
+  await reply(last('cmd', 'presets.list'), {...PRESETS, user: [mine]});
+  await tab('settings');
+  eq(rows('user-presets'), [['Fridge 12', 'NFC tag · 30.00 × 20.00 × 1.00 mm']], 'the preset row');
+  await click(btn('Delete Fridge 12'));
+  await until(dialogOpen, 'dialog');
+  assert(dialogText().includes('"Fridge 12" will be removed'), 'what will happen: ' + dialogText());
+  await until(() => document.activeElement === q('[data-dlg=cancel]'), 'focus starts on Go back');
+  assert(q('[data-dlg=confirm]').classList.contains('p-button-danger') && text(q('[data-dlg=confirm]')) === 'Delete', 'the action is named on the red button');
+  await press('Escape');
+  await until(() => !dialogOpen(), 'Escape closes');
+  assert(!last('cmd', 'presets.delete'), 'Escape deletes nothing');
+  await click(btn('Delete Fridge 12'));
+  await yes();
+  await until(() => last('cmd', 'presets.delete'), 'delete sent');
+  eq(last('cmd', 'presets.delete').args, {id: 'user-1'}, 'delete arguments');
+  await reply(last('cmd', 'presets.delete'), {user: []});
+  assert(byTest('presets-empty'), 'list empty again');
+`);
+
+test('unsaved settings are named in the save bar and can be discarded', `
+  await ready();
+  await tab('settings');
+  assert(byTest('settings-save').disabled && byTest('settings-discard').disabled, 'nothing changed yet');
+  await type(q('#set-cover_nfc'), '0.8');
+  q('#set-cover_nfc').blur();
+  await settle();
+  assert(text(q('.oui-settings-foot')).includes('Unsaved changes') && text(q('.oui-settings-foot')).includes('Cover over NFC tags'), 'bar: ' + text(q('.oui-settings-foot')));
+  assert(!byTest('settings-save').disabled, 'can save');
+  await click(byTest('settings-discard'));
+  eq(q('#set-cover_nfc').value, '0.6 mm', 'value back');
+  assert(byTest('settings-save').disabled && !text(q('.oui-settings-foot')).includes('Unsaved'), 'bar quiet again');
+  assert(!last('cmd', 'settings.save'), 'nothing was sent');
+  eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
+`);
+
+test('the language choice is sent to the plugin and the page follows it', `
+  await ready();
+  await tab('settings');
+  await click(byTest('lang'));
+  await until(() => qa('[role=option]').length === 3, 'language options');
+  await click(qa('[role=option]').find(o => text(o) === 'Português (Brasil)'));
+  eq(last('ui_language').value, 'pt-BR', 'choice sent');
+  eq(document.documentElement.lang, 'pt-BR', 'document language');
+  eq(text(q('[data-tab=embed]')), 'Embutir', 'tabs follow');
+  eq(text(byTest('state')), 'Sem projeto', 'state follows');
+`);
+
+test('three columns side by side: the form, the view and the list fill the window', `
+  await loaded();
+  const r = name => q(name).getBoundingClientRect();
+  const form = r('.em-form'), view = r('.em-stage-panel'), list = r('.em-list');
+  eq([Math.round(form.width), Math.round(list.width)], [320, 380], 'side columns');
+  assert(form.right < view.left && view.right < list.left, 'in reading order: form, view, list');
+  eq([form.top, list.top], [view.top, view.top], 'on one line');
+  eq(Math.round(view.height), innerHeight - 88, 'the view takes the window height under the bar');
+  assert(form.bottom >= view.bottom - 1 && list.bottom >= view.bottom - 1, 'the side panels reach as far');
+  eq(document.documentElement.scrollWidth, innerWidth, 'nothing wider than the window');
+  const foot = r('.em-list .oui-panel-foot');
+  assert(Math.abs(foot.bottom - list.bottom) < 2, 'Apply sits at the foot of the list');
+  eq(getComputedStyle(q('.em-form .oui-panel-head')).backgroundColor, 'rgb(16, 61, 60)', 'panel header strip in the accent tint');
+  eq(getComputedStyle(q('.em-list .oui-panel-head .oui-tile')).backgroundColor, 'rgb(185, 220, 108)', 'the list is lime');
+  eq(getComputedStyle(byTest('apply')).height, '32px', 'control height');
+  eq(getComputedStyle(q('.em-form')).borderRadius, '8px', 'panel radius');
+`);
+
+test('one column when the window is narrow, in the order form, view, list; nothing overflows', `
+  await loaded();
+  const r = name => q(name).getBoundingClientRect();
+  const form = r('.em-form'), view = r('.em-stage-panel'), list = r('.em-list');
+  assert(form.bottom <= view.top && view.bottom <= list.top, 'stacked in order');
+  eq([form.left, view.left, list.left], [16, 16, 16], 'page gutter');
+  eq([form.width, view.width, list.width], [innerWidth - 32, innerWidth - 32, innerWidth - 32], 'full width');
+  eq(document.documentElement.scrollWidth, innerWidth, 'nothing wider than the window');
+  const bar = r('.oui-appbar');
+  assert(r('.oui-appbar-tabs').top > r('.oui-appbar-id').top && bar.height < 110, 'tabs drop to a second line');
+  for (const b of qa('button').filter(b => b.getClientRects().length)) assert(b.scrollWidth <= b.clientWidth + 1, 'label fits its button: ' + text(b));
+`, { width: 480, lang: 'pt_BR' });
 
 // ------------------------------------------------------------------ runner
 const workers = Number(process.env.WORKERS ?? 4);
 if (!Number.isSafeInteger(workers) || workers < 1) throw new Error('WORKERS must be a positive integer');
 const filter = process.argv[2];
 const chosen = scenarios.filter(s => !filter || s.name.includes(filter));
-const page = await pageWithIcons();
+const page = await builtPage();
 const dir = await mkdtemp(join(tmpdir(), 'embedder-page-'));
 const browser = await launch();
 let failed = 0;
@@ -356,7 +519,7 @@ try {
       const p = await browser.newPage();
       const started = Date.now();
       try {
-        await p.size(1280, 900);
+        await p.size(sc.width ?? 1280, 900);
         await p.init(MOCK_HOST + NO_WEBGL + 'try { localStorage.clear(); } catch {}');
         await p.goto(pathToFileURL(file).href);
         const body = `(async () => { ${HELPERS} ${PRELUDE}

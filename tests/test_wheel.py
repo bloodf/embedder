@@ -21,7 +21,8 @@ PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text("utf-8"))["project"]
 DIST_INFO = "embedder-%s.dist-info/" % PROJECT["version"]
 EXPECTED = {"embedder/%s.py" % n for n in ("__init__", "_assets") + build.MODULES} | {
     DIST_INFO + n for n in ("METADATA", "WHEEL", "RECORD", "top_level.txt", "licenses/LICENSE", "licenses/PrimeUIX.txt",
-                            "licenses/PrimeVue.txt", "licenses/Vue.txt", "licenses/Three.txt")}
+                            "licenses/PrimeVue.txt", "licenses/Vue.txt", "licenses/Three.txt", "licenses/Lucide.txt",
+                            "licenses/Manrope.txt")}
 # (?<![.\w]): a JS method call such as RegExp .exec( in the embedded page is not Python exec().
 FORBIDDEN = re.compile(r"(?<![.\w])exec\(|(?<![.\w])eval\(|__import__|importlib")
 DYNAMIC_BUILTINS = {"exec", "eval", "compile", "__import__"}
