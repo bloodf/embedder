@@ -14,7 +14,10 @@ import { launch, MOCK_HOST, HELPERS, preparePage } from './cdp.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
 const out = resolve(process.argv[2] ?? join(repo, 'dist', 'shots'));
-const W = 1280, H = 800, SCALE = 2;   // 16:10, rendered at 2x so the frames are sharp after scaling down
+// Every frame is 16:10 and every render is too, at 2x so the frames are sharp after scaling down. The window is as
+// large as the state needs for the whole page to fit without scrolling (the three columns are as tall as the window
+// or their content); the small install cards get a small window, so their text stays readable at that size.
+const STORE = [1440, 900], TALL = [1600, 1000], CARD = [640, 400], SCALE = 2;
 const THEMES = { dark: '#151515', light: '#f4f4f4' };   // the host colour the page follows (--orca-bg)
 
 const page = process.env.PAGE ? await readFile(process.env.PAGE, 'utf8')
@@ -22,7 +25,7 @@ const page = process.env.PAGE ? await readFile(process.env.PAGE, 'utf8')
     { cwd: repo, encoding: 'utf8', maxBuffer: 64 << 20 });
 
 /** One fresh page wired to one fresh plugin process; `run(steps)` evaluates scenario code with the test helpers. */
-async function session(browser, dir, theme) {
+async function session(browser, dir, theme, [W, H]) {
   const file = join(dir, `shot-${theme}-${Date.now()}.html`);
   await writeFile(file, preparePage(page, { version: 'shots', lang: 'en', pref: 'en' }));
   const host = spawn('python3', [join(here, 'shots_host.py')], { cwd: repo, stdio: ['pipe', 'pipe', 'inherit'] });
@@ -51,7 +54,8 @@ async function session(browser, dir, theme) {
     await settle(); })()`);
   /** A real mouse click on the 3D view, `dx`/`dy` pixels from its centre. */
   const clickView = async (dx = 0, dy = 0) => {
-    const r = await p.evaluate(`(() => { const b = document.querySelector('[data-test=viewer] canvas').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
+    const r = await p.evaluate(`(() => { const c = document.querySelector('[data-test=viewer] canvas'); c.scrollIntoView({ block: 'center' });
+      const b = c.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
     const at = { x: r.x + dx, y: r.y + dy, button: 'left', clickCount: 1 };
     await p.call('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y });
     await p.call('Input.dispatchMouseEvent', { type: 'mousePressed', ...at });
@@ -87,24 +91,23 @@ const SHOTS = [
   { name: 'nfc', themes: ['dark'], async go(s) {
     await s.run(LOADED + choose('object', 'Badge') + `await until(() => !text(byTest('viewer')).includes('Loading'), 'badge mesh', 30000); await sleep(400);`
       + choose('preset', 'Ø25 mm sticker') + CENTRE);
-    await s.clickView(); await s.run(PLANNED + SCROLL('plan'));
+    await s.clickView(); await s.run(PLANNED);
   } },
   { name: 'pause', themes: ['dark'], async go(s) {
     await s.run(LOADED);
     await s.clickView(-60, 0); await s.run(PLANNED + ADD);
     await s.clickView(60, 0); await s.run(PLANNED + ADD);
-    await s.run(SCROLL('staged'));
   } },
-  { name: 'custom', themes: ['dark'], async go(s) {
+  { name: 'custom', themes: ['dark'], size: TALL, async go(s) {
     await s.run(LOADED + `await click(q('#f-custom'));
       await type(q('#f-d'), '12'); q('#f-d').blur(); await type(q('#f-t'), '4'); q('#f-t').blur(); await settle();` + CENTRE);
     await s.clickView(); await s.run(PLANNED);
   } },
-  { name: 'load', themes: ['light'], async go(s) { await s.run(LOADED); } },
-  { name: 'place', themes: ['light'], async go(s) { await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED + SCROLL('plan')); } },
-  { name: 'applied', themes: ['light'], async go(s) {
+  { name: 'load', themes: ['light'], size: CARD, async go(s) { await s.run(LOADED); } },
+  { name: 'place', themes: ['light'], size: CARD, async go(s) { await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED + SCROLL('plan')); } },
+  { name: 'applied', themes: ['light'], size: CARD, async go(s) {
     await s.run(LOADED); await s.clickView(-60, 0); await s.run(PLANNED + ADD); await s.clickView(60, 0); await s.run(PLANNED + ADD);
-    await s.run(`await click(byTest('apply')); await until(() => byTest('result'), 'applied', 30000);`);
+    await s.run(`await click(byTest('apply')); await until(() => byTest('result'), 'applied', 30000); window.scrollTo(0, 0); await sleep(300);`);
   } },
 ];
 
@@ -115,7 +118,7 @@ let failed = 0;
 try {
   for (const shot of SHOTS.filter(s => !process.env.ONLY || s.name === process.env.ONLY)) {
     for (const theme of shot.themes) {
-      const s = await session(browser, dir, theme);
+      const s = await session(browser, dir, theme, shot.size ?? STORE);
       try {
         await shot.go(s);
         const probe = await s.p.evaluate('JSON.stringify({ v: __t.violations, r: __t.rejections, e: __t.errors })');
