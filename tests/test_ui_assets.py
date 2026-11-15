@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import build  # noqa: E402
 
 UI = ROOT / "src" / "embedder" / "ui"
-MAX_BUILT_BYTES = 400_000   # the wheel measures ~384 kB with three.js, OrbitControls and the panel (page ~1.26 MB raw, deflated)
+MAX_BUILT_BYTES = 400_000   # the wheel measures ~388 kB with three.js, OrbitControls and the panel (page ~1.26 MB raw, deflated)
 SHARED_ICONS = ROOT / "ui" / "shared" / "src" / "icons.ts"
 
 

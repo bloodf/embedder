@@ -42,6 +42,16 @@ class WheelTests(unittest.TestCase):
         sources = {p.stem for p in (ROOT / "src" / "embedder").glob("*.py")} - {"plugin"}
         self.assertEqual(sources, set(build.MODULES))
 
+    def test_plugin_code_carries_every_bundled_licence(self):
+        """OrcaSlicer installs the package; the licence notices of what the page bundles ride in _assets.py too."""
+        tree = ast.parse(self.read("embedder/_assets.py"))
+        (notices,) = [ast.literal_eval(n.value) for n in tree.body
+                      if isinstance(n, ast.Assign) and [t.id for t in n.targets] == ["THIRD_PARTY_NOTICES"]]
+        shipped = sorted([*(ROOT / "ui" / "shared" / "licenses").glob("*.txt"), *(ROOT / "ui" / "licenses").glob("*.txt")])
+        self.assertEqual(set(notices), {"Lucide", "Manrope", "PrimeUIX", "PrimeVue", "Three", "Vue"})
+        for lic in shipped:
+            self.assertEqual(notices[lic.stem], lic.read_text("utf-8"), lic.name)
+
     def test_exact_file_list(self):
         self.assertEqual(set(self.zip.namelist()), EXPECTED)
         self.assertEqual(len(self.zip.namelist()), len(EXPECTED))

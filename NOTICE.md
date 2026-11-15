@@ -30,8 +30,14 @@ with their licence texts in [assets/fonts](assets/fonts):
 These copies of the fonts are only used for the artwork. The page embeds its own subset of Manrope through the
 shared foundation (above).
 
-The page is built into one offline HTML file, and the licence notices of the bundled libraries are kept
-in that file.
+The no-project illustration in the page, `ui/src/assets/embedder-insert.webp`, is the Embedder illustration of the
+shared Orca UI foundation (`ui-foundation/assets/illustrations/`), copied unchanged; it is original artwork made for
+this plugin family.
+
+The page is built into one offline, minified HTML file that carries no licence comments. The licence texts of
+everything bundled in it (Vue, PrimeVue, PrimeUIX, three.js, the Lucide icons and the Manrope typeface) ship in the
+wheel, under `embedder-<version>.dist-info/licenses/`, and inside the plugin's own code, as `THIRD_PARTY_NOTICES` in
+`embedder/_assets.py`, since OrcaSlicer installs the package without its dist-info.
 
 ## File format facts
 
