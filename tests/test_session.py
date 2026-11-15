@@ -132,6 +132,13 @@ class Load(Base):
             f.write(b"junk")
         self.assertEqual(self.error(self.s.load, job_id, "", 1, {}), "bad_package")
 
+    def test_long_names_fit_a_file_name(self):
+        """A file name is at most 255 bytes on Linux: the stem leaves room for the suffix and the temporary name."""
+        for name in ("日" * 200, "a" * 300, "🧲" * 90):
+            stem = session._stem("/p/%s.3mf" % name)
+            self.assertLessEqual(len(stem.encode("utf-8")), 150, name[:3])
+            self.assertTrue(stem and name.startswith(stem))
+
 
 class Plan(Base):
     def test_embedded_on_top(self):
@@ -174,7 +181,8 @@ class Plan(Base):
     def test_bad_requests(self):
         r = self.load()
         cases = [({"tri": 99}, "bad_request"), ({"point": [110, 110, 25]}, "bad_point"), ({"point": "x"}, "bad_request"),
-                 ({"preset": "nope"}, "unknown_preset"), ({"object": 3}, "bad_request"), ({"spin": "a"}, "bad_request")]
+                 ({"preset": "nope"}, "unknown_preset"), ({"object": 3}, "bad_request"), ({"spin": "a"}, "bad_request"),
+                 ({"others": 5}, "bad_request")]
         for kw, code in cases:
             self.assertEqual(self.error(self.plan, r["job"], **kw), code, kw)
 

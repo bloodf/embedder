@@ -89,7 +89,9 @@ def _index(args, key, size):
 def _stem(project_path):
     name = os.path.basename(str(project_path or "").replace("\\", "/"))
     stem = os.path.splitext(name)[0].strip()
-    return re.sub(r"[\x00-\x1f]", "", stem)[:80] or "untitled"
+    stem = re.sub(r"[\x00-\x1f]", "", stem)[:80]
+    # a file name is at most 255 bytes on Linux: keep room for the suffix and the temporary name
+    return stem.encode("utf-8")[:150].decode("utf-8", "ignore").strip() or "untitled"
 
 
 class Session:
@@ -293,6 +295,8 @@ class Session:
             return {"blocked": {"code": e.code, "detail": e.detail}, "preview": None, "mode": args.get("mode")}
         warnings = list(p.warnings)
         others = args.get("others") or []
+        if not isinstance(others, list):
+            raise SessionError("bad_request", "others is a list")
         if others:
             planned = [p] + [q for _, q in self._plan_quiet(job, others)]
             warnings += [w[0] for w in pocket.proximity_warnings(planned) if 0 in w[1:]]
