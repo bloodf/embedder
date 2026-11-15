@@ -80,6 +80,11 @@ class Bridge(Base):
         self.page.on_message({"type": "cmd", "id": 99, "cmd": "hello", "args": "x"})
         self.assertNotIn("error", self.reply(99))
 
+    def test_a_language_that_cannot_be_saved_does_not_raise_into_the_host(self):
+        os.makedirs(os.path.join(self.storage, "settings.json.tmp"))   # the settings file can't be written
+        self.page.on_message({"type": "ui_language", "value": "en"})
+        self.assertEqual(self.error("settings.save", settings={"xy_clearance": 0.3}), "internal")
+
     def test_presets(self):
         r = self.call("presets.list")
         self.assertEqual(len(r["builtin"]), 15 + 4 + 7 + 2 + 1)

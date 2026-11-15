@@ -339,7 +339,10 @@ class EmbedderPage(orca.pages.PagesPluginCapabilityBase):
         _storage()
         kind, msg_id = data.get("type"), data.get("id")
         if kind == "ui_language":
-            get_store(self).update({"ui_language": data.get("value")})
+            try:
+                get_store(self).update({"ui_language": data.get("value")})
+            except Exception as e:   # a notice with no reply: log it, never raise into OrcaSlicer's callback
+                log("ui_language not saved: %r" % e)
             return
         if kind != "cmd":
             return
