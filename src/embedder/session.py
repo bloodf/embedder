@@ -243,6 +243,10 @@ class Session:
             raise SessionError("bad_part", "pockets go on model parts only")
         if job.pkg.has_cut_connectors(entry.obj.id):
             raise SessionError("cut_object", "%s was cut with connectors" % entry.obj.name)
+        if not job.pkg.has_settings:
+            raise SessionError("no_model_settings", "the project has no model_settings.config")
+        if entry.obj.plain:
+            raise SessionError("unsupported_object", "%s has no parts list to add to" % entry.obj.name)
         pos, idx = entry.meshes[j]
         t = _index(args, "tri", len(idx) // 3)
         corners = [tuple(pos[3 * idx[3 * t + c] + a] for a in range(3)) for c in range(3)]

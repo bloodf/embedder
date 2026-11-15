@@ -240,6 +240,14 @@ class Write(Base):
         transform = re.search(r'transform="([^"]+)"', comp[-1]).group(1)
         self.assertTrue(all(abs(a - b) < 1e-6 for a, b in zip(g.from_config(matrix), g.from_3mf(transform))))
 
+    def test_no_model_settings_refuses_additions(self):
+        src = self.make(fixtures.no_model_settings)
+        with self.assertRaises(threemf.ThreeMFError) as cm:
+            self.apply(src, add=[self.addition(src)])
+        self.assertEqual(cm.exception.code, "no_model_settings")
+        self.assertFalse(threemf.read(src).has_settings)
+        self.assertTrue(threemf.read(self.make(fixtures.cube, name="ok.3mf")).has_settings)
+
     def test_untouched_entries_are_identical(self):
         src = self.make(fixtures.cube)
         out = self.apply(src, add=[self.addition(src)], pauses=[(19.2, "Embedder: x")])

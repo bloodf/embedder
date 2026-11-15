@@ -184,3 +184,23 @@ def empty_settings(path, **kw):
 
 def user_pause(path, z=19.2, **kw):
     return build(path, gcode_xml=user_pause_xml(z), **kw)
+
+
+def no_model_settings(path, **kw):
+    """A project with components but without Metadata/model_settings.config (hand-made, not an Orca export)."""
+    build(path, **kw)
+    with zipfile.ZipFile(path) as z:
+        files = {i.filename: z.read(i) for i in z.infolist() if i.filename != "Metadata/model_settings.config"}
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, data in files.items():
+            z.writestr(name, data)
+    return path
+
+
+def plain_mesh(path, **kw):
+    """A bare mesh object: the build item names a mesh, not a parts list."""
+    obj = '  <object id="1" p:UUID="%s" type="model">\n%s  </object>\n' % (uid(1, 1), mesh_xml(box(20, 20, 20)))
+    main = (HEAD + VERSION + ' <resources>\n' + obj + ' </resources>\n <build p:UUID="%s">\n'
+            '  <item objectid="1" p:UUID="%s" transform="1 0 0 0 1 0 0 0 1 100 100 0" printable="1"/>\n </build>\n</model>\n'
+            % (uid(5, 0), uid(4, 0)))
+    return build(path, submodel=None, extra={"3D/3dmodel.model": main}, **kw)
