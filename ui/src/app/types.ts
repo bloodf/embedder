@@ -61,7 +61,7 @@ export interface Project {
   blocks: string[];
   objects: ObjectInfo[];
   existing: { id: string; object_id: string; name: string; label: string; mode: Mode }[];
-  pauses: { top_z: number; type: number; extra: string; embedder: boolean }[];
+  pauses: { top_z: number; type: string; extra: string; embedder: boolean }[];
 }
 
 export interface Custom { kind: Kind; shape: Shape; d: number; l: number; w: number; t: number }

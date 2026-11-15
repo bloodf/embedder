@@ -142,7 +142,7 @@ export const en = {
   'warn.thin_cover': 'The cover is thinner than two layers; the insert may show through.',
   'warn.nfc_near_magnet': 'An NFC tag is within 10 mm of a magnet; it may not read.',
   'warn.breaks_surface': 'The pocket reaches outside the part; the insert may show or fall out.',
-  'warn.existing_gcode_at_layer': 'Your own custom G-code already sits at a pause layer; Embedder left it and added no pause there.',
+  'warn.existing_gcode_at_layer': 'Your own custom G-code already sits at this pause layer; Embedder leaves it and adds no pause there.',
 
   'err.bad_request': 'The plugin refused the request',
   'err.stale_job': 'The project was loaded again. Load it once more',
@@ -176,6 +176,8 @@ export const en = {
   'err.xml_layout': 'The project is not laid out the way Embedder expects',
   'err.not_embedder_part': 'That part is not an Embedder pocket',
   'err.unsupported_object': 'This object cannot take new parts',
+  'err.bad_item': 'The project changed under Embedder; load it again',
+  'err.no_model_settings': 'The project has no OrcaSlicer part list (model_settings.config). Open it in OrcaSlicer, save it, and load it again',
   'err.exists': 'The output file already exists',
 
   'settings.title': 'Fit and covers',
@@ -353,7 +355,7 @@ export const ptBR: Record<MessageKey, string> = {
   'warn.thin_cover': 'A cobertura tem menos de duas camadas; o inserto pode aparecer.',
   'warn.nfc_near_magnet': 'Uma etiqueta NFC está a menos de 10 mm de um ímã; ela pode não ser lida.',
   'warn.breaks_surface': 'O bolso sai para fora da peça; o inserto pode aparecer ou cair.',
-  'warn.existing_gcode_at_layer': 'Um G-code seu já está numa camada de pausa; o Embedder o manteve e não adicionou pausa ali.',
+  'warn.existing_gcode_at_layer': 'Um G-code seu já está nesta camada de pausa; o Embedder o mantém e não adiciona pausa ali.',
 
   'err.bad_request': 'O plugin recusou o pedido',
   'err.stale_job': 'O projeto foi carregado de novo. Carregue-o mais uma vez',
@@ -387,6 +389,8 @@ export const ptBR: Record<MessageKey, string> = {
   'err.xml_layout': 'O projeto não está organizado como o Embedder espera',
   'err.not_embedder_part': 'Essa parte não é um bolso do Embedder',
   'err.unsupported_object': 'Este objeto não aceita novas partes',
+  'err.bad_item': 'O projeto mudou sem o Embedder saber; carregue-o de novo',
+  'err.no_model_settings': 'O projeto não tem a lista de partes do OrcaSlicer (model_settings.config). Abra-o no OrcaSlicer, salve e carregue de novo',
   'err.exists': 'O arquivo de saída já existe',
 
   'settings.title': 'Folgas e coberturas',
