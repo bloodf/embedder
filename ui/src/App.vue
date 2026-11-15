@@ -62,6 +62,8 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
 :root { --em-magnet: #8c4b08; --em-nfc: #6541a6; --em-ink: #202731; }
 :root.orca-dark { --em-magnet: #f2bc7a; --em-nfc: #c7b5ff; }
 html, body, #app { min-height: 100%; }
+/* A classic scrollbar (Windows) appearing when the page grows must not narrow the page and flip the Embed layout. */
+html { scrollbar-gutter: stable; }
 .em-mark-insert { fill: var(--em-ink); }
 .em-view { display: grid; gap: var(--oui-s3); min-width: 0; }
 

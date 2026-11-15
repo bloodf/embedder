@@ -35,9 +35,12 @@ const waiting = computed(() => [...tracker.pending.values()].filter(p => p.key !
   </section>
 </template>
 <style>
-/* The live regions stay rendered so what is added later is announced; an empty one is taken out of the flow, so it
-   opens no gap in the page grid. Not :empty, which Vue's empty anchor text nodes defeat. */
-.em-notices { display: grid; gap: var(--oui-s3); min-width: 0; }
+/* The live regions stay rendered, in the flow, so what is added later is announced. An empty one takes no height, and
+   with no banner at all the page drops the gap it would open above the content. Not :empty, which Vue's empty anchor
+   text nodes defeat. */
+.em-notices { display: grid; min-width: 0; }
 .em-stack { display: grid; gap: var(--oui-s2); }
-.em-notices:not(:has(.oui-banner)), .em-stack:not(:has(> *)) { position: absolute; }
+.em-stack:not(:has(> *)) { height: 0; overflow: hidden; }
+.em-stack:has(> *) + .em-stack:has(> *) { margin-top: var(--oui-s2); }
+.em:not(:has(> .em-notices .oui-banner)) { row-gap: 0; }   /* :has cannot nest */
 </style>

@@ -126,6 +126,8 @@ async function remove(p: Preset) {
 .em-settings { margin: calc(-1 * var(--oui-s3)) calc(-1 * var(--oui-s4)) calc(-1 * var(--oui-s6)); }
 .em-setform > * + * { border-top: 1px solid var(--oui-border); }
 .em-copies { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--oui-s2) var(--oui-s4); padding: var(--oui-s3) var(--oui-s4); }
-.em-unsaved:empty { display: none; }
+/* The live region stays rendered so "Unsaved changes" is announced; empty, it takes no room (the negative margin
+   cancels the footer's gap). Not :empty, which Vue's anchor comment defeats. */
+.em-unsaved:not(:has(*)) { width: 0; margin-inline-end: calc(-1 * var(--oui-s3)); overflow: hidden; }
 .em-settings .em-rows > li:last-child { border-bottom: 0; }
 </style>

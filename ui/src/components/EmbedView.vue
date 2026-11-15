@@ -15,7 +15,7 @@ import { loadProject } from '../app/project';
 import { t, tMaybe } from '../core/i18n';
 
 const percent = computed(() => (s.loading?.total ? Math.round((100 * s.loading.done) / s.loading.total) : 0));
-const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`block.${code}`, code)));
+const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`block.${code}`, code).replace(/\.$/, '')));   // each is a sentence; one period at the end
 </script>
 
 <template>
@@ -69,7 +69,7 @@ const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`bloc
   .em-stage-panel { height: auto; min-height: 440px; }
   .em-list { grid-column: 1 / -1; }
 }
-@container oui-page (min-width: 1240px) {
+@container oui-page (min-width: 1200px) {   /* 1280 px windows keep three columns beside a classic scrollbar */
   .em-grid { grid-template-columns: 320px minmax(0, 1fr) 380px; min-height: calc(100vh - 88px); }
   .em-stage-panel { position: sticky; top: 64px; align-self: start; height: calc(100vh - 88px); min-height: 360px; }
   .em-list { grid-column: auto; }
