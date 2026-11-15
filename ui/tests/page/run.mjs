@@ -480,6 +480,8 @@ test('three columns side by side: the form, the view and the list fill the windo
   eq(document.documentElement.scrollWidth, innerWidth, 'nothing wider than the window');
   const foot = r('.em-list .oui-panel-foot');
   assert(Math.abs(foot.bottom - list.bottom) < 2, 'Apply sits at the foot of the list');
+  document.documentElement.style.setProperty('--orca-bg', '#151515');   // the host's theme, not the runner's
+  await until(() => document.documentElement.classList.contains('orca-dark'), 'dark', 15000);
   eq(getComputedStyle(q('.em-form .oui-panel-head')).backgroundColor, 'rgb(16, 61, 60)', 'panel header strip in the accent tint');
   eq(getComputedStyle(q('.em-list .oui-panel-head .oui-tile')).backgroundColor, 'rgb(185, 220, 108)', 'the list is lime');
   eq(getComputedStyle(byTest('apply')).height, '32px', 'control height');
@@ -491,9 +493,10 @@ test('one column when the window is narrow, in the order form, view, list; nothi
   const r = name => q(name).getBoundingClientRect();
   const form = r('.em-form'), view = r('.em-stage-panel'), list = r('.em-list');
   assert(form.bottom <= view.top && view.bottom <= list.top, 'stacked in order');
+  const room = document.documentElement.clientWidth;   // the window less a classic scrollbar, where the system draws one
   eq([form.left, view.left, list.left], [16, 16, 16], 'page gutter');
-  eq([form.width, view.width, list.width], [innerWidth - 32, innerWidth - 32, innerWidth - 32], 'full width');
-  eq(document.documentElement.scrollWidth, innerWidth, 'nothing wider than the window');
+  eq([form.width, view.width, list.width], [room - 32, room - 32, room - 32], 'full width');
+  eq(document.documentElement.scrollWidth, room, 'nothing wider than the window');
   const bar = r('.oui-appbar');
   assert(r('.oui-appbar-tabs').top > r('.oui-appbar-id').top && bar.height < 110, 'tabs drop to a second line');
   for (const b of qa('button').filter(b => b.getClientRects().length)) assert(b.scrollWidth <= b.clientWidth + 1, 'label fits its button: ' + text(b));
