@@ -203,18 +203,16 @@ Things to know:
 
 ## Install
 
-There is no release yet. Build the wheel and install it:
+Subscribe to Embedder on Orca Cloud, or download `embedder_any.whl` from the
+[latest release](../../releases/latest). To build the wheel from the source instead:
 
 ```sh
 python3 scripts/build.py     # writes dist/embedder_any.whl
 ```
 
-In OrcaSlicer use **File > Plugins > Install local plugin**, pick the wheel, then tick **Activate**.
-Allow the background thread when OrcaSlicer asks. The **Embedder** tab appears next to Prepare,
-Preview and Device.
-
-Once a release exists, download `embedder_any.whl` from the [latest release](../../releases/latest) or
-subscribe on Orca Cloud.
+For a downloaded or built wheel, use **File > Plugins > Install local plugin** in OrcaSlicer, pick the
+wheel, then tick **Activate**. Allow the background thread when OrcaSlicer asks. The **Embedder** tab
+appears next to Prepare, Preview and Device.
 
 ## Usage
 
