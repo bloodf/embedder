@@ -1,67 +1,80 @@
 <script setup lang="ts">
-import { onBeforeUnmount } from 'vue';
-import Tabs from 'primevue/tabs';
-import TabList from 'primevue/tablist';
-import Tab from 'primevue/tab';
-import TabPanels from 'primevue/tabpanels';
-import TabPanel from 'primevue/tabpanel';
-import Icon from './components/Icon.vue';
+import { computed, onBeforeUnmount } from 'vue';
+import Button from 'primevue/button';
+import { OuiAppBar, OuiIcon, OuiStatus, type OuiState } from '../shared/src/components';
+import { magnet, refresh, settings } from '../shared/src/icons';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import NoticeArea from './components/NoticeArea.vue';
 import EmbedView from './components/EmbedView.vue';
 import SettingsView from './components/SettingsView.vue';
 import { s, start } from './app/store';
-import { t } from './core/i18n';
+import { loadProject } from './app/project';
+import { t, tn } from './core/i18n';
 
 const stop = start();
 onBeforeUnmount(stop);
-const sections = [
-  { value: 'embed', icon: 'icon/layers', label: 'nav.embed' },
-  { value: 'settings', icon: 'icon/settings', label: 'nav.settings' },
-] as const;
+const tabs = computed(() => [
+  { value: 'embed', label: t('nav.embed'), icon: magnet },
+  { value: 'settings', label: t('nav.settings'), icon: settings },
+]);
+// The page's one state: what the plugin holds right now. Nothing else on the page repeats or contradicts it.
+const state = computed<{ kind: OuiState; label: string }>(() =>
+  s.error ? { kind: 'error', label: t('state.error') }
+  : s.loading ? { kind: 'busy', label: t('state.loading') }
+  : s.result ? { kind: 'ok', label: t('state.applied') }
+  : s.project ? { kind: 'ok', label: t('state.loaded') }
+  : { kind: 'idle', label: t('state.none') });
 </script>
 
 <template>
-  <Tabs v-model:value="s.tab" class="em-shell">
-    <header class="oui-header em-head">
-      <span class="em-brand">
-        <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 10h6M15 10h6M9 10v4a3 3 0 0 0 6 0v-4"/><circle cx="12" cy="13" r="1.5"/><path d="M3 18h18"/></svg>
-        <h1>{{ t('app.brand') }}</h1>
+  <OuiAppBar v-model="s.tab" :name="t('app.brand')" :tabs="tabs" :tabs-label="t('nav.label')">
+    <template #mark>
+      <!-- The brand kit's micro mark (assets/embedder-micro-24.svg): the bars take the band colour, the insert its ink. -->
+      <svg viewBox="0 0 24 24" fill="currentColor"><title>{{ t('about.text', { version: s.version || '—' }) }}</title>
+        <rect x="3" y="3" width="18" height="3" rx=".5" /><rect x="3" y="18" width="18" height="3" rx=".5" />
+        <rect x="3" y="8" width="4" height="3" rx=".5" /><rect x="17" y="8" width="4" height="3" rx=".5" />
+        <rect x="3" y="13" width="4" height="3" rx=".5" /><rect x="17" y="13" width="4" height="3" rx=".5" />
+        <circle class="em-mark-insert" cx="12" cy="12" r="3" /></svg>
+    </template>
+    <template #status>
+      <OuiStatus :state="state.kind" data-test="state">{{ state.label }}</OuiStatus>
+      <span v-if="s.project" class="oui-truncate" data-test="project">
+        <span data-test="project-name">{{ s.project.name }}</span> · {{ t('load.plate', { plate: s.project.plate, plates: s.project.plates }) }} · {{ tn('load.objects', s.project.objects.length) }}
       </span>
-      <span v-if="s.version" class="oui-meta" data-test="version">{{ s.version }}</span>
-      <TabList class="em-nav" :aria-label="t('nav.label')">
-        <Tab v-for="sec in sections" :key="sec.value" :value="sec.value" :data-tab="sec.value">
-          <Icon :name="sec.icon" /> <span>{{ t(sec.label) }}</span>
-        </Tab>
-      </TabList>
-    </header>
-    <main class="em-main">
-      <NoticeArea />
-      <TabPanels class="em-panels">
-        <TabPanel value="embed"><EmbedView /></TabPanel>
-        <TabPanel value="settings"><SettingsView /></TabPanel>
-      </TabPanels>
-    </main>
-    <ConfirmDialog />
-  </Tabs>
+    </template>
+    <template v-if="s.project && !s.loading" #actions>
+      <Button :label="t('load.again')" severity="secondary" size="small" data-test="reload" @click="loadProject">
+        <template #icon><OuiIcon :icon="refresh" :size="14" /></template></Button>
+    </template>
+  </OuiAppBar>
+
+  <main class="oui-page em">
+    <NoticeArea />
+    <div v-show="s.tab === 'embed'" id="em-view-embed" class="em-view" role="tabpanel" aria-labelledby="oui-tab-embed"><EmbedView /></div>
+    <div v-show="s.tab === 'settings'" id="em-view-settings" class="em-view" role="tabpanel" aria-labelledby="oui-tab-settings"><SettingsView /></div>
+  </main>
+  <ConfirmDialog />
 </template>
 
 <style>
+/* Embedder's brand colours for the two kinds of insert (assets/asset-manifest.json, palette.magnet and palette.nfc).
+   On the root, where the 3D view reads them. */
+:root { --em-magnet: #8c4b08; --em-nfc: #6541a6; --em-ink: #202731; }
+:root.orca-dark { --em-magnet: #f2bc7a; --em-nfc: #c7b5ff; }
 html, body, #app { min-height: 100%; }
-body { background: var(--oui-background); }
-.em-shell { display: flex; flex-direction: column; min-height: 100vh; background: var(--oui-background); }
-.em-head { position: sticky; top: 0; z-index: 5; }
-.em-brand { display: inline-flex; align-items: center; gap: 8px; }
-.em-brand h1 { margin: 0; font-size: 20px; }
-.em-nav { margin-left: auto; min-width: 0; }
-.em-nav .p-tab { display: inline-flex; gap: 6px; align-items: center; }
-.em-main { flex: 1; padding: 16px; display: flex; flex-direction: column; min-width: 0; }
-.em-panels.p-tabpanels { padding: 0; background: transparent; }
-.em-card { padding: 16px; background: var(--oui-surface); border: 1px solid var(--oui-border); border-radius: 12px; min-width: 0; }
-.em-card > h2 { margin: 0 0 12px; }
-.em-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
-.em-warn { color: var(--oui-warning); }
-.em-card .em-icon.em-spot { width: 160px; height: 120px; color: var(--oui-muted); }
-.em-row .em-icon, .p-button .em-icon, .p-message .em-icon { vertical-align: middle; }
-@media (max-width: 720px) { .em-main { padding: 12px; } .em-nav { margin-left: 0; width: 100%; overflow-x: auto; } }
+/* A classic scrollbar (Windows) appearing when the page grows must not narrow the page and flip the Embed layout. */
+html { scrollbar-gutter: stable; }
+.em-mark-insert { fill: var(--em-ink); }
+.em-view { display: grid; gap: var(--oui-s3); min-width: 0; }
+
+/* Shared by the Embed panels and Settings: what kind of insert a thing is, as a dot (in a line of text) or a tile (on a row). */
+.em-kind { flex: none; display: inline-grid; place-items: center; width: 10px; height: 10px; border-radius: 50%; color: var(--em-magnet); background: currentColor; }
+.em-kind[data-kind='nfc'] { color: var(--em-nfc); border-radius: 2px; }
+.em-kind.em-kind-lg { width: 28px; height: 28px; border-radius: var(--oui-radius); background: color-mix(in srgb, currentColor 16%, transparent); }
+.em-rows { list-style: none; padding: 0; }
+.em-rows > li { display: flex; align-items: center; gap: var(--oui-s3); min-height: 52px; padding: var(--oui-s2) var(--oui-s2) var(--oui-s2) var(--oui-s4); border-bottom: 1px solid var(--oui-border); }
+.em-row-id { flex: 1 1 0; display: grid; gap: 1px; min-width: 0; }
+.em-row-id > .oui-strong { overflow-wrap: anywhere; }
+.em-note { display: flex; align-items: flex-start; gap: 6px; }
+.em-note > .oui-icon { margin-top: 1px; }
 </style>

@@ -2,8 +2,8 @@
 import { ref } from 'vue';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
-import Message from 'primevue/message';
-import Icon from './Icon.vue';
+import { OuiEmpty, OuiIcon, OuiPanel } from '../../shared/src/components';
+import { box, eye, target } from '../../shared/src/icons';
 import { s } from '../app/store';
 import { currentObject, meshesOf, placeAt } from '../app/project';
 import { centrePick, partMesh } from '../core/pick';
@@ -26,21 +26,19 @@ function place() {
 </script>
 
 <template>
-  <section class="em-card em-fallback" data-test="no3d" aria-labelledby="no3d-h">
-    <h2 id="no3d-h">{{ t('no3d.title') }}</h2>
-    <Message severity="warn"><Icon name="icon/warning" /> {{ t('embed.no3d') }}</Message>
-    <Icon name="spot/no-3d" class="em-spot" />
-    <p class="oui-meta">{{ t('no3d.help') }}</p>
-    <div class="em-row">
-      <label id="face-l">{{ t('place.face') }}</label>
-      <Select v-model="face" :options="faces.map(f => ({ value: f.value, label: t(f.label) }))" option-label="label" option-value="value"
-              aria-labelledby="face-l" data-test="fallback-face" />
-      <Button :label="t('place.button')" :disabled="s.mesh.state !== 'ready'" data-test="fallback-place" @click="place" />
-    </div>
-  </section>
+  <OuiPanel class="em-fallback" :title="t('no3d.title')" :icon="box" tone="sky" flush data-test="no3d">
+    <OuiEmpty :icon="eye" tone="sky" :title="t('embed.no3d')" :text="t('no3d.help')">
+      <template #actions>
+        <label id="face-l" class="oui-meta oui-strong">{{ t('place.face') }}</label>
+        <Select v-model="face" :options="faces.map(f => ({ value: f.value, label: t(f.label) }))" option-label="label" option-value="value"
+                aria-labelledby="face-l" data-test="fallback-face" />
+        <Button :label="t('place.button')" severity="secondary" :disabled="s.mesh.state !== 'ready'" data-test="fallback-place" @click="place">
+          <template #icon><OuiIcon :icon="target" :size="14" /></template></Button>
+      </template>
+    </OuiEmpty>
+  </OuiPanel>
 </template>
 
-<style scoped>
-.em-fallback { display: grid; gap: 12px; justify-items: start; }
-.em-fallback > h2 { margin: 0; }
+<style>
+.em-fallback .oui-empty .oui-row { justify-content: center; }
 </style>

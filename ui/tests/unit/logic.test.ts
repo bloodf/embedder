@@ -1,7 +1,7 @@
 // Pure Embed-panel rules: plan arguments, the Embedded block reason, pause summary, preset groups, staging.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { embeddedBlock, groupPresets, insertsNeeded, pauseSummary, planArgs, previewsFor, stage, toggle, unstage } from '../../src/app/logic.ts';
+import { embeddedBlock, groupPresets, insertsNeeded, pauseSummary, planArgs, previewsFor, sizeOf, splitLead, stage, toggle, unstage } from '../../src/app/logic.ts';
 import type { ObjectInfo, Plan, Preset, Staged } from '../../src/app/types.ts';
 
 const hit = { part: 1, tri: 7, point: [1, 2, 3] as [number, number, number] };
@@ -50,6 +50,24 @@ test('the viewer shows only the selected object\'s staged pockets', () => {
     ({ key, args: { object } as Staged['args'], plan: { mode: 'open', blocked: null, preview: withPreview ? preview : null } });
   assert.equal(previewsFor([at(1, 0), at(2, 1), at(3, 0, false)], 0).length, 1);
   assert.equal(previewsFor([at(1, 0)], null).length, 0);
+  const nfc = at(4, 0);
+  nfc.plan.kind = 'nfc';
+  assert.deepEqual(previewsFor([at(1, 0), nfc], 0).map(p => p.kind), ['magnet', 'nfc'], 'each preview carries the kind that colours it');
+});
+
+test('the object size is the bounding box of its meshes; nothing to measure is null, never 0', () => {
+  const a = { positions: new Float32Array([90, 90, 0, 150, 130, 8]) }, b = { positions: new Float32Array([100, 80, 2]) };
+  assert.deepEqual(sizeOf([a, b]), [60, 50, 8]);
+  assert.equal(sizeOf([]), null);
+  assert.equal(sizeOf([{ positions: new Float32Array(0) }]), null);
+});
+
+test('a message splits after its first sentence or colon; decimals and a lone sentence stay whole', () => {
+  assert.deepEqual(splitLead('Placing the pocket failed: The project was loaded again. Load it once more'), ['Placing the pocket failed:', 'The project was loaded again. Load it once more']);
+  assert.deepEqual(splitLead('No pockets yet. Place one and press Add pocket.'), ['No pockets yet.', 'Place one and press Add pocket.']);
+  assert.deepEqual(splitLead('Z 7.20 mm: insert 2 × 6x3 magnet'), ['Z 7.20 mm:', 'insert 2 × 6x3 magnet']);
+  assert.deepEqual(splitLead('Settings saved.'), ['Settings saved.', '']);
+  assert.deepEqual(splitLead('Deleted 2 old copies, 2.0 MB freed.'), ['Deleted 2 old copies, 2.0 MB freed.', '']);
 });
 
 test('presets group into magnets, NFC and mine; empty groups drop', () => {

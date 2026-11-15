@@ -1,4 +1,8 @@
+import { ref } from 'vue';
 import { applyOrcaTheme, type OrcaTheme } from '../../shared/src';
+
+/** The theme the page shows now; the 3D view repaints its materials when it changes. */
+export const theme = ref<OrcaTheme | null>(null);
 
 // The host paints the page through --orca-bg (as the previous pages assumed). We read the resolved colour and
 // follow it; without it the system preference decides. Changes are picked up while the page runs (B-11).
@@ -27,6 +31,7 @@ export function followHostTheme(onChange?: (t: OrcaTheme) => void): () => void {
     if (next === current) return;
     current = next;
     applyOrcaTheme(next);
+    theme.value = next;
     onChange?.(next);
   };
   apply();

@@ -3,7 +3,8 @@ import { computed, reactive, ref, watch } from 'vue';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
 import InputNumber from 'primevue/inputnumber';
-import Icon from './Icon.vue';
+import { OuiEmpty, OuiFormRow, OuiFormSection, OuiIcon, OuiSettings, OuiStatus } from '../../shared/src/components';
+import { files, info, insert, languages, rfid, ruler, save as saveIcon, tag, trash } from '../../shared/src/icons';
 import { s, saveSettings, deletePreset, tracker } from '../app/store';
 import { replanStaged } from '../app/project';
 import { ask } from '../core/dialog';
@@ -15,10 +16,19 @@ type Knob = 'xy_clearance' | 'z_clearance' | 'cover_magnet' | 'cover_nfc';
 const knobs: { key: Knob; max: number }[] = [
   { key: 'xy_clearance', max: 1 }, { key: 'z_clearance', max: 1 }, { key: 'cover_magnet', max: 10 }, { key: 'cover_nfc', max: 10 }];
 const form = reactive<Record<Knob, number | null>>({ xy_clearance: null, z_clearance: null, cover_magnet: null, cover_nfc: null });
-watch(() => s.settings, v => { if (v) knobs.forEach(k => { form[k.key] = v[k.key]; }); }, { immediate: true });
-const dirty = computed(() => !!s.settings && knobs.some(k => form[k.key] !== s.settings?.[k.key]));
+function reset() { const v = s.settings; if (v) knobs.forEach(k => { form[k.key] = v[k.key]; }); }
+watch(() => s.settings, reset, { immediate: true });
+const changed = computed(() => (s.settings ? knobs.filter(k => form[k.key] !== s.settings?.[k.key]) : []));
+const dirty = computed(() => changed.value.length > 0);
 const valid = computed(() => knobs.every(k => form[k.key] != null));
 
+const sections = computed(() => [
+  { id: 'set-fit', label: t('settings.title'), icon: ruler },
+  { id: 'set-presets', label: t('settings.presets'), icon: tag },
+  { id: 'set-copies', label: t('copies.title'), icon: files },
+  { id: 'set-language', label: t('lang.title'), icon: languages },
+  { id: 'set-about', label: t('about.title'), icon: info },
+]);
 const langOptions = computed(() => [
   { value: 'auto', label: t('lang.auto', { current: t(`lang.${autoLocale.value}`) }) },
   { value: 'en', label: t('lang.en') }, { value: 'pt-BR', label: t('lang.pt-BR') }]);
@@ -56,59 +66,68 @@ async function remove(p: Preset) {
 </script>
 
 <template>
-  <div class="em-settings">
-    <section class="em-card" aria-labelledby="knobs-h">
-      <h2 id="knobs-h">{{ t('settings.title') }}</h2>
-      <p class="oui-meta">{{ t('settings.help') }}</p>
-      <form class="em-dims" data-test="settings-form" @submit.prevent="save">
-        <template v-for="k in knobs" :key="k.key">
-          <label :for="'set-' + k.key">{{ t(`settings.${k.key}`) }}</label>
-          <InputNumber v-model="form[k.key]" :input-id="'set-' + k.key" :min="0" :max="k.max" :min-fraction-digits="1" :max-fraction-digits="2" :step="0.1" suffix=" mm" />
-        </template>
-      </form>
-      <div class="em-row">
-        <Button :label="t('common.save')" :disabled="!s.settings || !dirty || !valid" :loading="tracker.isBusy('settings')" data-test="settings-save" @click="save" />
-        <span v-if="dirty" class="oui-meta em-warn" role="status">{{ t('settings.unsaved') }}</span>
-      </div>
-    </section>
+  <OuiSettings class="em-settings" :sections="sections" :nav-label="t('settings.nav')">
+    <div class="oui-stack">
+      <OuiFormSection id="set-fit" :icon="ruler" :title="t('settings.title')" :description="t('settings.help')">
+        <form id="em-settings-form" class="em-setform" data-test="settings-form" @submit.prevent="save">
+          <OuiFormRow v-for="k in knobs" :key="k.key" :label="t(`settings.${k.key}`)" :for="'set-' + k.key">
+            <InputNumber v-model="form[k.key]" :input-id="'set-' + k.key" :min="0" :max="k.max" :min-fraction-digits="1" :max-fraction-digits="2" :step="0.1" suffix=" mm" />
+          </OuiFormRow>
+        </form>
+      </OuiFormSection>
 
-    <section class="em-card" aria-labelledby="mine-h">
-      <h2 id="mine-h">{{ t('settings.presets') }}</h2>
-      <p v-if="!s.user.length" class="oui-muted" data-test="presets-empty">{{ t('settings.presetsEmpty') }}</p>
-      <ul v-else class="em-rows" data-test="user-presets">
-        <li v-for="p in s.user" :key="p.id" class="em-item">
-          <Icon :name="p.kind === 'nfc' ? 'icon/nfc' : 'icon/magnet'" />
-          <span class="em-item-main"><strong>{{ p.name }}</strong> <span class="oui-meta">{{ dims(p) }} mm</span></span>
-          <Button text severity="danger" size="small" :aria-label="t('preset.deleteNamed', { name: p.name })" @click="remove(p)"><Icon name="icon/delete" /></Button>
-        </li>
-      </ul>
-    </section>
+      <OuiFormSection id="set-presets" :icon="tag" :title="t('settings.presets')">
+        <template v-if="s.user.length" #status><span class="oui-chip oui-num">{{ s.user.length }}</span></template>
+        <OuiEmpty v-if="!s.user.length" compact :icon="tag" :title="t('settings.presetsEmpty')" data-test="presets-empty" />
+        <ul v-else class="em-rows" data-test="user-presets">
+          <li v-for="p in s.user" :key="p.id">
+            <span class="em-kind em-kind-lg" :data-kind="p.kind"><OuiIcon :icon="p.kind === 'nfc' ? rfid : insert" :size="16" /></span>
+            <div class="em-row-id"><p class="oui-strong">{{ p.name }}</p><p class="oui-meta oui-num">{{ t(`kind.${p.kind}`) }} · {{ dims(p) }} mm</p></div>
+            <Button text severity="danger" size="small" :aria-label="t('preset.deleteNamed', { name: p.name })" @click="remove(p)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
+          </li>
+        </ul>
+      </OuiFormSection>
+    </div>
 
-    <section class="em-card" aria-labelledby="copies-h" data-test="copies">
-      <h2 id="copies-h">{{ t('copies.title') }}</h2>
-      <p class="oui-meta">{{ t('copies.help') }}</p>
-      <div class="em-row">
-        <span role="status" data-test="copies-status">{{ copies?.count ? tn('copies.status', copies.count, { size: size(copies.bytes) }) : copies ? t('copies.none') : '' }}</span>
-        <Button severity="secondary" outlined :label="t('copies.clear')" :disabled="!copies?.count" :loading="tracker.isBusy('copies-clear')"
-                data-test="copies-clear" @click="clearCopies" />
-      </div>
-    </section>
+    <div class="oui-stack">
+      <OuiFormSection id="set-copies" :icon="files" tone="neutral" :title="t('copies.title')" :description="t('copies.help')" data-test="copies">
+        <div class="em-copies">
+          <span role="status" data-test="copies-status">{{ copies?.count ? tn('copies.status', copies.count, { size: size(copies.bytes) }) : copies ? t('copies.none') : '' }}</span>
+          <Button :label="t('copies.clear')" severity="danger" outlined :disabled="!copies?.count" :loading="tracker.isBusy('copies-clear')" data-test="copies-clear" @click="clearCopies">
+            <template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
+        </div>
+      </OuiFormSection>
 
-    <section class="em-card" aria-labelledby="lang-h">
-      <h2 id="lang-h">{{ t('lang.title') }}</h2>
-      <div class="em-row"><label id="lang-l">{{ t('lang.label') }}</label>
-        <Select :model-value="langPref" :options="langOptions" option-label="label" option-value="value" aria-labelledby="lang-l" data-test="lang"
-                @update:model-value="setLangPref($event as LangPref)" /></div>
-      <p class="oui-meta" data-test="about">{{ t('about.text', { version: s.version || '—' }) }}</p>
-    </section>
-  </div>
+      <OuiFormSection id="set-language" :icon="languages" tone="neutral" :title="t('lang.title')">
+        <OuiFormRow :label="t('lang.label')">
+          <Select :model-value="langPref" :options="langOptions" option-label="label" option-value="value" :aria-label="t('lang.label')" data-test="lang"
+                  @update:model-value="setLangPref($event as LangPref)" />
+        </OuiFormRow>
+      </OuiFormSection>
+
+      <OuiFormSection id="set-about" :icon="info" tone="neutral" :title="t('about.title')" data-test="about">
+        <OuiFormRow :label="t('about.version')"><span class="oui-num oui-strong" data-test="version">{{ s.version || '—' }}</span></OuiFormRow>
+      </OuiFormSection>
+    </div>
+
+    <template #footer>
+      <span role="status" class="em-unsaved"><OuiStatus v-if="dirty" state="pending">{{ t('settings.unsaved') }}</OuiStatus></span>
+      <span v-if="dirty" class="oui-meta oui-truncate">{{ changed.map(k => t(`settings.${k.key}`)).join(', ') }}</span>
+      <span class="oui-spacer" />
+      <Button :label="t('settings.discard')" severity="secondary" text :disabled="!dirty" data-test="settings-discard" @click="reset" />
+      <Button :label="t('common.save')" type="submit" form="em-settings-form" :disabled="!s.settings || !dirty || !valid" :loading="tracker.isBusy('settings')" data-test="settings-save">
+        <template #icon><OuiIcon :icon="saveIcon" :size="14" /></template></Button>
+    </template>
+  </OuiSettings>
 </template>
 
-<style scoped>
-.em-settings { display: grid; gap: 16px; max-width: 760px; }
-.em-dims { display: grid; grid-template-columns: minmax(160px, 240px) minmax(0, 220px); gap: 8px 12px; align-items: center; margin-bottom: 12px; }
-.em-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.em-item { display: flex; align-items: center; gap: 8px; }
-.em-item-main { flex: 1; min-width: 0; }
-@media (max-width: 640px) { .em-dims { grid-template-columns: minmax(0, 1fr); } }
+<style>
+/* The settings page brings its own padding; it sits edge to edge in the page. */
+.em-settings { margin: calc(-1 * var(--oui-s3)) calc(-1 * var(--oui-s4)) calc(-1 * var(--oui-s6)); }
+.em-setform > * + * { border-top: 1px solid var(--oui-border); }
+.em-copies { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--oui-s2) var(--oui-s4); padding: var(--oui-s3) var(--oui-s4); }
+/* The live region stays rendered so "Unsaved changes" is announced; empty, it takes no room (the negative margin
+   cancels the footer's gap). Not :empty, which Vue's anchor comment defeats. */
+.em-unsaved:not(:has(*)) { width: 0; margin-inline-end: calc(-1 * var(--oui-s3)); overflow: hidden; }
+.em-settings .em-rows > li:last-child { border-bottom: 0; }
 </style>

@@ -53,9 +53,32 @@ export function insertsNeeded(staged: readonly Staged[]): InsertCount[] {
   return [...counts.values()].sort((a, b) => (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === 'magnet' ? -1 : 1));
 }
 
-/** Previews of the staged pockets on one object (the viewer shows one object at a time). */
-export function previewsFor(staged: readonly Staged[], object: number | null): NonNullable<Plan['preview']>[] {
-  return staged.flatMap(x => (x.args.object === object && x.plan.preview ? [x.plan.preview] : []));
+export type KindPreview = NonNullable<Plan['preview']> & { kind: Kind };
+
+/** Previews of the staged pockets on one object (the viewer shows one object at a time), with the insert kind that colours them. */
+export function previewsFor(staged: readonly Staged[], object: number | null): KindPreview[] {
+  return staged.flatMap(x => (x.args.object === object && x.plan.preview ? [{ ...x.plan.preview, kind: x.plan.kind ?? 'magnet' }] : []));
+}
+
+/** The bounding size (x, y, z in mm) of meshes in the plate frame; null without vertices. */
+export function sizeOf(parts: readonly { positions: ArrayLike<number> }[]): [number, number, number] | null {
+  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
+  for (const p of parts) {
+    for (let i = 0; i + 2 < p.positions.length; i += 3) {
+      for (let a = 0; a < 3; a++) {
+        const v = p.positions[i + a];
+        if (v < min[a]) min[a] = v;
+        if (v > max[a]) max[a] = v;
+      }
+    }
+  }
+  return max[0] >= min[0] ? [max[0] - min[0], max[1] - min[1], max[2] - min[2]] : null;
+}
+
+/** A message split after its first sentence or colon, so a banner can set the lead apart: ["Apply failed:", "the reason"]. */
+export function splitLead(text: string): [string, string] {
+  const m = /^(.+?[.:!?…])\s+(\S.*)$/s.exec(text);
+  return m ? [m[1], m[2]] : [text, ''];
 }
 
 export interface PresetGroup { key: 'magnet' | 'nfc' | 'mine'; items: Preset[] }

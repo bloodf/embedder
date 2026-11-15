@@ -1,5 +1,5 @@
-// The plugin fills two JSON blocks before serving the page: the boot payload (version, host language, language
-// preference) and the sanitized icon map. During `vite dev` they are absent and the defaults apply.
+// The plugin fills one JSON block before serving the page: the boot payload (version, host language, language
+// preference). During `vite dev` it is absent and the defaults apply.
 export interface Boot {
   version: string;
   lang: string | null;
@@ -13,4 +13,3 @@ function readJson<T>(id: string, fallback: T): T {
 }
 
 export const boot: Boot = { version: 'dev', lang: null, ...readJson<Partial<Boot>>('embedder-boot', {}) };
-export const icons: Record<string, string> = readJson('embedder-icons', {});

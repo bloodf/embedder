@@ -10,12 +10,15 @@ import type { PartMesh } from './mesh';
 
 export interface Preview { positions: number[]; indices: number[] }
 export interface SceneApi {
-  setParts(parts: PartMesh[], pickable: (part: number) => boolean): void;
-  setPockets(current: Preview | null, staged: Preview[]): void;
+  /** `refit: false` keeps the camera where it is (a repaint after the theme changed). */
+  setParts(parts: PartMesh[], pickable: (part: number) => boolean, refit?: boolean): void;
+  /** The pocket being placed (accent) and the staged ones, each in the colour of its kind of insert. */
+  setPockets(current: Preview | null, staged: (Preview & { kind: 'magnet' | 'nfc' })[]): void;
   fit(): void;
   dispose(): void;
 }
 
+const PART_MIX = 0.4;
 const css = (name: string, fallback: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
 
 function disposeAll(objects: Object3D[]): void {
@@ -90,12 +93,16 @@ export function createScene(host: HTMLElement, onPick: (hit: Hit) => void): Scen
   };
 
   return {
-    setParts(list, pickable) {
+    setParts(list, pickable, refit = true) {
       disposeAll([...parts, ...(grid ? [grid] : [])]);
-      const solid = css('--oui-muted', '#8a96a6'), ghost = css('--oui-warning', '#c08a00');
+      grid = null;
+      // The part is a mid tone between the hairline and the control outline of the theme: it stands off the stage in
+      // both themes and leaves the pockets (lighter in dark, darker in light) easy to see on it.
+      const solid = new Color(css('--oui-border', '#b6cbd0')).lerp(new Color(css('--oui-control-border', '#4c737a')), PART_MIX);
+      const ghost = css('--oui-warning', '#c08a00');
       parts = list.map(m => {
         const negative = !pickable(m.part);
-        return partMesh(m, new MeshStandardMaterial({ color: new Color(negative ? ghost : solid), flatShading: true,
+        return partMesh(m, new MeshStandardMaterial({ color: negative ? new Color(ghost) : solid, flatShading: true,
           transparent: negative, opacity: negative ? 0.35 : 1, depthWrite: !negative }));
       });
       targets = parts.filter(m => pickable(m.userData.part as number));
@@ -109,12 +116,12 @@ export function createScene(host: HTMLElement, onPick: (hit: Hit) => void): Scen
         grid.position.set(c.x, c.y, 0);
         scene.add(grid);
       }
-      fit();
+      if (refit) fit(); else render();
     },
     setPockets(current, staged) {
       disposeAll(pockets);
-      const primary = css('--oui-primary', '#00675b');
-      pockets = [...staged.map(p => previewMesh(p, primary, 0.45)), ...(current ? [previewMesh(current, primary, 0.9)] : [])];
+      const kind = { magnet: css('--em-magnet', '#8c4b08'), nfc: css('--em-nfc', '#6541a6') };
+      pockets = [...staged.map(p => previewMesh(p, kind[p.kind], 0.85)), ...(current ? [previewMesh(current, css('--oui-primary', '#00675b'), 0.9)] : [])];
       pockets.forEach(m => scene.add(m));
       render();
     },

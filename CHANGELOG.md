@@ -6,6 +6,29 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-15
+
+### Changed
+
+- A new look for the Embedder tab, shared with the other plugins of the family: a teal app bar with the
+  Embedder mark, the project's state and name, and Load again; coloured panels with icons; a clearer type
+  scale and the Manrope typeface; light and dark themes that follow OrcaSlicer.
+- The Embed tab is laid out in three columns when the window is wide: the new pocket on the left, the 3D view
+  in the middle, the pockets to add on the right. It drops to two columns, then one, as the window narrows,
+  and the 3D view always fills the height it is given.
+- The new pocket panel shows the planned pocket (size, cavity, pause and cover) in a highlighted block, with
+  Add pocket at its foot. Magnets and NFC tags carry their own colours in the insert list and the pocket list.
+- The pocket list says what to have ready at the printer and at which heights the print will pause, with
+  Apply and a summary of what it will write at its foot.
+- After Apply, the result shows the pause height first, then where the copy was written and Open in
+  OrcaSlicer.
+- Settings are grouped in panels with an index, and unsaved changes are named in one save bar.
+- The no-project screen has a new illustration.
+
+### Fixed
+
+- A long pocket in the list no longer wraps onto a second line that starts with a stray "· Embedded".
+
 ## [0.1.1] - 2026-11-15
 
 ### Changed

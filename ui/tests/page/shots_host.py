@@ -20,6 +20,7 @@ sys.path[:0] = [os.path.join(ROOT, "src", "embedder"), os.path.join(ROOT, "tests
 import fake_orca  # noqa: E402
 import fixtures  # noqa: E402
 
+SHOWN_STORAGE = "~/OrcaSlicer/plugins/embedder"   # where the result card says the copy went
 LIVE = {"layer_height": "0.2", "initial_layer_print_height": "0.2", "machine_pause_gcode": "M601",
         "print_sequence": "by layer", "raft_layers": "0", "printable_area": ["0x0", "256x0", "256x256", "0x256"]}
 
@@ -34,7 +35,6 @@ def project(path):
 
 def main():
     channel, sys.stdout = sys.stdout, sys.stderr   # the plugin's log lines go to stderr, the stream stays JSON
-    # a short neutral path: the result card prints where the applied copy went
     work = tempfile.mkdtemp(prefix="embedder-shots-", dir="/tmp" if os.path.isdir("/tmp") else None)
     try:
         storage = os.path.join(work, "storage")
@@ -49,8 +49,10 @@ def main():
         out = threading.Lock()
 
         def post(data):
+            # the copy's folder as a user would see it, not this run's temporary one (the file name is the plugin's own)
+            line = json.dumps(data).replace(json.dumps(storage)[1:-1], SHOWN_STORAGE)
             with out:
-                channel.write(json.dumps(data) + "\n")
+                channel.write(line + "\n")
                 channel.flush()
 
         page.post_message = post

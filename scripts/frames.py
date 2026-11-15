@@ -6,7 +6,9 @@
    transparent; the README picks their light or dark variant.
 2. The real page renders (node ui/tests/page/shots.mjs) go into the empty 16:10 screenshot frames, at the
    coordinates in the manifest. The SVG masters keep their empty frames.
-3. docs/related-plugins/embedder-preview.png (560x224, shown by the sibling plugins) is resized from the
+3. Opaque images whose kit layout leaves a deeper margin below the content than above it (BALANCE) are moved down
+   until both margins match; a balanced image is left as it is.
+4. docs/related-plugins/embedder-preview.png (560x224, shown by the sibling plugins) is resized from the
    finished dark README hero.
 
 Running it again over its own output gives the same bytes: flattening an opaque image changes nothing and the
@@ -20,7 +22,7 @@ import json
 import sys
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_STORE_BYTES = 2_000_000          # Orca Cloud refuses images of 2 MB or more
@@ -44,6 +46,9 @@ PLACES = {
     "assets/social/embedder-social-square.png": "pause-dark",
     "assets/social/embedder-social-vertical.png": "placement-dark",
 }
+# Opaque images whose kit layout leaves more room below the content than above it, with the content's top edge in the
+# kit's export. The PNG is moved down until the two margins are equal; the SVG master keeps its layout.
+BALANCE = {"assets/social/embedder-social-vertical.png": 76}
 INSET = 2                            # inside the frame's 2 px border
 RADIUS = {"install": 12}             # frame corner radius by folder; 16 elsewhere (the SVG masters' rx)
 
@@ -78,8 +83,26 @@ def flatten(target, background):
     return save(Image.alpha_composite(base, image).convert("RGB"), target)
 
 
-def place(target, shot, frame):
-    x, y, w, h = frame["x"] + INSET, frame["y"] + INSET, frame["width"] - 2 * INSET, frame["height"] - 2 * INSET
+def content_box(image, background):
+    return ImageChops.difference(image.convert("RGB"), Image.new("RGB", image.size, hex_rgb(background))).getbbox()
+
+
+def balance(target, background):
+    """Move the content of an opaque PNG down so its top and bottom margins match. A balanced image is unchanged."""
+    image = Image.open(ROOT / target).convert("RGB")
+    _, top, _, bottom = content_box(image, background)
+    shift = (top + image.height - bottom) // 2 - top
+    if shift:
+        moved = Image.new("RGB", image.size, hex_rgb(background))
+        moved.paste(image, (0, shift))
+        save(moved, target)
+    return shift
+
+
+def place(target, shot, frame, background):
+    # an image moved by balance() carries its frame lower by as much
+    dy = content_box(Image.open(ROOT / target), background)[1] - BALANCE[target] if target in BALANCE else 0
+    x, y, w, h = frame["x"] + INSET, frame["y"] + INSET + dy, frame["width"] - 2 * INSET, frame["height"] - 2 * INSET
     radius = RADIUS.get(target.split("/")[1], 16) - INSET
     base = Image.open(ROOT / target)
     render = Image.open(shot).convert(base.mode).resize((w, h), Image.LANCZOS)
@@ -99,11 +122,14 @@ def main():
         if a["png"].startswith(OPAQUE) and a["background"] == "transparent":
             print("%-48s on %s %7d bytes" % (a["png"], a["intended_background"], flatten(a["png"], a["intended_background"])))
     known = {a["png"]: a["screenshot_frames"] for a in assets if a["screenshot_frames"]}
+    backgrounds = {a["png"]: a["intended_background"] for a in assets}
     for target, name in PLACES.items():
         (frame,) = known[target]
         if frame["aspect_ratio"] != "16:10":
             raise SystemExit("%s: frame is not 16:10" % target)
-        print("%-48s <- %-16s %7d bytes" % (target, name, place(target, shots / (name + ".png"), frame)))
+        print("%-48s <- %-16s %7d bytes" % (target, name, place(target, shots / (name + ".png"), frame, backgrounds[target])))
+    for target in BALANCE:
+        print("%-48s moved down %d px" % (target, balance(target, backgrounds[target])))
     for target in sorted(set(known) - set(PLACES)):
         print("%-48s    left empty" % target)
     print("%-48s <- %-16s %7d bytes" % (PREVIEW[1], PREVIEW[0].split("/")[-1], preview()))

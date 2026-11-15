@@ -21,7 +21,8 @@ PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text("utf-8"))["project"]
 DIST_INFO = "embedder-%s.dist-info/" % PROJECT["version"]
 EXPECTED = {"embedder/%s.py" % n for n in ("__init__", "_assets") + build.MODULES} | {
     DIST_INFO + n for n in ("METADATA", "WHEEL", "RECORD", "top_level.txt", "licenses/LICENSE", "licenses/PrimeUIX.txt",
-                            "licenses/PrimeVue.txt", "licenses/Vue.txt", "licenses/Three.txt")}
+                            "licenses/PrimeVue.txt", "licenses/Vue.txt", "licenses/Three.txt", "licenses/Lucide.txt",
+                            "licenses/Manrope.txt")}
 # (?<![.\w]): a JS method call such as RegExp .exec( in the embedded page is not Python exec().
 FORBIDDEN = re.compile(r"(?<![.\w])exec\(|(?<![.\w])eval\(|__import__|importlib")
 DYNAMIC_BUILTINS = {"exec", "eval", "compile", "__import__"}
@@ -40,6 +41,16 @@ class WheelTests(unittest.TestCase):
     def test_every_source_module_is_packed(self):
         sources = {p.stem for p in (ROOT / "src" / "embedder").glob("*.py")} - {"plugin"}
         self.assertEqual(sources, set(build.MODULES))
+
+    def test_plugin_code_carries_every_bundled_licence(self):
+        """OrcaSlicer installs the package; the licence notices of what the page bundles ride in _assets.py too."""
+        tree = ast.parse(self.read("embedder/_assets.py"))
+        (notices,) = [ast.literal_eval(n.value) for n in tree.body
+                      if isinstance(n, ast.Assign) and [t.id for t in n.targets] == ["THIRD_PARTY_NOTICES"]]
+        shipped = sorted([*(ROOT / "ui" / "shared" / "licenses").glob("*.txt"), *(ROOT / "ui" / "licenses").glob("*.txt")])
+        self.assertEqual(set(notices), {"Lucide", "Manrope", "PrimeUIX", "PrimeVue", "Three", "Vue"})
+        for lic in shipped:
+            self.assertEqual(notices[lic.stem], lic.read_text("utf-8"), lic.name)
 
     def test_exact_file_list(self):
         self.assertEqual(set(self.zip.namelist()), EXPECTED)
