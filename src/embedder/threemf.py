@@ -12,6 +12,7 @@ import urllib.parse
 import uuid
 import xml.etree.ElementTree as ET
 import zipfile
+import zlib
 from array import array
 from dataclasses import dataclass, field
 from xml.sax.saxutils import quoteattr
@@ -274,9 +275,9 @@ def _mesh(oid, verts, tris):
 
 
 def _model_settings(text):
-    objects, plates = {}, {}
+    objects, plates, listed = {}, {}, {}
     if not text:
-        return objects, plates
+        return objects, plates, listed
     root = ET.fromstring(text)
     for obj in root.iter("object"):
         meta = {m.get("key"): m.get("value", "") for m in obj.findall("metadata")}
@@ -287,7 +288,6 @@ def _model_settings(text):
                                   "extruder": pm.get("extruder", "")}
         objects[obj.get("id")] = {"name": meta.get("name", ""), "extruder": meta.get("extruder") or "1",
                                   "layer_height": meta.get("layer_height", ""), "parts": parts}
-    listed = {}
     for n, plate in enumerate(root.iter("plate"), 1):
         meta = {m.get("key"): m.get("value", "") for m in plate.findall("metadata")}
         pid = int(meta.get("plater_id") or n)
@@ -388,7 +388,9 @@ def read(path, fallback=None):
     with zf:
         try:
             return _read(zf, path, dict(fallback or {}))
-        except (ET.ParseError, KeyError, zipfile.BadZipFile) as e:
+        except ThreeMFError:
+            raise
+        except (ET.ParseError, KeyError, zipfile.BadZipFile, ValueError, TypeError, EOFError, zlib.error) as e:
             raise ThreeMFError("bad_package", "%s: %s" % (type(e).__name__, e)) from None
 
 

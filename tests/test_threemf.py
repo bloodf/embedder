@@ -164,6 +164,26 @@ class Read(Base):
             threemf.read(broken)
         self.assertEqual(cm.exception.code, "bad_package")
 
+    def test_no_model_settings(self):
+        src = self.make(fixtures.cube)
+        bare = os.path.join(self.tmp, "bare.3mf")
+        with zipfile.ZipFile(src) as zin, zipfile.ZipFile(bare, "w") as zout:
+            for info in zin.infolist():
+                if info.filename != threemf.SETTINGS:
+                    zout.writestr(info, zin.read(info))
+        pkg = threemf.read(bare, FALLBACK)
+        self.assertEqual(len(pkg.items), 1)
+        self.assertEqual(pkg.listed, {})
+
+    def test_malformed_values_are_a_bad_package(self):
+        bad_z = '<?xml version="1.0"?>\n<custom_gcodes_per_layer><plate><plate_info id="1"/><layer top_z="abc" type="1"/></plate></custom_gcodes_per_layer>'
+        bad_plate = '<?xml version="1.0"?>\n<custom_gcodes_per_layer><plate><plate_info/><layer top_z="1" type="1"/></plate></custom_gcodes_per_layer>'
+        for n, xml in enumerate((bad_z, bad_plate)):
+            path = fixtures.build(os.path.join(self.tmp, "bad%d.3mf" % n), gcode_xml=xml)
+            with self.assertRaises(threemf.ThreeMFError) as cm:
+                threemf.read(path)
+            self.assertEqual(cm.exception.code, "bad_package")
+
 
 def cavity(z0=15.8, z1=19.0, x=110.0, y=110.0):
     """A plate-frame pocket: a 6.4 mm cylinder from z0 to z1."""
