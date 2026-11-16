@@ -386,6 +386,47 @@ class Write(Base):
                 self.assertNotIn('objectid="3"', a.read(name).decode(), name)
             self.assertEqual(len(a.read("3D/Objects/object_1.model")), len(b.read("3D/Objects/object_1.model")))
 
+    def entries(self, path, names=("3D/3dmodel.model", "3D/Objects/object_1.model", "Metadata/model_settings.config")):
+        with zipfile.ZipFile(path) as z:
+            return {n: z.read(n).decode() for n in names}
+
+    def test_orca_2_5_1_object_attributes_are_kept(self):
+        src = self.make(fixtures.orca_251)
+        first = self.apply(src, out="1.3mf", add=[self.addition(src)], pauses=[(19.2, "Embedder: a")])
+        before = self.entries(src)["Metadata/model_settings.config"]
+        after = self.entries(first)["Metadata/model_settings.config"]
+        self.assertIn('<object id="2" auto_drop="1">', after)
+        added = re.search(r'[ \t]*<part id="3".*?</part>\n', after, re.S).group(0)
+        self.assertEqual(after.replace(added, ""), before, "only the new part is added")
+        self.assertEqual([e.object_id for e in threemf.read(first).embedder_parts()], ["2"])
+        second = self.apply(first, out="2.3mf", remove=["3"])
+        self.assertEqual(self.entries(second), self.entries(src))
+
+    def test_reordered_attributes_and_single_quotes(self):
+        src = self.make(fixtures.odd_attributes)
+        first = self.apply(src, out="1.3mf", add=[self.addition(src)], pauses=[(19.2, "Embedder: a")])
+        pkg = threemf.read(first)
+        self.assertEqual([p.id for p in pkg.objects["2"].parts], ["1", "3"], "ids in single quotes count")
+        self.assertEqual([(l.top_z, l.extra) for l in pkg.layers], [(19.2, "Embedder: a")], "the old pause is replaced")
+        got = self.entries(first)
+        for name, text in self.entries(src).items():
+            for tag in re.findall(r"<(?:object|part|component)\b[^>]*>", text):
+                self.assertIn(tag, got[name], "kept byte for byte")
+        last = re.findall(r"<component\b[^>]*>", got["3D/3dmodel.model"])[-1]
+        self.assertIn("p:path='/3D/Objects/object_1.model'", last)
+        with zipfile.ZipFile(first) as z:
+            self.assertIn("<mode value='SingleExtruder'/>", z.read("Metadata/custom_gcode_per_layer.xml").decode())
+        second = self.apply(first, out="2.3mf", remove=["3"])
+        self.assertEqual(self.entries(second), self.entries(src))
+        self.assertEqual(threemf.read(second).layers, ())
+
+    def test_gcode_plate_and_layer_attributes_in_any_form(self):
+        out = threemf.gcode_xml(fixtures.ODD_GCODE, 1, [(7.0, "Embedder: new")])
+        self.assertNotIn("Embedder: old", out)
+        self.assertIn('extra="Embedder: new"', out)
+        self.assertEqual(out.count("<plate_info"), 1)
+        self.assertEqual(threemf.gcode_xml(fixtures.ODD_GCODE, 2, []), fixtures.ODD_GCODE)
+
     def test_remove_refuses_other_parts(self):
         src = self.make(fixtures.multipart_with_negative)
         with self.assertRaises(threemf.ThreeMFError) as cm:
