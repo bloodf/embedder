@@ -107,14 +107,49 @@ class Meshes(unittest.TestCase):
         self.assertGreater(_volume(v, t), 0)   # outward winding
         self.assertAlmostEqual(_volume(v, t), n * r_vertex ** 2 * math.sin(2 * math.pi / n) / 2 * 3.0, places=6)
 
-    def test_box(self):
-        v, t = g.box_mesh(4, 2, 3)
-        self.assertEqual(len(v), 8)
-        self.assertEqual(len(t), 12)
+    def test_hexagon_holds_a_disc_on_its_flats_and_vents_at_its_corners(self):
+        v, t = g.hexagon_mesh(6.4, 3.2)
+        self.assertEqual((len(v), len(t)), (14, 24))
         self.assertTrue(_closed(t))
-        self.assertAlmostEqual(_volume(v, t), 24.0)
-        self.assertEqual(min(p[0] for p in v), -2)
-        self.assertEqual((min(p[2] for p in v), max(p[2] for p in v)), (0, 3))
+        ring = v[:6]
+        for x, y, _ in ring:
+            self.assertAlmostEqual(math.hypot(x, y), 6.4 / 2 / math.cos(math.radians(30)))   # circumradius
+        self.assertAlmostEqual(max(y for _, y, _ in ring), 3.2)        # flat to flat is the round pocket's diameter
+        self.assertAlmostEqual(min(y for _, y, _ in ring), -3.2)
+        # fixed orientation: two corners on local X, so two flats run parallel to it
+        self.assertTrue(close(ring[0], (g.hexagon_corners(6.4) / 2, 0.0, 0.0)))
+        self.assertAlmostEqual(g.hexagon_corners(6.4), 6.4 / math.cos(math.radians(30)))
+        self.assertEqual(sorted(round(y, 9) for _, y, _ in ring), [-3.2, -3.2, 0.0, 0.0, 3.2, 3.2])
+        self.assertAlmostEqual(_volume(v, t), 2 * math.sqrt(3) * 3.2 ** 2 * 3.2)   # 2 sqrt(3) apothem^2 * height
+        self.assertEqual(g.hexagon_mesh(6.4, 3.2), (v, t))             # deterministic
+
+    def test_vented_box_is_one_closed_solid_with_a_round_vent_on_each_corner(self):
+        n = g.VENT_SEGMENTS
+        v, t = g.vented_box_mesh(10.4, 5.4, 2.2, 0.5)
+        self.assertTrue(_closed(t))
+        self.assertEqual({p[2] for p in v}, {0.0, 2.2})
+        sector = 0.5 ** 2 * math.sin(2 * math.pi / n) / 2              # one arc step of a vent
+        self.assertAlmostEqual(_volume(v, t), (10.4 * 5.4 + 4 * (3 * n // 4) * sector) * 2.2)
+        for cx in (-5.2, 5.2):
+            for cy in (-2.7, 2.7):
+                arc = [p for p in v if abs(math.hypot(p[0] - cx, p[1] - cy) - 0.5) < 1e-9]
+                self.assertEqual(len(arc), 2 * (3 * n // 4 + 1), (cx, cy))           # 270 degrees outside the box
+                self.assertTrue(any(close(p[:2], (cx + math.copysign(0.5, cx), cy)) for p in arc))
+                self.assertTrue(any(close(p[:2], (cx, cy + math.copysign(0.5, cy))) for p in arc))
+        self.assertAlmostEqual(max(p[0] for p in v), 5.7)
+        self.assertAlmostEqual(min(p[1] for p in v), -3.2)
+        self.assertFalse(_degenerate(v, t))
+
+    def test_flush_vented_box_keeps_its_front_face_flat(self):
+        n = g.VENT_SEGMENTS
+        v, t = g.vented_box_mesh(6.4, 3.4, 6.2, 0.5, flush=True)
+        self.assertTrue(_closed(t))
+        self.assertAlmostEqual(min(p[1] for p in v), -1.7)              # nothing past the -Y face
+        self.assertAlmostEqual(max(p[1] for p in v), 2.2)               # the back corners vent all round
+        self.assertAlmostEqual(max(p[0] for p in v), 3.7)               # the front corners vent sideways
+        sector = 0.5 ** 2 * math.sin(2 * math.pi / n) / 2
+        self.assertAlmostEqual(_volume(v, t), (6.4 * 3.4 + (2 * 3 + 2) * (n // 4) * sector) * 6.2)
+        self.assertFalse(_degenerate(v, t))
 
     def test_normal_and_tilt(self):
         self.assertTrue(close(g.triangle_normal((0, 0, 0), (1, 0, 0), (0, 1, 0)), (0, 0, 1)))
@@ -129,6 +164,14 @@ class Meshes(unittest.TestCase):
         self.assertEqual(g.tilt((0.7071, 0, 0.7071)), "tilted")
         s6 = math.sin(math.radians(6))
         self.assertEqual(g.tilt((s6, 0, math.cos(math.radians(6)))), "tilted")
+
+
+def _degenerate(verts, tris):
+    """Triangles without area (they would make a mesh OrcaSlicer repairs)."""
+    def area(a, b, c):
+        u, w = [q - p for p, q in zip(a, b)], [q - p for p, q in zip(a, c)]
+        return math.sqrt((u[1] * w[2] - u[2] * w[1]) ** 2 + (u[2] * w[0] - u[0] * w[2]) ** 2 + (u[0] * w[1] - u[1] * w[0]) ** 2) / 2
+    return [tri for tri in tris if area(*(verts[i] for i in tri)) < 1e-9]
 
 
 def _closed(tris):

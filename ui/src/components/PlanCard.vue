@@ -8,6 +8,7 @@ import { t, tMaybe, fmt } from '../core/i18n';
 
 const mm = (v: number | null | undefined) => (v == null ? '—' : fmt.number(v, 2));
 const size = computed(() => (s.plan?.size ?? []).map(v => fmt.number(v, 2)).join(' × '));
+const outer = computed(() => (s.plan?.outer ?? []).map(v => fmt.number(v, 2)).join(' × '));
 const planned = computed(() => !!s.hit && !!s.plan && !s.plan.blocked);
 </script>
 
@@ -24,6 +25,8 @@ const planned = computed(() => !!s.hit && !!s.plan && !s.plan.blocked);
         <dt>{{ t('plan.insert') }}</dt><dd data-test="plan-label">{{ s.plan.label }}</dd>
         <dt>{{ t('plan.face') }}</dt><dd>{{ tMaybe(`face.${s.plan.face}`, s.plan.face ?? '') }} · {{ t(`mode.${s.plan.mode}`) }}</dd>
         <dt>{{ t('plan.size') }}</dt><dd>{{ size }} mm</dd>
+        <template v-if="s.plan.shape"><dt>{{ t('plan.shape') }}</dt><dd data-test="plan-shape">{{ tMaybe(`pocket.${s.plan.shape}`, s.plan.shape) }}</dd></template>
+        <template v-if="outer"><dt>{{ t('plan.outer') }}</dt><dd data-test="plan-outer">{{ outer }} mm</dd></template>
         <template v-if="s.plan.mode === 'embedded'">
           <dt>{{ t('plan.cavity') }}</dt><dd>{{ t('plan.cavityRange', { floor: mm(s.plan.floor), top: mm(s.plan.top) }) }}</dd>
           <dt><OuiIcon :icon="pause" :size="14" />{{ t('plan.pause') }}</dt><dd data-test="plan-pause">Z {{ mm(s.plan.pause_z) }} mm</dd>

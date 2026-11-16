@@ -6,10 +6,13 @@ import tempfile
 import time
 import unittest
 from array import array
+from unittest import mock
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [os.path.join(ROOT, "src", "embedder"), os.path.join(ROOT, "tests")]
 import fixtures  # noqa: E402
+import geometry  # noqa: E402
+import pocket  # noqa: E402
 import session  # noqa: E402
 import settings  # noqa: E402
 import threemf  # noqa: E402
@@ -144,12 +147,14 @@ class Plan(Base):
     def test_embedded_on_top(self):
         r = self.load()
         p = self.plan(r["job"])
-        self.assertEqual((p["mode"], p["face"], p["shape"], p["label"], p["kind"]), ("embedded", "top", "cylinder", "6x3 magnet", "magnet"))
+        self.assertEqual((p["mode"], p["face"], p["shape"], p["label"], p["kind"]), ("embedded", "top", "hexagon", "6x3 magnet", "magnet"))
+        self.assertEqual(p["size"], [6.4, 6.4, 3.2])
+        self.assertEqual(p["outer"], [7.390083, 6.4])      # corner to corner, flat to flat
         self.assertAlmostEqual(p["floor"], 15.8)
         self.assertAlmostEqual(p["top"], 19.0)
         self.assertAlmostEqual(p["pause_z"], 19.2)
         self.assertEqual(len(p["transform"]), 16)
-        self.assertEqual(len(p["preview"]["indices"]), 256 * 3)
+        self.assertEqual(len(p["preview"]["indices"]), 24 * 3)
         self.assertEqual(p["warnings"], [])
         self.assertIsNone(p["blocked"])
 
@@ -157,6 +162,14 @@ class Plan(Base):
         r = self.load()
         p = self.plan(r["job"], tri=SIDE_TRI, point=[120, 110, 10], normal=[0, 0, 1])
         self.assertEqual(p["face"], "side")
+
+    def test_a_block_and_a_slot_report_their_vents(self):
+        r = self.load()
+        box = self.plan(r["job"], preset="magnet-block-10x5x2")
+        self.assertEqual((box["shape"], box["size"][:2], box["outer"]), ("box", [10.4, 5.4], [11.4, 6.4]))
+        slot = self.plan(r["job"], tri=SIDE_TRI, point=[120, 110, 10])
+        self.assertEqual((slot["shape"], slot["size"][:2], slot["outer"]), ("slot", [6.4, 3.4], [7.4, 3.9]))
+        self.assertEqual((slot["cover"], slot["warnings"]), (1.0, []))
 
     def test_open_and_custom(self):
         r = self.load()
@@ -278,6 +291,24 @@ class Apply(Base):
         pkg = threemf.read(second["path"])
         self.assertEqual([e.label for e in pkg.embedder_parts()], ["5x3 magnet"])
         self.assertEqual([(l.top_z, l.extra) for l in pkg.layers], [(19.2, "Embedder: insert 1 x 5x3 magnet")])
+
+    def test_round_pockets_from_an_older_version_stay_as_they_are(self):
+        """Up to 0.2.0 a disc got a 64-sided cylinder. Its mesh lives in the project, so it is kept, paused for and
+        removable like any other pocket; only new pockets are hexagons."""
+        r = self.load()
+        with mock.patch.object(pocket.Pocket, "mesh", lambda p: geometry.cylinder_mesh(p.size[0], p.size[2])):
+            old = self.apply(r["job"], [self.pocket()])
+        job_id, source = self.s.new_job()
+        shutil.copyfile(old["path"], source)
+        r2 = self.s.load(job_id, old["path"], 1, {})
+        self.assertEqual([(e["label"], e["mode"]) for e in r2["existing"]], [("6x3 magnet", "embedded")])
+        out = self.apply(r2["job"], [self.pocket(point=[105, 105, 20])])
+        self.assertEqual([p["top_z"] for p in out["pauses"]], [19.2])
+        job_id, source = self.s.new_job()
+        shutil.copyfile(out["path"], source)
+        parts = self.s.load(job_id, out["path"], 1, {})["objects"][0]["parts"]
+        self.assertEqual([(p["embedder"], p["vertices"]) for p in parts], [(False, 8), (True, 130), (True, 14)])
+        self.assertEqual(out["pauses"][0]["extra"], "Embedder: insert 2 x 6x3 magnet")
 
     def test_existing_user_gcode_at_the_same_layer(self):
         r = self.load(fixtures.user_pause, z=19.2)

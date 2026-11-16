@@ -19,7 +19,7 @@ storage folder. (`orca_organizer` uses the same route.)
 | `session.py` | One job: load a copy, serve meshes in chunks, plan pockets, write the applied copy | no |
 | `pocket.py` | Pocket rules: layer grid, embedded and open shapes, blocks, warnings, pause heights and pause text | no |
 | `threemf.py` | Read a 3MF project; write a copy with new negative parts, removed parts and pauses | no |
-| `geometry.py` | 4x4 matrices, 3MF and config transform strings, cylinder and box meshes, face tilt | no |
+| `geometry.py` | 4x4 matrices, 3MF and config transform strings, hexagon and vented box meshes, face tilt | no |
 | `presets.py` | Built-in insert table, validation of user presets | no |
 | `settings.py` | Validated settings store (JSON file) | no |
 | `ui/app.html` | The Embedder tab: one compiled Vue page, built from `ui/` | - |
@@ -184,7 +184,22 @@ height to the grid.
 
 **Open pocket.** Any face. Depth is the insert thickness plus the Z clearance. The footprint is the
 insert size plus the XY clearance on each side. The mesh reaches 1 mm outside the surface so the cut is
-clean. Disc: cylinder (64 sides). Block: box.
+clean.
+
+**Shapes and vents.** Every pocket leaves a way out for trapped air and spare glue; the fit of the insert is
+the same as without it.
+
+- Disc: a hexagonal prism. The width across the flats is the diameter plus the XY clearance on each side
+  (what a round pocket would measure), so the six flats locate the disc; the six corners, at
+  `flat / cos 30°` across, stay open. Two corners lie on the pocket's local X, and the spin turns them.
+- Block: a box of the insert size plus clearance, with a round vent (`VENT_DIAMETER`, 1.0 mm) centred on each
+  corner and running the whole depth. A vent is never wider than 90% of the box's shorter side, so two
+  vents do not merge on a very narrow box.
+- Side slot (any insert on edge): a box with the same vents, except that the two corners on the wall side
+  vent along the wall only. The face towards the wall stays flat, so the wall keeps the cover that was asked.
+
+Each pocket is one closed solid (the outline of the box and its vents, pushed up), written as one negative
+part. The page shows the fit (`size`) and the footprint with the corners or vents (`outer`).
 
 **Embedded pocket, flat face.** Height is thickness plus Z clearance. On a top face the cavity ends one
 cover thickness below the surface; on a bottom face it starts one cover thickness above it. The floor is
@@ -209,10 +224,12 @@ second layer) and `no_layer_height`. `instances_differ` (instances differ by mor
 move) blocks both modes, because one part cuts every instance.
 
 **Warnings:** `thin_cover` (cover under two layers on a top or bottom face, under 0.8 mm for a side wall),
-`breaks_surface` (an embedded cavity leaves the part: nine probe columns, the centre and eight around the
-rim, are ray-tested against the clicked part's mesh above the top, through the middle and under the floor;
-for a side slot its eight corners and centre must be inside the solid), `nfc_near_magnet` (NFC pocket edge
-within 10 mm of a magnet pocket edge), `existing_gcode_at_layer` (someone else's custom G-code already on
+`breaks_surface` (an embedded cavity leaves the part: probe columns through the centre and the rim are
+ray-tested against the clicked part's mesh above the top, through the middle and under the floor; for a side
+slot they must be inside the solid just above its floor and just under its top. The rim is the hexagon's six
+corners and the middle of its six flats, or the middle of the box's four edges and the furthest reach of each
+corner vent), `nfc_near_magnet` (NFC pocket within 10 mm of a magnet pocket, measured from the fit: corners and
+vents hold no insert), `existing_gcode_at_layer` (someone else's custom G-code already on
 the pause layer; no Embedder pause is added there).
 
 **Face classes.** A face within 5 degrees of horizontal is flat (top or bottom), within 5 degrees of

@@ -1,9 +1,11 @@
+import math
 import os
 import sys
 import unittest
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [os.path.join(ROOT, "src", "embedder"), os.path.join(ROOT, "tests")]
+import fixtures  # noqa: E402
 import geometry as g  # noqa: E402
 import pocket  # noqa: E402
 import presets  # noqa: E402
@@ -13,6 +15,7 @@ BLOCK = presets.find("magnet-block-10x5x2")
 NFC = presets.find("nfc-sticker-25")
 GRID = pocket.Grid(0.2, 0.2)
 CTX = pocket.Context(grid=GRID, xy_clearance=0.2, z_clearance=0.2)
+MODES = pocket.MODES
 
 
 def req(insert=MAG, mode="embedded", point=(10, 10, 20), normal=(0, 0, 1), spin=0.0, cover=1.0):
@@ -44,7 +47,7 @@ class Embedded(unittest.TestCase):
     def test_disc_on_top_face_matches_the_spike(self):
         """Cube 20 mm, H=0.2: 6x3 magnet under a 1 mm cover. Depth 3.2 -> 16 layers; pause one layer above."""
         p = pocket.plan(req(point=(10, 10, 20)), CTX)
-        self.assertEqual((p.face, p.shape, p.mode), ("top", "cylinder", "embedded"))
+        self.assertEqual((p.face, p.shape, p.mode), ("top", "hexagon", "embedded"))
         self.assertAlmostEqual(p.size[0], 6.4)
         self.assertAlmostEqual(p.floor, 15.8)
         self.assertAlmostEqual(p.top, 19.0)
@@ -80,7 +83,7 @@ class Embedded(unittest.TestCase):
 
     def test_disc_behind_side_face_is_a_vertical_slot(self):
         p = pocket.plan(req(point=(20, 10, 10), normal=(1, 0, 0), cover=1.0), CTX)
-        self.assertEqual((p.face, p.shape), ("side", "box"))
+        self.assertEqual((p.face, p.shape), ("side", "slot"))
         width, depth, height = p.size
         self.assertAlmostEqual(width, 6.4)            # d + 2 xy
         self.assertAlmostEqual(depth, 3.4)            # t + 2 xy
@@ -170,10 +173,51 @@ class Mesh(unittest.TestCase):
     def test_mesh_and_world_mesh(self):
         p = pocket.plan(req(), CTX)
         v, t = p.mesh()
-        self.assertEqual(len(v), 2 * g.SEGMENTS + 2)
+        self.assertEqual((v, t), g.hexagon_mesh(6.4, p.top - p.floor))
         world = p.world_mesh()[0]
         self.assertAlmostEqual(min(q[2] for q in world), p.floor)
         self.assertAlmostEqual(max(q[2] for q in world), p.top)
+
+    def test_a_disc_gets_a_hexagon_as_wide_across_the_flats_as_the_round_pocket_was(self):
+        for mode, insert in (("embedded", MAG), ("open", MAG), ("embedded", NFC), ("open", NFC)):
+            p = pocket.plan(req(insert=insert, mode=mode, cover=0.6), CTX)
+            self.assertEqual(p.shape, "hexagon", (mode, insert.label))
+            self.assertAlmostEqual(p.size[0], insert.d + 0.4)
+            xs, ys = [q[0] for q in p.mesh()[0]], [q[1] for q in p.mesh()[0]]
+            self.assertAlmostEqual(max(ys) - min(ys), insert.d + 0.4)                      # the flats hold the disc
+            self.assertAlmostEqual(max(xs) - min(xs), (insert.d + 0.4) / math.cos(math.radians(30)))   # the corners vent
+            self.assertTrue(_close(p.outer(), ((insert.d + 0.4) / math.cos(math.radians(30)), insert.d + 0.4)))
+
+    def test_the_hexagon_turns_with_the_spin(self):
+        p = pocket.plan(req(spin=30), CTX)
+        world = p.world_mesh()[0]
+        self.assertAlmostEqual(max(q[1] for q in world) - 10, 3.2 / math.cos(math.radians(30)))   # a corner now points along Y
+
+    def test_a_block_gets_a_box_of_the_same_size_with_a_vent_on_each_corner(self):
+        for mode in MODES:
+            p = pocket.plan(req(insert=BLOCK, mode=mode), CTX)
+            self.assertEqual((p.shape, p.size[:2]), ("box", (10.4, 5.4)), mode)
+            self.assertEqual(p.mesh(), g.vented_box_mesh(10.4, 5.4, p.size[2], pocket.VENT_DIAMETER / 2))
+            self.assertTrue(_close(p.outer(), (10.4 + pocket.VENT_DIAMETER, 5.4 + pocket.VENT_DIAMETER)), mode)
+        self.assertEqual(pocket.VENT_DIAMETER, 1.0)
+
+    def test_vents_shrink_on_a_box_too_narrow_for_them(self):
+        thin = presets.resolve({"custom": {"kind": "nfc", "shape": "block", "l": 30, "w": 0.4, "t": 1}}, [])
+        p = pocket.plan(req(insert=thin, mode="open"), CTX)
+        r = pocket.vent_radius(*p.size[:2])
+        self.assertLess(2 * r, 0.8)                     # the vents of the two near corners stay apart
+        self.assertEqual(p.mesh(), g.vented_box_mesh(30.4, 0.8, p.size[2], r))
+
+    def test_a_side_slot_vents_at_its_corners_and_keeps_the_wall_whole(self):
+        for insert in (MAG, BLOCK):
+            p = pocket.plan(req(insert=insert, point=(20, 10, 10), normal=(1, 0, 0), cover=1.0), CTX)
+            self.assertEqual(p.shape, "slot")
+            world = p.world_mesh()[0]
+            self.assertAlmostEqual(max(q[0] for q in world), 19.0)                       # 1 mm of wall, as before the vents
+            self.assertAlmostEqual(max(q[1] for q in world) - min(q[1] for q in world), p.size[0] + pocket.VENT_DIAMETER)
+            self.assertAlmostEqual(min(q[0] for q in world), 19.0 - p.size[1] - pocket.VENT_DIAMETER / 2)
+            self.assertAlmostEqual(p.cover, 1.0)
+            self.assertEqual(p.warnings, ())
 
 
 class Pauses(unittest.TestCase):
@@ -221,7 +265,6 @@ class Containment(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        import fixtures
         verts, tris = fixtures.box(20, 20, 20, 100, 100, 0)
         cls.pos = [c for v in verts for c in v]
         cls.idx = [i for t in tris for i in t]
@@ -233,6 +276,30 @@ class Containment(unittest.TestCase):
         self.assertFalse(self.breaks(req(point=(110, 110, 20))))
         self.assertFalse(self.breaks(req(point=(120, 110, 10), normal=(1, 0, 0))))
         self.assertFalse(self.breaks(req(point=(110, 110, 0), normal=(0, 0, -1))))
+
+    def test_a_hexagon_corner_through_a_thin_wall_is_reported(self):
+        """The flats are 3.2 mm from the centre and the corners 3.7: at 3.5 mm from the wall only a corner leaves."""
+        self.assertTrue(self.breaks(req(point=(103.5, 110, 20))))               # a corner points at the wall
+        self.assertFalse(self.breaks(req(point=(103.5, 110, 20), spin=30)))     # turned: a flat faces it
+        self.assertFalse(self.breaks(req(point=(104, 110, 20))))
+        self.assertTrue(self.breaks(req(point=(110, 116.6, 20), spin=90)))      # and so does any other corner
+        self.assertFalse(self.breaks(req(point=(110, 116.6, 20))))
+
+    def test_a_vent_through_a_thin_wall_is_reported(self):
+        """A 10.4 x 5.4 box 0.3 mm from the wall: the box stays inside, its corner vents (0.5 mm) do not."""
+        self.assertTrue(self.breaks(req(insert=BLOCK, point=(105.5, 110, 20))))
+        self.assertFalse(self.breaks(req(insert=BLOCK, point=(105.8, 110, 20))))
+        self.assertTrue(self.breaks(req(insert=BLOCK, point=(110, 103, 20))))
+        self.assertFalse(self.breaks(req(insert=BLOCK, point=(110, 103.3, 20))))
+
+    def test_a_slot_vent_past_the_end_of_the_wall_is_reported(self):
+        """The slot is 6.4 mm along the wall and its vents reach 0.5 mm further; behind it they reach 0.5 mm deeper."""
+        self.assertTrue(self.breaks(req(point=(120, 103.5, 10), normal=(1, 0, 0))))
+        self.assertFalse(self.breaks(req(point=(120, 103.8, 10), normal=(1, 0, 0))))
+        thin = fixtures.box(4.7, 20, 20, 100, 100, 0)                           # 1 mm wall, 3.4 mm slot, 0.3 mm left behind it
+        pos, idx = [c for v in thin[0] for c in v], [i for t in thin[1] for i in t]
+        slot = pocket.plan(req(point=(104.7, 110, 10), normal=(1, 0, 0)), CTX)
+        self.assertTrue(pocket.breaks_surface(slot, pos, idx))
 
     def test_breaks_through(self):
         self.assertTrue(self.breaks(req(point=(101, 110, 20))))              # rim leaves the side wall
