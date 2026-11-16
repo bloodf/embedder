@@ -1,11 +1,12 @@
 # Brand and image set prompt
 
-**Status: delivered.** Every asset in the table below is in the repository (59 SVG masters and their PNGs),
-plus the fonts in `assets/fonts/` and the frame coordinates in `assets/asset-manifest.json`. The screenshot
-frames of the README heroes, the five Orca Cloud gallery images, install cards 2 to 4 and the three social
-images hold real renders of the page (see CONTRIBUTING.md, Assets). Install card 1 shows OrcaSlicer's own
-Plugins dialog, which the page cannot render, so its frame stays empty until a capture from OrcaSlicer exists.
-The prompt below is kept as the brief for future changes.
+**Status: delivered, and partly replaced.** The kit's SVG masters and their PNGs are in the repository, plus the
+fonts in `assets/fonts/` and the frame coordinates in `assets/asset-manifest.json`. The README heroes, the Orca
+Cloud tile, main and gallery images and the GitHub social preview have since been replaced by the marketing art in
+`assets/marketing/source/` (see CONTRIBUTING.md, Assets), so the kit's files for those are no longer here. The
+screenshot frames of install cards 2 to 4 and the three social images hold real renders of the page. Install card 1
+shows OrcaSlicer's own Plugins dialog, which the page cannot render, so its frame stays empty until a capture from
+OrcaSlicer exists. The prompt below is kept as the brief for future changes.
 
 Paste the prompt below into an image model (ChatGPT with image generation or similar). Ask for the
 assets one at a time if it tries to cram everything into one image. Ask for SVG code for the mark,
@@ -28,19 +29,16 @@ below (items 7 and 8) are no longer shipped; they are kept here as the record of
 
 | Asset | File |
 |---|---|
-| README hero, light and dark | `assets/readme/embedder-hero-light.*`, `assets/readme/embedder-hero-dark.*` |
+| README hero, light and dark | replaced by `assets/readme/embedder-hero-{light,dark}-{en,pt-BR}.png` (marketing art) |
 | Feature icons | `assets/features/feature-*.svg` |
 | How it works diagram | `assets/diagrams/how-it-works-{light,dark}.*` |
 | Pocket types diagram | `assets/diagrams/pocket-types-{light,dark}.*` |
-| Orca Cloud frames and main images | `assets/orca-cloud/*` (each under 2 MB) |
-| 512x512 store tile | `assets/orca-cloud/embedder-tile.*` |
+| Orca Cloud frames and main images | replaced by `assets/orca-cloud/embedder-{main,main-square,feature-0N-*}-{en,pt-BR}.png` (marketing art, each under 2 MB) |
+| 512x512 store tile | replaced by `assets/orca-cloud/embedder-tile.png` (marketing art) |
 | Install steps | `assets/install/embedder-install-0{1..4}.*` |
 | Social images | `assets/social/embedder-social-{wide,square,vertical}.*` |
-| GitHub social preview | `assets/social/embedder-social-preview.png` (Repository Settings > Social preview) |
+| GitHub social preview | replaced by `assets/social/embedder-social-preview-en.png` (marketing art; Repository Settings > Social preview) |
 | Release banner | `assets/releases/embedder-release-template.*` |
-
-The related-plugin thumbnails (`docs/related-plugins/embedder-icon.png` 80x80 and
-`embedder-preview.png` 560 px wide) are resized from the app icon and the dark hero, not generated.
 
 ---
 

@@ -76,13 +76,31 @@ command line or the GUI and check the pocket and the pause in the G-code.
 
 ## Assets
 
-Images live in `assets/` and the tab icon in `src/embedder/ui/icon.svg`. The art comes from the Embedder brand
-kit, made from [docs/brand-images-prompt.md](docs/brand-images-prompt.md); each image has an SVG master and a PNG.
+Images live in `assets/` and the tab icon in `src/embedder/ui/icon.svg`. There are two sets.
+
+**The marketing art** is what the README, the Orca Cloud listing and the GitHub social preview show: the store tile,
+the main, square and four feature images, the social preview and the README heroes, in English and Brazilian
+Portuguese. The generated originals are in `assets/marketing/source/`, untouched, each with one empty panel for a
+screenshot. `scripts/marketing.py` crops and scales each one to its listing size (512x512 tile, 1600x900 main,
+feature and hero images, 900x900 square, 1280x640 social preview), finds the panel from the pixels, pastes a real
+render of the page inside it, and records every export (source, operation, size, bytes, date) under `exports` in
+`assets/asset-manifest.json`. It also scales the README's plain screenshots (`assets/readme/embedder-screen-*`):
+
+```sh
+node ui/tests/page/shots.mjs                                      # dist/shots/*.png: the built page and the real plugin
+uv run --no-project --with pillow python scripts/marketing.py     # the exports, and their records in the manifest
+```
+
+Look at every export at full size before committing: no text of the art may be cut by a crop, and the screenshot must
+be readable. The art's tile is for listings and the README only; the mark inside the plugin stays the vector one.
+
+**The brand kit** is the rest: the identity marks, diagrams, install cards, the other social formats and the release
+banner, made from [docs/brand-images-prompt.md](docs/brand-images-prompt.md); each image has an SVG master and a PNG.
 The icons inside the page come from the shared Orca UI foundation (`ui/shared/src/icons.ts`), and the no-project
 illustration (`ui/src/assets/embedder-insert.webp`) is the foundation's Embedder illustration; neither is drawn
 here. The app bar carries the brand kit's micro mark (`assets/embedder-micro-24.svg`), inlined in `ui/src/App.vue`.
 
-Screenshots inside images are real renders of the built page, never drawn or edited by hand. The SVG masters
+Screenshots inside images are real renders of the built page, never drawn or edited by hand. The kit's SVG masters
 keep their 16:10 screenshot frames empty; the PNGs get the renders:
 
 ```sh
@@ -90,16 +108,15 @@ node ui/tests/page/shots.mjs                                   # dist/shots/*.pn
 uv run --no-project --with pillow python scripts/frames.py     # places them at the frames in assets/asset-manifest.json
 ```
 
-`frames.py` also makes the store, social and install PNGs opaque on the background the manifest records for
-each (`#181c22` or `#f5f6f8`), since they are uploaded or shown where the page colour is unknown, and resizes
-the finished dark hero into `docs/related-plugins/embedder-preview.png` for the sibling plugins. Run on its own
-output it gives the same bytes. Identity marks, feature tiles and UI icons stay transparent; where one is
-shown in the README, use a `<picture>` with its light and dark variant.
+`frames.py` also makes the social and install PNGs opaque on the background the manifest records for each
+(`#181c22` or `#f5f6f8`), since they are posted or shown where the page colour is unknown. Run on its own output
+it gives the same bytes. Identity marks, feature tiles and UI icons stay transparent; where one is shown in the
+README, use a `<picture>` with its light and dark variant.
 
 `shots.mjs` drives headless Chrome (with `--use-mock-keychain --password-store=basic` and software WebGL)
 against `ui/tests/page/shots_host.py`, which runs `plugin.py` under the test double of `orca` on a project
 built in code, so every number on a screenshot is the plugin's own answer. Pillow is used only for this step;
-it is not a dependency of the plugin. Orca Cloud images must stay under 2 MB (`frames.py` checks).
+it is not a dependency of the plugin. Orca Cloud images must stay under 2 MB (`marketing.py` checks).
 
 The fonts used in the artwork (Manrope and IBM Plex Mono, SIL Open Font License) live in `assets/fonts/`
 next to their licence texts; the plugin does not ship them.
