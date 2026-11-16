@@ -8,8 +8,9 @@ import { files, info, insert, languages, rfid, ruler, save as saveIcon, tag, tra
 import { s, saveSettings, deletePreset, tracker } from '../app/store';
 import { replanStaged } from '../app/project';
 import { ask } from '../core/dialog';
-import { t, tn, langPref, setLangPref, autoLocale, fmt } from '../core/i18n';
-import type { LangPref } from '../core/i18n-core';
+import { t, tn, langPref, setLangPref, autoLocale, fmt, locale } from '../core/i18n';
+import { vDecimal } from '../core/decimal';
+import { LOCALES, type LangPref } from '../core/i18n-core';
 import type { CopiesCleared, CopiesStatus, Preset } from '../app/types';
 
 type Knob = 'xy_clearance' | 'z_clearance' | 'cover_magnet' | 'cover_nfc';
@@ -31,7 +32,7 @@ const sections = computed(() => [
 ]);
 const langOptions = computed(() => [
   { value: 'auto', label: t('lang.auto', { current: t(`lang.${autoLocale.value}`) }) },
-  { value: 'en', label: t('lang.en') }, { value: 'pt-BR', label: t('lang.pt-BR') }]);
+  ...LOCALES.map(value => ({ value, label: t(`lang.${value}`) }))]);
 
 async function save() {
   if (!valid.value) return;
@@ -71,7 +72,7 @@ async function remove(p: Preset) {
       <OuiFormSection id="set-fit" :icon="ruler" :title="t('settings.title')" :description="t('settings.help')">
         <form id="em-settings-form" class="em-setform" data-test="settings-form" @submit.prevent="save">
           <OuiFormRow v-for="k in knobs" :key="k.key" :label="t(`settings.${k.key}`)" :for="'set-' + k.key">
-            <InputNumber v-model="form[k.key]" :input-id="'set-' + k.key" :min="0" :max="k.max" :min-fraction-digits="1" :max-fraction-digits="2" :step="0.1" suffix=" mm" />
+            <InputNumber v-decimal :locale="locale" v-model="form[k.key]" :input-id="'set-' + k.key" :min="0" :max="k.max" :min-fraction-digits="1" :max-fraction-digits="2" :step="0.1" suffix=" mm" />
           </OuiFormRow>
         </form>
       </OuiFormSection>

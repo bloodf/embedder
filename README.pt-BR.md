@@ -206,7 +206,7 @@ Um ímã perto da etiqueta pode impedir a leitura. O Embedder avisa quando um bo
 
 ## 🌍 Idiomas
 
-Inglês e português do Brasil. O Embedder segue o idioma do OrcaSlicer, ou o que você escolher em **Configurações > Idioma**.
+Inglês, português do Brasil, espanhol, alemão e chinês simplificado. O Embedder segue o idioma do OrcaSlicer, ou o que você escolher em **Configurações > Idioma**.
 
 ## 🧩 Mais plugins do bloodf
 

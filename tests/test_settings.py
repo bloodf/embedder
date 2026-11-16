@@ -29,6 +29,8 @@ class StoreTests(unittest.TestCase):
         self.assertNotIn("nope", out)
         self.assertEqual(out["ui_language"], "auto")
         self.assertEqual(st.update({"ui_language": "pt-BR"})["ui_language"], "pt-BR")
+        for lang in ("es", "de", "zh-CN", "en", "auto"):
+            self.assertEqual(st.update({"ui_language": lang})["ui_language"], lang)
 
     def test_ranges_and_booleans(self):
         st = settings.Store()

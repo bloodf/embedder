@@ -206,7 +206,7 @@ A magnet close to a tag can stop it from reading. Embedder warns when an NFC poc
 
 ## 🌍 Languages
 
-English and Brazilian Portuguese. Embedder follows OrcaSlicer's language, or the one you pick under **Settings > Language**.
+English, Brazilian Portuguese, Spanish, German and Simplified Chinese. Embedder follows OrcaSlicer's language, or the one you pick under **Settings > Language**.
 
 ## 🧩 More plugins by bloodf
 

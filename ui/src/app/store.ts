@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 import * as bridge from '../core/bridge';
 import { Tracker, message } from '../core/tracker';
-import { t, onLangPref } from '../core/i18n';
+import { t, tMaybe, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';
 import type { Hit } from '../core/pick';
@@ -45,11 +45,19 @@ export const s = reactive({
   opened: '' as '' | 'asked' | 'none',
 });
 
-/** A plugin error in words: the translated code (err.<code>) with Python's detail after it. */
+// Codes whose detail is data (a path, a file or preset name, OrcaSlicer's or Python's own error text), worth showing
+// after the translated sentence. The other details are English sentences that only repeat what err.<code> says.
+const DATA_DETAIL = new Set(['export_failed', 'open_failed', 'internal', 'unknown_command', 'missing_model_file', 'bad_xml',
+  'bad_package', 'not_found', 'unknown_preset', 'exists', 'cut_object', 'unsupported_object']);
+
+/** A plugin error in words: the translated code (err.<code>), with Python's detail after it when that is data. */
 export function errorText(e: unknown): string {
   if (e instanceof bridge.ReplyError) {
     const key = `err.${e.code}`;
-    if (key in en) return t(key as keyof typeof en) + (e.detail ? ` (${e.detail})` : '');
+    const blocked = e.code === 'pocket_blocked' && /^pocket (\d+): (\w+)$/.exec(e.detail);   // "pocket 2: no_floor"
+    if (blocked) return `${t('err.pocket_blocked')} (${t('err.pocketN', { n: blocked[1] })}: ${tMaybe(`block.${blocked[2]}`, blocked[2])})`;
+    if (key in en && e.detail && !DATA_DETAIL.has(e.code)) console.warn(`embedder: ${e.code}: ${e.detail}`);
+    if (key in en) return t(key as keyof typeof en) + (e.detail && DATA_DETAIL.has(e.code) ? ` (${e.detail})` : '');
     return e.detail || e.code;
   }
   return message(e);

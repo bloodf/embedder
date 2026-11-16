@@ -57,6 +57,10 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
 </template>
 
 <style>
+/* Manrope has Latin glyphs only. Chinese text takes the system's Simplified Chinese font, named here so a Japanese or
+   Traditional Chinese one isn't picked first for the shared Han characters. It comes before Manrope, so the quotes
+   and punctuation between Chinese words are drawn full width too. */
+html:lang(zh-CN) { --oui-font: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Noto Sans SC', 'Source Han Sans SC', 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 /* Embedder's brand colours for the two kinds of insert (assets/asset-manifest.json, palette.magnet and palette.nfc).
    On the root, where the 3D view reads them. */
 :root { --em-magnet: #8c4b08; --em-nfc: #6541a6; --em-ink: #202731; }

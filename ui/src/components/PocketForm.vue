@@ -13,7 +13,8 @@ import { addStaged, canAdd as addable, currentObject, replan, selectObject, sele
 import { customDims, embeddedBlock, groupPresets } from '../app/logic';
 import type { Custom, Preset } from '../app/types';
 import { prompt } from '../core/dialog';
-import { t, tMaybe, fmt } from '../core/i18n';
+import { locale, t, tMaybe, fmt } from '../core/i18n';
+import { vDecimal } from '../core/decimal';
 
 const n = (v: number | undefined) => fmt.number(v ?? 0, 1).replace(/[.,]0$/, '');
 function presetLabel(p: Preset): string {
@@ -99,15 +100,15 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
         </div>
         <div class="em-two" :data-three="s.insert.custom.shape === 'block' || undefined">
           <div v-if="s.insert.custom.shape === 'disc'" class="oui-field"><label for="f-d">{{ t('form.d') }}</label>
-            <InputNumber input-id="f-d" :model-value="s.insert.custom.d" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('d', $event)" /></div>
+            <InputNumber v-decimal :locale="locale" input-id="f-d" :model-value="s.insert.custom.d" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('d', $event)" /></div>
           <template v-else>
             <div class="oui-field"><label for="f-l">{{ t('form.l') }}</label>
-              <InputNumber input-id="f-l" :model-value="s.insert.custom.l" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('l', $event)" /></div>
+              <InputNumber v-decimal :locale="locale" input-id="f-l" :model-value="s.insert.custom.l" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('l', $event)" /></div>
             <div class="oui-field"><label for="f-w">{{ t('form.w') }}</label>
-              <InputNumber input-id="f-w" :model-value="s.insert.custom.w" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('w', $event)" /></div>
+              <InputNumber v-decimal :locale="locale" input-id="f-w" :model-value="s.insert.custom.w" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('w', $event)" /></div>
           </template>
           <div class="oui-field"><label for="f-t">{{ t('form.t') }}</label>
-            <InputNumber input-id="f-t" :model-value="s.insert.custom.t" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('t', $event)" /></div>
+            <InputNumber v-decimal :locale="locale" input-id="f-t" :model-value="s.insert.custom.t" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('t', $event)" /></div>
         </div>
         <Button :label="t('preset.saveAs')" severity="secondary" size="small" data-test="save-preset" @click="saveAsPreset"><template #icon><OuiIcon :icon="save" :size="14" /></template></Button>
       </div>
@@ -122,9 +123,9 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
 
       <div class="em-two">
         <div class="oui-field"><label for="f-spin">{{ t('form.spin') }}</label>
-          <InputNumber v-model="s.spin" input-id="f-spin" :min="-360" :max="360" suffix=" °" placeholder="0 °" fluid /></div>
+          <InputNumber :locale="locale" v-model="s.spin" input-id="f-spin" :min="-360" :max="360" suffix=" °" placeholder="0 °" fluid /></div>
         <div class="oui-field"><label for="f-cover">{{ t('form.cover') }}</label>
-          <InputNumber v-model="s.cover" input-id="f-cover" :min="0" :max="10" :max-fraction-digits="2" suffix=" mm" fluid
+          <InputNumber v-decimal :locale="locale" v-model="s.cover" input-id="f-cover" :min="0" :max="10" :max-fraction-digits="2" suffix=" mm" fluid
                        :placeholder="t('form.coverDefault', { mm: fmt.number(coverDefault, 1) })" :title="t('form.coverDefault', { mm: fmt.number(coverDefault, 1) })" :disabled="s.mode !== 'embedded'" /></div>
       </div>
 

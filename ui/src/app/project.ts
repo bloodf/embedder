@@ -1,7 +1,7 @@
 // The Embed flow: load the project copy, pull the selected object's meshes, plan pockets on click, move them, stage,
 // apply, open. Mesh arrays never enter Vue state: they live in `meshes` and the page is told through s.mesh.version.
 import * as bridge from '../core/bridge';
-import { t, tMaybe } from '../core/i18n';
+import { t, tMaybe, insertLabel } from '../core/i18n';
 import { pullPart, type PartMesh } from '../core/mesh';
 import type { Hit } from '../core/pick';
 import { formOf, hitOf, othersOf, planArgs, restage, stage, unstage, toggle, verdict } from './logic';
@@ -262,9 +262,9 @@ export async function replanStaged(): Promise<void> {
     const others = before.filter(o => o !== x).map(o => o.args);
     try {
       const plan: Plan = await bridge.command('pocket.plan', { job: project.job, ...x.args, ...(others.length ? { others } : {}) });
-      if (plan.blocked) dropped.push(x.plan.label ?? '?'); else kept.push({ ...x, plan });
+      if (plan.blocked) dropped.push(insertLabel(x.plan.label)); else kept.push({ ...x, plan });
     } catch {
-      dropped.push(x.plan.label ?? '?');
+      dropped.push(insertLabel(x.plan.label));
     }
   }
   if (s.project !== project || s.staged !== before) return;   // reloaded or edited meanwhile: that state wins

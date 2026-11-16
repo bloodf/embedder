@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launch, MOCK_HOST, HELPERS, preparePage } from './cdp.mjs';
+import { en } from '../../src/core/messages.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
@@ -19,7 +20,13 @@ async function builtPage() {
     { cwd: repo, encoding: 'utf8', maxBuffer: 64 << 20 });
 }
 
+// English sentences of the page (the words before a placeholder, long enough to be a phrase) that must not show
+// in another language.
+const ENGLISH = Object.entries(en).filter(([k]) => !k.startsWith('lang.')).map(([, v]) => v.split('{')[0].trim())
+  .filter(v => v.length >= 8 && v.includes(' '));
+
 const PRELUDE = `
+const ENGLISH = ${JSON.stringify(ENGLISH)};
 const SETTINGS = {ui_language: 'auto', xy_clearance: 0.2, z_clearance: 0.2, cover_magnet: 1, cover_nfc: 0.6, user_presets: []};
 const PRESETS = {builtin: [
   {id: 'magnet-disc-6x3', name: '6x3 magnet', kind: 'magnet', shape: 'disc', d: 6, t: 3, builtin: true},
@@ -194,6 +201,76 @@ test('Portuguese from the host language', `
   eq(document.documentElement.lang, 'pt-BR', 'document language');
 `, { lang: 'pt_BR' });
 
+for (const [lang, host, title] of [['es', 'es', 'Ningún proyecto cargado'], ['de', 'de', 'Kein Projekt geladen'], ['zh-CN', 'zh_CN', '未加载项目']]) {
+  test(`${lang} from the host language, with no English left on the main screens`, `
+  const english = () => ENGLISH.filter(s => document.body.innerText.includes(s));
+  await ready();
+  assert(text(byTest('embed-empty')).includes(${JSON.stringify(title)}), 'title: ' + text(byTest('embed-empty')));
+  eq(document.documentElement.lang, '${lang}', 'document language');
+  eq(english(), [], 'empty state');
+  await loaded();
+  await place(PLAN);
+  await click(byTest('add'));
+  await settle();
+  eq(english(), [], 'a pocket placed and staged');
+  assert(!document.body.innerText.includes('6x3 magnet'), 'the insert label is translated');
+  await tab('settings');
+  await settle();
+  eq(english(), [], 'settings');
+`, { lang: host });
+}
+
+test('German decimals: "1.5" typed or pasted into a millimetre field is one and a half, not 15', `
+  await ready();
+  await tab('settings');
+  const field = q('#set-cover_magnet');
+  await type(field, '1.5'); field.blur(); await settle();
+  eq(field.value, '1,5 mm', 'typed with a point');
+  await type(field, '2,5'); field.blur(); await settle();
+  eq(field.value, '2,5 mm', 'typed with a comma');
+  field.focus(); field.select();
+  const data = new DataTransfer(); data.setData('text/plain', '0.8');
+  field.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+  field.blur(); await settle();
+  eq(field.value, '0,8 mm', 'pasted with a point');
+  await click(byTest('settings-save'));
+  await until(() => last('cmd', 'settings.save'), 'saved');
+  eq(last('cmd', 'settings.save').args.settings.cover_magnet, 0.8, 'the number sent');
+`, { lang: 'de', intl: 'de-DE' });
+
+test('Chinese input: a full-width 。 or ． typed into a millimetre field is the decimal point', `
+  await ready();
+  await tab('settings');
+  const field = q('#set-cover_magnet');
+  await type(field, '1。5'); field.blur(); await settle();
+  eq(field.value, '1.5 mm', 'typed 。');
+  await type(field, '2．5'); field.blur(); await settle();
+  eq(field.value, '2.5 mm', 'typed ．');
+`, { lang: 'zh_CN', intl: 'zh-CN' });
+
+test('where a WebView cannot build a paste event, the field keeps its own paste', `
+  await ready();
+  await tab('settings');
+  const field = q('#set-cover_magnet');
+  window.DataTransfer = function () { throw new TypeError('Illegal constructor'); };
+  field.focus(); field.select();
+  const paste = new Event('paste', { bubbles: true, cancelable: true });
+  paste.clipboardData = { getData: () => '0.8' };   // needs rewriting for de, so the directive tries to build its event
+  field.dispatchEvent(paste);   // an exception in a listener would show in the page probe (window error)
+  assert(paste.defaultPrevented, 'InputNumber took the paste, nothing was swallowed');
+  field.blur(); await settle();
+  eq(field.value, '8,0 mm', 'InputNumber read it as it always did (the point is a group sign in German)');
+`, { lang: 'de', intl: 'de-DE' });
+
+test('Spanish decimals in a custom size: "2.5" typed is two and a half', `
+  await loaded();
+  await click(q('#f-custom'));
+  await type(q('#f-d'), '2.5'); q('#f-d').blur(); await settle();
+  eq(q('#f-d').value, '2,5 mm', 'shown with a comma');
+  await place(null);
+  eq(last('cmd', 'pocket.plan').args.custom.d, 2.5, 'sent as two and a half');
+`, { lang: 'es', intl: 'es-ES' });
+
 test('icons come from the shared set; the bar carries the brand mark', `
   await ready();
   eq(qa('[role=tab] svg.oui-icon').length, 2, 'tab icons drawn');
@@ -263,10 +340,10 @@ test('placing sends a plan request; the preview is listed and staged with its pa
   assert(q('#em-plan-state').classList.contains('oui-on-band'), 'a planned pocket is the accent block');
   assert(byTest('staged-empty') && byTest('apply').disabled, 'nothing staged yet');
   await click(byTest('add'));
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm']], 'one row: the name, then where and how on its second line');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'one row: the name, then where and how on its second line');
   eq(text(byTest('staged-count')), '1', 'count in the panel header');
   eq(text(q('#em-pauses-l')), 'The print will pause', 'pause heading');
-  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × 6x3 magnet'], 'pause summary');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × Ø6 × 3 mm disc'], 'pause summary');
   eq(text(byTest('summary')), '1 pocket to add, 0 to remove. Writes a new copy.', 'what Apply will do');
   assert(byTest('add').disabled && byTest('plan-empty'), 'Add waits for the next face');
   const again = await place(null);
@@ -353,6 +430,7 @@ test('a stale job error tells the user to load again', `
   const m = await place(null);
   await fail(m, {code: 'stale_job', detail: 'the project was loaded again; load it once more'});
   assert(alerts().includes('The project was loaded again. Load it once more'), 'alert: ' + alerts());
+  assert(!alerts().includes('load it once more)'), 'the English detail is not repeated after the sentence: ' + alerts());
   assert(byTest('plan-empty') && byTest('add').disabled, 'no preview kept, the panel asks for a face again');
 `);
 
@@ -397,7 +475,7 @@ test('saving settings plans the staged pockets again; one that no longer fits is
   await until(() => alerts().includes('no longer fit'), 'drop notice');
   assert(alerts().includes('Lid magnet'), 'names the dropped pocket: ' + alerts());
   await tab('embed');
-  assert(text(byTest('staged')).includes('6x3 magnet') && !text(byTest('staged')).includes('Lid magnet'), 'staged: ' + text(byTest('staged')));
+  assert(text(byTest('staged')).includes('Ø6 × 3 mm disc') && !text(byTest('staged')).includes('Lid magnet'), 'staged: ' + text(byTest('staged')));
 `);
 
 test('Centre on the face plans again with center and keeps it for Apply', `
@@ -422,9 +500,26 @@ test('the list says which inserts to have ready, open pockets and copies include
   await place({...PLAN, mode: 'open', pause_z: null, label: '25 mm NFC sticker', kind: 'nfc'});
   await click(byTest('add'));
   eq(text(q('#em-inserts-l')), 'Have ready at the printer', 'inserts heading');
-  eq(qa('[data-test=inserts] li').map(text), ['2 × 6x3 magnet', '1 × 25 mm NFC sticker'], 'inserts lines');
+  eq(qa('[data-test=inserts] li').map(text), ['2 × Ø6 × 3 mm disc', '1 × Ø25 mm sticker'], 'inserts lines');
   eq(qa('[data-test=inserts] .em-kind').map(e => e.dataset.kind), ['magnet', 'nfc'], 'each with the mark of its kind');
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm'], ['25 mm NFC sticker', 'Cube · top · open']], 'rows');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Ø25 mm sticker', 'Cube · top · open']], 'rows');
+`);
+
+test('Apply refused for one staged pocket says which pocket and why', `
+  await loaded();
+  await place(PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  await fail(last('cmd', 'project.apply'), {code: 'pocket_blocked', detail: 'pocket 1: no_floor'});
+  assert(alerts().includes('A staged pocket can no longer be made (pocket 1: no printed layer would sit under the pocket'), 'alert: ' + alerts());
+`);
+
+test('a cut object is named in the error', `
+  await loaded();
+  const m = await place(null);
+  await fail(m, {code: 'cut_object', detail: 'Lid'});
+  assert(alerts().includes('This object was cut with connectors; Embedder cannot add parts to it (Lid)'), 'alert: ' + alerts());
 `);
 
 test('a project without a part list says why in words', `
@@ -535,7 +630,8 @@ test('the language choice is sent to the plugin and the page follows it', `
   await ready();
   await tab('settings');
   await click(byTest('lang'));
-  await until(() => qa('[role=option]').length === 3, 'language options');
+  await until(() => qa('[role=option]').length === 6, 'language options');
+  eq(qa('[role=option]').map(text).slice(1), ['English', 'Português (Brasil)', 'Español', 'Deutsch', '简体中文'], 'each language in its own name');
   await click(qa('[role=option]').find(o => text(o) === 'Português (Brasil)'));
   eq(last('ui_language').value, 'pt-BR', 'choice sent');
   eq(document.documentElement.lang, 'pt-BR', 'document language');
@@ -605,9 +701,9 @@ test('a pocket of the list taken in hand is changed by the form in place; a chan
   const m = last('cmd', 'pocket.plan');
   eq([m.args.mode, m.args.others.length], ['open', 1], 'the pocket in hand, checked against the other one only');
   await reply(m, {...PLAN, mode: 'open', pause_z: null, label: 'Second'});
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Second', 'Cube · top · open']], 'its row follows');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Second', 'Cube · top · open']], 'its row follows');
   eq(text(byTest('staged-count')), '2', 'no pocket was added');
-  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × 6x3 magnet'], 'the pauses follow too');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × Ø6 × 3 mm disc'], 'the pauses follow too');
   await click(qa('[data-test=mode] button').find(b => text(b) === 'Embedded'));
   await until(() => cmds('pocket.plan').length > before + 1, 'planned again');
   await reply(last('cmd', 'pocket.plan'), {blocked: {code: 'no_floor', detail: ''}, preview: null, mode: 'embedded'});
@@ -619,7 +715,7 @@ test('a pocket of the list taken in hand is changed by the form in place; a chan
   eq(pressed(), ['false', 'false'], 'Done lets go of it');
   assert(byTest('add') && byTest('plan-empty') && text(q('.em-form .oui-panel-title')) === 'New pocket', 'the form is for a new pocket again');
   await click(picks()[0]);
-  await click(btn('Remove 6x3 magnet'));
+  await click(btn('Remove Ø6 × 3 mm disc'));
   assert(byTest('add') && !byTest('done') && text(byTest('staged-count')) === '1', 'removing the pocket in hand lets go of it');
   await click(picks()[0]);
   await place(PLAN);
@@ -699,12 +795,12 @@ test('a pocket of the list dropped where it cannot be made goes back; a good dro
   eq(byTest('row-pick').getAttribute('aria-pressed'), 'true', 'dragging a pocket of the list takes it in hand');
   assert(!open('pocket.plan')[0].args.others, 'it is not checked against itself');
   await answerPlans(planAt);
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the list waits for the release');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the list waits for the release');
   await drop(TOP_B);
   await until(() => open('pocket.plan').length === 1, 'the release plans');
   await answerPlans(() => TILTED);
   assert(notes().includes('The pocket stays as it was: the face is tilted'), 'the refusal is said: ' + notes());
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the pocket is where it was');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the pocket is where it was');
   assert(text(byTest('plan-pause')).includes('19') && byTest('row-pick').getAttribute('aria-pressed') === 'true', 'still in hand, as it was');
   await dragTo(TOP_A, TOP_B);
   await answerPlans(planAt);
@@ -712,8 +808,8 @@ test('a pocket of the list dropped where it cannot be made goes back; a good dro
   await until(() => open('pocket.plan').length === 1, 'the release plans');
   const final = open('pocket.plan')[0];
   await answerPlans(args => planAt(args, {pause_z: 12.4}));
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row follows the move');
-  eq(qa('[data-test=pauses] li').map(text), ['Z 12.40 mm: insert 1 × 6x3 magnet'], 'and so do the pauses');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row follows the move');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 12.40 mm: insert 1 × Ø6 × 3 mm disc'], 'and so do the pauses');
   assert(!notes().includes('stays as it was'), 'the refusal is gone: ' + notes());
   eq(text(byTest('staged-count')), '1', 'no pocket was added');
   await click(byTest('apply'));
@@ -792,7 +888,7 @@ test('a pocket of the list let go before its move is planned still moves; a move
   await press('Escape');
   eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'Escape let go of it before the answer came');
   await answerPlans(args => planAt(args, {pause_z: 12.4}));
-  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row moved all the same');
+  eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row moved all the same');
   await click(byTest('row-pick'));
   stage().focus();
   await press('ArrowLeft');
@@ -1018,6 +1114,7 @@ try {
       try {
         await p.size(sc.width ?? 1280, 900);
         await p.init(MOCK_HOST + (sc.gl ? '' : NO_WEBGL) + 'try { localStorage.clear(); } catch {}');
+        if (sc.intl) await p.call('Emulation.setLocaleOverride', { locale: sc.intl });   // the system's own language
         await p.goto(pathToFileURL(file).href);
         const body = `(async () => { ${HELPERS} ${PRELUDE}
           await until(() => document.querySelector('#app > *'), 'app mounted');

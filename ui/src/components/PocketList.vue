@@ -8,10 +8,10 @@ import { s, tracker } from '../app/store';
 import { apply, markRemove, removeStaged, selectStaged } from '../app/project';
 import { insertsNeeded, pauseSummary, splitLead } from '../app/logic';
 import type { Staged } from '../app/types';
-import { locale, t, tn, tMaybe, fmt } from '../core/i18n';
+import { locale, t, tn, tMaybe, fmt, insertLabel } from '../core/i18n';
 
 const pauses = computed(() => pauseSummary(s.staged).map(g => splitLead(t('pause.line', {
-  z: fmt.number(g.z, 2), items: g.items.map(i => t('pause.item', { n: i.n, label: i.label })).join(', ') }))));
+  z: fmt.number(g.z, 2), items: g.items.map(i => t('pause.item', { n: i.n, label: insertLabel(i.label) })).join(', ') }))));
 const inserts = computed(() => insertsNeeded(s.staged));
 const existing = computed(() => s.project?.existing ?? []);
 const canApply = computed(() => !!(s.staged.length || s.remove.length) && !tracker.isBusy('apply'));
@@ -36,12 +36,12 @@ function where(p: Staged): string {
         <button type="button" class="em-row-pick" :aria-pressed="s.selected === p.key" data-test="row-pick" @click="selectStaged(s.selected === p.key ? null : p.key)">
           <span class="em-kind em-kind-lg" :data-kind="p.plan.kind ?? 'magnet'"><OuiIcon :icon="p.plan.kind === 'nfc' ? rfid : insert" :size="16" /></span>
           <span class="em-row-id">
-            <span class="oui-strong">{{ p.plan.label }}</span>
+            <span class="oui-strong">{{ insertLabel(p.plan.label) }}</span>
             <span class="oui-meta">{{ where(p) }}</span>
             <span v-for="w in p.plan.warnings ?? []" :key="w" class="oui-meta em-warn em-note"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</span>
           </span>
         </button>
-        <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: p.plan.label })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
+        <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: insertLabel(p.plan.label) })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
       </li>
     </ul>
     <p v-if="s.staged.length" class="oui-meta em-list-help" data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</p>
@@ -50,7 +50,7 @@ function where(p: Staged): string {
       <template v-if="inserts.length">
         <p id="em-inserts-l" class="oui-label">{{ t('list.inserts') }}</p>
         <ul class="em-ready-list" aria-labelledby="em-inserts-l" data-test="inserts">
-          <li v-for="i in inserts" :key="i.kind + i.label" class="em-ready-line"><span class="em-kind" :data-kind="i.kind" /><strong class="oui-num">{{ i.n }} ×</strong> {{ i.label }}</li>
+          <li v-for="i in inserts" :key="i.kind + i.label" class="em-ready-line"><span class="em-kind" :data-kind="i.kind" /><strong class="oui-num">{{ i.n }} ×</strong> {{ insertLabel(i.label) }}</li>
         </ul>
       </template>
       <template v-if="pauses.length">
@@ -67,7 +67,7 @@ function where(p: Staged): string {
       <ul class="em-ready-list" aria-labelledby="em-existing-l" data-test="existing">
         <li v-for="x in existing" :key="x.id">
           <label class="em-check" :for="'rm-' + x.id"><Checkbox :model-value="s.remove.includes(x.id)" binary :input-id="'rm-' + x.id" @update:model-value="markRemove(x.id, $event)" />
-            {{ t('list.removeExisting', { label: x.label, mode: t(`mode.${x.mode}`) }) }}</label>
+            {{ t('list.removeExisting', { label: insertLabel(x.label), mode: t(`mode.${x.mode}`) }) }}</label>
         </li>
       </ul>
     </div>

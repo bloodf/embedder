@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import build  # noqa: E402
 
 UI = ROOT / "src" / "embedder" / "ui"
-MAX_BUILT_BYTES = 400_000   # the wheel measures ~388 kB with three.js, OrbitControls and the panel (page ~1.26 MB raw, deflated)
+MAX_BUILT_BYTES = 420_000   # the wheel measures ~408 kB with three.js, OrbitControls, the panel and five languages (page ~1.32 MB raw, deflated)
 SHARED_ICONS = ROOT / "ui" / "shared" / "src" / "icons.ts"
 
 
@@ -34,12 +34,15 @@ class UiAssets(unittest.TestCase):
     def test_every_error_and_block_code_is_translated(self):
         """Codes raised in Python reach the page as err.<code> (refusals) or block.<code> (plan blocks)."""
         source = "".join(p.read_text("utf-8") for p in (ROOT / "src" / "embedder").glob("*.py"))
-        messages = (ROOT / "ui" / "src" / "core" / "messages.ts").read_text("utf-8")
+        core = ROOT / "ui" / "src" / "core"
+        tables = {"en and pt-BR": 2, "messages-es": 1, "messages-de": 1, "messages-zh": 1}
+        texts = {name: (core / ("messages.ts" if name == "en and pt-BR" else name + ".ts")).read_text("utf-8") for name in tables}
         errors = set(re.findall(r'(?:SessionError|ThreeMFError|PresetError|CommandError)\("([a-z_]+)"', source))
         blocks = set(re.findall(r'Blocked\("([a-z_]+)"', source))
         for prefix, codes in (("err", errors), ("block", blocks)):
             for code in sorted(codes):
-                self.assertEqual(messages.count("'%s.%s':" % (prefix, code)), 2, "%s.%s in en and pt-BR" % (prefix, code))
+                for name, count in tables.items():
+                    self.assertEqual(texts[name].count("'%s.%s':" % (prefix, code)), count, "%s.%s in %s" % (prefix, code, name))
 
     def test_the_wheel_carries_the_committed_page(self):
         html = build.page_html("app.html")

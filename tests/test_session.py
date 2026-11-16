@@ -230,6 +230,9 @@ class Plan(Base):
         cut = '<?xml version="1.0"?>\n<objects>\n <object id="1">\n  <cut_id id="5" check_sum="1" connectors_cnt="1"/>\n </object>\n</objects>\n'
         r = self.load(extra={"Metadata/cut_information.xml": cut})
         self.assertEqual(self.error(self.plan, r["job"]), "cut_object")
+        with self.assertRaises(session.SessionError) as cm:
+            self.plan(r["job"])
+        self.assertEqual(cm.exception.detail, r["objects"][0]["name"])   # the page names the object; the sentence is its own
 
     def test_breaking_through_warns(self):
         r = self.load()

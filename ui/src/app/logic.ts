@@ -109,9 +109,10 @@ export function sizeOf(parts: readonly { positions: ArrayLike<number> }[]): [num
   return max[0] >= min[0] ? [max[0] - min[0], max[1] - min[1], max[2] - min[2]] : null;
 }
 
-/** A message split after its first sentence or colon, so a banner can set the lead apart: ["Apply failed:", "the reason"]. */
+/** A message split after its first sentence or colon, so a banner can set the lead apart: ["Apply failed:", "the reason"].
+ *  Chinese ends a sentence with full-width 。：！？ and no space after it. */
 export function splitLead(text: string): [string, string] {
-  const m = /^(.+?[.:!?…])\s+(\S.*)$/s.exec(text);
+  const m = /^(.+?(?:[.:!?…](?=\s)|[。：！？]))\s*(\S.*)$/s.exec(text);
   return m ? [m[1], m[2]] : [text, ''];
 }
 

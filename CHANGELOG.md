@@ -23,14 +23,31 @@ All notable changes to this project are documented here. The format follows
   says why. A new pocket left on such a spot stays there, marked, as it would after a click. A pocket that is
   already on the list goes back to where it was, and the pocket panel gives the reason.
 - The pocket panel shows where the pocket is on the plate (X, Y, Z) and how far it is turned.
+- The page speaks Spanish, German and Simplified Chinese next to English and Brazilian Portuguese. On Automatic it
+  follows OrcaSlicer's language (`es`, `de`, `zh_CN`; `zh_TW` shows Simplified Chinese; anything else shows
+  English), and **Settings > Language** lists all five. Shared words follow OrcaSlicer's own translations (cama,
+  Platte, 盘, capa, Schicht, 层). German uses "Sie"; Chinese uses full-width punctuation and the system's Chinese font.
 
 ### Changed
 
 - Moving a pocket by hand unticks **Centre on the face** for it. Tick it again to send the pocket back to the
   middle of its face.
 - The line under the 3D view now also says that a pocket can be dragged.
+- Insert names in the pocket list, the plan, the pauses and **Have ready at the printer** are written in the page
+  language, the same way as in the insert menu ("Ø6 × 3 mm disc" rather than "6x3 magnet").
+- Error messages no longer repeat the plugin's English explanation after the translated sentence. A file path,
+  OrcaSlicer's own error text and the name of the object are still shown, and an Apply refused for one pocket says
+  which pocket and why. The pause text written into the project ("Embedder: insert 2 x 6x3 magnet") stays in
+  English: it is G-code that OrcaSlicer shows as is.
+- Number fields follow the page language. In Brazilian Portuguese, Portuguese "mesa" now names the plate.
 - In a narrow window, where the form sits above the 3D view, the view no longer jumps when a click or a drag
   changes the pocket panel above it.
+
+### Fixed
+
+- Typing "2.5" into a millimetre field (custom insert size, cover, clearances) on a German, Spanish or Portuguese
+  system gave 25, or the field's maximum. A point or a comma is now the decimal sign in every language, typed or
+  pasted.
 
 Pockets that an earlier Apply already wrote into the project cannot be moved. Tick one for removal, place it
 again and apply.

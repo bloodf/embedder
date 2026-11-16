@@ -68,6 +68,9 @@ test('a message splits after its first sentence or colon; decimals and a lone se
   assert.deepEqual(splitLead('Z 7.20 mm: insert 2 × 6x3 magnet'), ['Z 7.20 mm:', 'insert 2 × 6x3 magnet']);
   assert.deepEqual(splitLead('Settings saved.'), ['Settings saved.', '']);
   assert.deepEqual(splitLead('Deleted 2 old copies, 2.0 MB freed.'), ['Deleted 2 old copies, 2.0 MB freed.', '']);
+  assert.deepEqual(splitLead('还没有凹槽。放置一个，然后点击“添加凹槽”。'), ['还没有凹槽。', '放置一个，然后点击“添加凹槽”。']);
+  assert.deepEqual(splitLead('Z 7.2 mm：放入 2 × 圆片 Ø6 × 3 mm'), ['Z 7.2 mm：', '放入 2 × 圆片 Ø6 × 3 mm']);
+  assert.deepEqual(splitLead('设置已保存。'), ['设置已保存。', '']);
 });
 
 test('presets group into magnets, NFC and mine; empty groups drop', () => {
