@@ -103,7 +103,7 @@ As regras completas dos formatos de bolso, da pausa, dos avisos e dos limites es
 <a id="-como-usar"></a>
 ## 🛠️ Como usar
 
-1. Abra o projeto no OrcaSlicer e escolha a placa com a peça.
+1. Abra o projeto no OrcaSlicer e escolha a mesa com a peça.
 2. Abra a aba **Embedder** e clique em **Carregar projeto**.
 3. Em **Inserto**, escolha um tamanho da lista, ou marque **Tamanho personalizado** e informe o seu. Em **Bolso**, escolha **Embutido** ou **Aberto**.
 4. Gire a peça e clique na face onde o inserto vai. Marque **Centralizar na face** para levá-lo ao meio. **Este bolso** mostra o tamanho, a cavidade, a pausa e a cobertura.
@@ -125,7 +125,7 @@ Um **Aplicar** por carga: para mudar os bolsos depois, abra o novo projeto, cliq
 
 | | O quê e onde |
 |---|---|
-| Lê | A cópia da placa atual que o OrcaSlicer exporta para a pasta do plugin e seis valores do perfil ativo: altura de camada, altura da primeira camada, G-code de pausa, sequência de impressão, camadas de raft e área de impressão. |
+| Lê | A cópia da mesa atual que o OrcaSlicer exporta para a pasta do plugin e seis valores do perfil ativo: altura de camada, altura da primeira camada, G-code de pausa, sequência de impressão, camadas de raft e área de impressão. |
 | Grava | Novas cópias `.3mf` e o `settings.json`, os dois na própria pasta do plugin. Nunca o projeto que você abriu. |
 | Envia | Nada. O Embedder não usa a rede e não tem serviço em nuvem nem telemetria. |
 | Impressora | Nenhum comando. A pausa é a pausa por camada do próprio OrcaSlicer, que executa o G-code de pausa do seu perfil. O Embedder nunca escolhe M600 nem outro comando por conta própria. |
@@ -137,13 +137,13 @@ Uma cópia aplicada contém o projeto inteiro, então cuide dela como do origina
 <details>
 <summary>Por que Aplicar abre um projeto novo em vez de alterar o meu?</summary>
 
-Os plugins do OrcaSlicer 2.5 não conseguem ler nem alterar a geometria do projeto aberto, e não desenham na visualização 3D do OrcaSlicer. Por isso o Embedder pede ao OrcaSlicer uma cópia da placa atual, grava cada bolso como uma peça negativa e cada pausa num arquivo novo ao lado dela, e pede ao OrcaSlicer que abra esse arquivo. Use **Arquivo > Salvar projeto como** para guardá-lo.
+Os plugins do OrcaSlicer 2.5 não conseguem ler nem alterar a geometria do projeto aberto, e não desenham na visualização 3D do OrcaSlicer. Por isso o Embedder pede ao OrcaSlicer uma cópia da mesa atual, grava cada bolso como uma peça negativa e cada pausa num arquivo novo ao lado dela, e pede ao OrcaSlicer que abra esse arquivo. Use **Arquivo > Salvar projeto como** para guardá-lo.
 </details>
 
 <details>
-<summary>Embutido está desativado na minha placa. Por quê?</summary>
+<summary>Embutido está desativado na minha mesa. Por quê?</summary>
 
-O Embedder mostra o motivo. Bolsos embutidos são bloqueados quando a sequência de impressão é "Por objeto" (o OrcaSlicer ignora pausas por camada nesse caso), quando o perfil da impressora não tem G-code de pausa, quando o projeto imprime um raft, quando o objeto tem altura de camada variável ou por faixa, quando há cópias do objeto em outra placa, ou quando a face está inclinada. Eles também são recusados quando o bolso passaria abaixo da mesa, ficaria sem camada impressa embaixo, ou quando a pausa viria antes da segunda camada. Bolsos abertos continuam funcionando.
+O Embedder mostra o motivo. Bolsos embutidos são bloqueados quando a sequência de impressão é "Por objeto" (o OrcaSlicer ignora pausas por camada nesse caso), quando o perfil da impressora não tem G-code de pausa, quando o projeto imprime um raft, quando o objeto tem altura de camada variável ou por faixa, quando há cópias do objeto em outra mesa, ou quando a face está inclinada. Eles também são recusados quando o bolso passaria abaixo da mesa, ficaria sem camada impressa embaixo, ou quando a pausa viria antes da segunda camada. Bolsos abertos continuam funcionando.
 </details>
 
 <details>
