@@ -15,8 +15,8 @@ export interface Preview { positions: number[]; indices: number[] }
 export interface InHand { preview: Preview; base: Hit; tone: 'ok' | 'warn' | 'blocked' }
 export interface StagedMark extends Preview { kind: 'magnet' | 'nfc'; key: number; base: Hit }
 export interface SceneEvents {
-  /** A click on a face. */
-  pick(hit: Hit): void;
+  /** A click on a face; `onHand`: on the pocket in hand. */
+  pick(hit: Hit, onHand: boolean): void;
   /** A click on a pocket of the list; null: a click on nothing at all. */
   select(key: number | null): void;
   dragStart(mark: Mark): void;
@@ -151,7 +151,7 @@ export function createScene(host: HTMLElement, events: SceneEvents): SceneApi {
     if (effect === 'select' && from.kind === 'press' && typeof from.mark === 'number') events.select(from.mark);
     if (effect === 'click' && pointer) {
       const hit = surface(pointer.x, pointer.y);
-      if (hit) events.pick(hit); else events.select(null);
+      if (hit) events.pick(hit, from.kind === 'press' && from.mark === 'edit'); else events.select(null);
     }
   };
   const onDown = (e: PointerEvent) => {

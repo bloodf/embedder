@@ -75,7 +75,7 @@ function onKey(e: KeyboardEvent) {
 onMounted(() => {
   if (!host.value) return;
   try {
-    scene = createScene(host.value, { pick: hit => { void placeAt(hit); }, select: selectStaged, dragStart, dragMove: moveTo, dragEnd });
+    scene = createScene(host.value, { pick: (hit, onHand) => { if (!onHand || s.selected == null) void placeAt(hit); }, select: selectStaged, dragStart, dragMove: moveTo, dragEnd });
   } catch {
     s.webgl = false;   // the probe passed but this context did not: fall back to the numeric form
     return;

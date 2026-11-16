@@ -19,6 +19,6 @@ export function gesture(g: Gesture, e: Input): [Gesture, Effect] {
   if (g.kind === 'drag') return e.type === 'move' ? [g, 'move'] : [IDLE, 'drop'];
   if (g.kind !== 'press') return [g, null];
   if (e.type === 'move') return g.mark == null || isClick(g, e) ? [g, null] : [{ kind: 'drag', mark: g.mark }, 'start'];
-  // A click on the pocket in hand is a click on the face under it: the pocket is placed there, as before it was drawn.
+  // A click on the pocket in hand is a click on the face under it; the view keeps a pocket of the list in hand then.
   return [IDLE, !isClick(g, e) ? null : g.mark == null || g.mark === 'edit' ? 'click' : 'select'];
 }

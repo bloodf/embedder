@@ -882,6 +882,66 @@ test('a click beside the pocket of the list in hand starts a new pocket without 
   assert(stage().hasAttribute('data-over'), 'then its own shape is');
 `, { gl: true });
 
+test('a click on the pocket of the list in hand keeps it in hand; on a new pocket it places that pocket again', `
+  await loaded3d();
+  const m = await place3d(TOP_A);
+  await click(byTest('add'));
+  await click(byTest('row-pick'));
+  eq(await clickAt(TOP_A), null, 'nothing is planned');
+  eq([byTest('row-pick').getAttribute('aria-pressed'), text(byTest('staged-count'))], ['true', '1'], 'it stays in hand, and no pocket is added');
+  assert(byTest('done'), 'Done is still offered');
+  await click(byTest('done'));
+  const fresh = await place3d(FRONT);
+  const again = await clickAt(FRONT);
+  assert(again && dist(again.args.point, fresh.args.point) < 1e-2, 'a new pocket is placed again where its own shape is clicked: ' + (again && again.args.point));
+`, { gl: true });
+
+test('a pocket of the list let go twice before the answers come takes the newest move, though the older answer comes first', `
+  await loaded3d();
+  await place3d(TOP_A);
+  await click(byTest('add'));
+  await dragTo(TOP_A, TOP_B);
+  await answerPlans(planAt);
+  await drop(TOP_B);
+  await until(() => open('pocket.plan').length === 1, 'the release plans');
+  await press('Escape');
+  await until(() => open('pocket.plan').length === 2, 'letting go plans the drop for the row');
+  const first = last('cmd', 'pocket.plan');
+  await click(byTest('row-pick'));
+  stage().focus();
+  await press('ArrowLeft');
+  await until(() => open('pocket.plan').length === 3, 'the step is planned');
+  await press('Escape');
+  await until(() => open('pocket.plan').length === 4, 'letting go plans the step for the row');
+  const second = last('cmd', 'pocket.plan');
+  assert(first.id !== second.id && dist(first.args.point, second.args.point) > 1, 'two moves: ' + first.args.point + ' / ' + second.args.point);
+  answered.add(first.id);
+  await reply(first, planAt(first.args, {pause_z: 12.4}));
+  answered.add(second.id);
+  await reply(second, planAt(second.args, {pause_z: 7.2}));
+  await answerPlans(planAt);
+  eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'the newest move stands');
+`, { gl: true });
+
+test('a move planned for its row after letting go says nothing when it fails after the project was loaded again', `
+  await loaded3d();
+  await place3d(TOP_A);
+  await click(byTest('add'));
+  await click(byTest('row-pick'));
+  stage().focus();
+  await press('ArrowLeft');
+  await until(() => open('pocket.plan').length === 1, 'the step is planned');
+  await press('Escape');
+  await until(() => open('pocket.plan').length === 2, 'letting go plans the step for the row');
+  const kept = last('cmd', 'pocket.plan');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loaded again');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  answered.add(kept.id);
+  await fail(kept, {code: 'stale_job', detail: 'the project was loaded again; load it once more'});
+  assert(!text(document.body).includes('Placing the pocket failed'), 'no error for a project that is gone: ' + alerts());
+`, { gl: true });
+
 test('the 3D view says how to move a pocket in Portuguese too, and the hint stays inside a narrow view', `
   await loaded3d();
   eq(stage().getAttribute('aria-label'), 'Visualização 3D', 'the widget is named');

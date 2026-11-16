@@ -22,6 +22,7 @@ let planSent = 0;
 let planAgain = false;
 let planKey = '';
 let planTimer: ReturnType<typeof setTimeout> | undefined;
+const kept = new Map<number, number>();   // per pocket of the list: the newest keepMove, whose answer alone counts
 let dragFrom: Pick<typeof s, 'hit' | 'plan' | 'planArgs' | 'center'> | null = null;
 
 export const meshesOf = (object: number): PartMesh[] => meshes.get(object) ?? [];
@@ -107,13 +108,15 @@ function takeStaged(x: Staged): void {
 function keepMove(): void {
   const project = s.project, x = s.staged.find(p => p.key === s.selected), args = argsInHand();
   if (!project || !x || !args || JSON.stringify(args) === JSON.stringify(x.args)) return;
-  const others = othersOf(s.staged, x.key);
+  const others = othersOf(s.staged, x.key), gen = (kept.get(x.key) ?? 0) + 1;
+  kept.set(x.key, gen);
+  // Reloaded, let go again with a newer move, removed, changed again, or back in hand (what the hand shows wins).
+  const current = () => s.project === project && kept.get(x.key) === gen;
   bridge.command('pocket.plan', { job: project.job, ...args, ...(others.length ? { others } : {}) }).then((plan: Plan) => {
-    // Reloaded, removed, changed again, or back in hand (what the hand shows wins): the answer is for nothing now.
-    if (s.project !== project || s.selected === x.key || !s.staged.includes(x)) return;
+    if (!current() || s.selected === x.key || !s.staged.includes(x)) return;
     if (plan.blocked) tracker.notify('info', t('edit.back', { reason: tMaybe(`block.${plan.blocked.code}`, plan.blocked.detail || plan.blocked.code) }));
     else s.staged = restage(s.staged, x.key, args, plan);
-  }, e => tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) })));
+  }, e => { if (current()) tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) })); });
 }
 
 /** Take a pocket of the list in hand (a click on its row or on its marker in the 3D view): the form then changes that
