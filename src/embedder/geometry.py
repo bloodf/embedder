@@ -1,9 +1,10 @@
 """Small stdlib geometry: 4x4 matrices as 16-tuples (row-major, column vectors: p' = M p), 3MF and Orca config
-transform strings, pocket meshes and face classes. Free of `orca`."""
+transform strings, pocket meshes (hexagon, box with corner vents) and face classes. Free of `orca`."""
 
 import math
 
-SEGMENTS = 64               # sides of a pocket cylinder
+SEGMENTS = 64               # sides of a round prism
+VENT_SEGMENTS = 16          # sides of a full corner vent
 TILT_LIMIT_DEG = 5.0        # a face within this of horizontal/vertical counts as flat/side
 IDENTITY = (1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0)
 
@@ -149,13 +150,42 @@ def cylinder_mesh(diameter, height, n=SEGMENTS):
     return tuple(verts), tuple(tris)
 
 
-def box_mesh(sx, sy, sz):
-    """Closed box centred on X and Y, z from 0 to sz."""
-    hx, hy = sx / 2, sy / 2
-    verts = tuple((float(x), float(y), float(z)) for z in (0, sz) for y in (-hy, hy) for x in (-hx, hx))
-    tris = ((0, 2, 1), (1, 2, 3), (4, 5, 6), (5, 7, 6), (0, 1, 4), (1, 5, 4),
-            (2, 6, 3), (3, 6, 7), (0, 4, 2), (2, 4, 6), (1, 3, 5), (3, 7, 5))
-    return verts, tris
+def hexagon_corners(flat):
+    """Corner-to-corner width of a regular hexagon that is `flat` across its flats."""
+    return flat / math.cos(math.pi / 6)
+
+
+def hexagon_mesh(flat, height):
+    """Closed hexagonal prism, z from 0 to height, `flat` across the flats. Two corners lie on X, so two flats run
+    parallel to X at y = +-flat / 2: a disc of that diameter touches the six flats and the corners stay open."""
+    return cylinder_mesh(flat, height, 6)
+
+
+def vented_box_mesh(sx, sy, sz, r, flush=False, n=VENT_SEGMENTS):
+    """Closed box centred on X and Y, z from 0 to sz, with a round vent of radius r centred on each corner: one solid,
+    the outline of the box and the four circles pushed up from 0 to sz. flush: the two corners on the -Y face vent
+    along X only, so that face stays flat. r must be under half the shorter side, so neighbouring vents stay apart."""
+    hx, hy, q = sx / 2, sy / 2, n // 4
+    pts, ring, rect, caps = [(0.0, 0.0)], [], [], []    # a layer's points, centre first; outline, box edge, cap triangles
+    for k, (cx, cy) in enumerate(((hx, -hy), (hx, hy), (-hx, hy), (-hx, -hy))):
+        lo, hi = (k - 2) * q, (k + 1) * q               # 270 degrees outside the box, in steps of 2 pi / n
+        first = not (flush and k == 0)                   # does the arc start, and end, on the box's own edge?
+        last = not (flush and k == 3)
+        lo, hi = (lo if first else lo + 2 * q), (hi if last else hi - 2 * q)
+        corner = len(pts)
+        arc = list(range(corner + 1, corner + 2 + hi - lo))
+        pts.append((cx, cy))
+        pts += [(cx + r * math.cos(2 * math.pi * i / n), cy + r * math.sin(2 * math.pi * i / n)) for i in range(lo, hi + 1)]
+        ring += ([] if first else [corner]) + arc + ([] if last else [corner])
+        rect += ([arc[0]] if first else []) + [corner] + ([arc[-1]] if last else [])
+        caps += [(corner, a, b) for a, b in zip(arc, arc[1:])]
+    caps += [(0, a, b) for a, b in zip(rect, rect[1:] + rect[:1])]
+    m = len(pts)
+    verts = [(x, y, 0.0) for x, y in pts] + [(x, y, float(sz)) for x, y in pts]
+    tris = [(a, c, b) for a, b, c in caps] + [(m + a, m + b, m + c) for a, b, c in caps]
+    for a, b in zip(ring, ring[1:] + ring[:1]):
+        tris += [(a, b, m + b), (a, m + b, m + a)]
+    return tuple(verts), tuple(tris)
 
 
 def triangle_normal(a, b, c):

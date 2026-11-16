@@ -129,15 +129,27 @@ Below the list of pockets, Embedder shows the inserts to have ready before you p
 | | Embedded | Open |
 |---|---|---|
 | Where | flat faces (top or bottom) and upright side faces | any face, including tilted ones |
-| Shape | a vertical cavity, closed by the print itself | a cylinder or box cut into the surface |
+| Shape | a vertical cavity, closed by the print itself | a hexagon or a vented box cut into the surface |
 | Pause | yes, one layer before the cavity closes | none |
 | Fit | the insert is dropped in during the pause and sealed in | pressed in after printing |
 
-- **Embedded on a flat face:** a disc gets a cylinder, a block gets a box. The pocket sits under a
-  cover of material (1.0 mm for magnets, 0.6 mm for NFC by default).
+- **Embedded on a flat face:** a disc gets a hexagon, a block gets a box with corner vents. The pocket
+  sits under a cover of material (1.0 mm for magnets, 0.6 mm for NFC by default).
 - **Embedded on a side face:** the insert stands on edge behind the wall, in a vertical slot
   (diameter by thickness by diameter for a disc), and is dropped in from above.
 - **Open:** cut along the inward direction of the face, flush with the surface.
+
+Every pocket lets air and spare glue out, so the insert goes all the way down:
+
+- **A disc sits in a hexagon.** It is as wide across the flats as a round pocket would be, so the six
+  flats hold the disc and the six corners stay open.
+- **A block sits in a box with a 1 mm round vent on each corner.** The box itself is the size of the
+  block plus the clearance.
+- **A side slot has the same corner vents.** The two next to the wall open along the wall only, so the
+  wall keeps the thickness you asked for.
+
+The tab shows both sizes: the fit, and how wide the pocket is with its corners or vents. A pocket added by
+an older version keeps its shape until you remove it and add it again.
 
 ### The pause
 

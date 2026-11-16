@@ -83,8 +83,9 @@ export interface PlanArgs {
 export interface Plan {
   mode: Mode;
   face?: string;
-  shape?: string;
-  size?: number[];
+  shape?: string;           // hexagon | box | slot
+  size?: number[];          // the fit: what holds the insert
+  outer?: number[];         // (x, y) with the corners or vents
   transform?: number[];
   floor?: number | null;
   top?: number | null;

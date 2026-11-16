@@ -35,7 +35,7 @@ const PROJECT = {job: 'j1', name: 'cube', plate: 1, plates: 2, config_source: 'p
   settings: {layer_height: 0.2, first_layer_height: 0.2, pause_gcode: true, print_sequence: 'by layer', raft_layers: 0},
   blocks: [], objects: [object(0), object(1)],
   existing: [{id: '9', object_id: '1', name: 'Embedder 6x3 magnet (embedded)', label: '6x3 magnet', mode: 'embedded'}], pauses: []};
-const PLAN = {mode: 'embedded', face: 'top', shape: 'cylinder', size: [6.4, 6.4, 3.2], transform: [1,0,0,100, 0,1,0,100, 0,0,1,15.6, 0,0,0,1],
+const PLAN = {mode: 'embedded', face: 'top', shape: 'hexagon', size: [6.4, 6.4, 3.2], outer: [7.390083, 6.4], transform: [1,0,0,100, 0,1,0,100, 0,0,1,15.6, 0,0,0,1],
   floor: 15.6, top: 18.8, pause_z: 19, cover: 1.2, label: '6x3 magnet', kind: 'magnet',
   preview: {positions: [100,100,15.6, 103,100,15.6, 100,103,18.8], indices: [0, 1, 2]}, warnings: [], blocked: null};
 async function ready() {
@@ -213,6 +213,23 @@ test('placing sends a plan request; the preview is listed and staged with its pa
   assert(byTest('add').disabled && byTest('plan-empty'), 'Add waits for the next face');
   const again = await place(null);
   eq(again.args.others.length, 1, 'staged pockets go along for the proximity check');
+`);
+
+test('the plan names the pocket shape and how wide it is with its vents', `
+  await loaded();
+  await place(PLAN);
+  const facts = () => Object.fromEntries(qa('[data-test=plan] dt').map(dt => [text(dt), text(dt.nextElementSibling)]));
+  eq(facts()['Pocket size'], '6.40 × 6.40 × 3.20 mm', 'the fit: flat to flat');
+  eq(text(byTest('plan-shape')), 'Hexagon · corners vent air and glue', 'a disc sits in a hexagon');
+  eq(facts()['With vents'], '7.39 × 6.40 mm', 'corner to corner, flat to flat');
+  eq(text(byTest('plan-outer')), '7.39 × 6.40 mm', 'the same cell by its hook');
+  await place({...PLAN, shape: 'box', size: [10.4, 5.4, 2.2], outer: [11.4, 6.4], label: '10x5x2 magnet'});
+  eq([text(byTest('plan-shape')), text(byTest('plan-outer'))], ['Box · corner vents for air and glue', '11.40 × 6.40 mm'], 'a block gets corner vents');
+  await place({...PLAN, face: 'side', shape: 'slot', size: [6.4, 3.4, 6.2], outer: [7.4, 3.9]});
+  eq([text(byTest('plan-shape')), text(byTest('plan-outer'))], ['Slot · corner vents for air and glue', '7.40 × 3.90 mm'], 'an insert on edge too');
+  const {shape, outer, ...plain} = PLAN;
+  await place(plain);
+  assert(byTest('plan-pause') && !byTest('plan-shape') && !byTest('plan-outer'), 'a plan without them shows the rest');
 `);
 
 test('a blocked embedded plan says why and offers Open', `

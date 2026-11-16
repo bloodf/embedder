@@ -20,7 +20,8 @@ lid or a base.
 ![Magnet sizes built in](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-02-magnets.png){align=center}
 
 Fifteen disc magnets (3x1 up to 20x3 mm) and four block magnets, with XY and Z clearance you can tune for your
-printer.
+printer. A disc sits in a hexagonal pocket and a block in a box with corner vents, so air and spare glue get
+out and the magnet goes all the way down.
 
 ## NFC stickers too
 

@@ -459,6 +459,7 @@ def _round(v):
 def _describe_pocket(p):
     verts, tris = p.world_mesh()
     return {"mode": p.mode, "face": p.face, "shape": p.shape, "size": [round(v, 6) for v in p.size],
+            "outer": [round(v, 6) for v in p.outer()],
             "transform": [round(v, 9) for v in p.transform], "floor": _round(p.floor), "top": _round(p.top),
             "pause_z": _round(p.pause_z), "cover": _round(p.cover), "label": p.insert.label, "kind": p.insert.kind,
             "preview": {"positions": [round(c, 4) for v in verts for c in v], "indices": [i for t in tris for i in t]}}
