@@ -14,9 +14,12 @@ function again(target: EventTarget | null, e: Event): void {
   target?.dispatchEvent(e);
 }
 
+// A Chinese input method in Chinese mode types the full-width signs.
+const DECIMAL_KEYS = ['.', ',', '。', '．', '，'];
+
 function onKeypress(e: KeyboardEvent): void {
   const sign = decimalSign(locale.value);
-  if (ours.has(e) || (e.key !== '.' && e.key !== ',') || e.key === sign) return;
+  if (ours.has(e) || !DECIMAL_KEYS.includes(e.key) || e.key === sign) return;
   e.preventDefault();
   e.stopPropagation();
   again(e.target, new KeyboardEvent('keypress', { key: sign, bubbles: true, cancelable: true }));
@@ -26,11 +29,15 @@ function onPaste(e: ClipboardEvent): void {
   const text = e.clipboardData?.getData('text/plain') ?? '';
   const fixed = pastedDecimal(text, decimalSign(locale.value));
   if (ours.has(e) || fixed == null || fixed === text.trim()) return;
+  let paste: ClipboardEvent;
+  try {   // a WebView without these constructors keeps InputNumber's own paste
+    const data = new DataTransfer();
+    data.setData('text/plain', fixed);
+    paste = new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true });
+  } catch { return; }
   e.preventDefault();
   e.stopPropagation();
-  const data = new DataTransfer();
-  data.setData('text/plain', fixed);
-  again(e.target, new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+  again(e.target, paste);
 }
 
 export const vDecimal: Directive<HTMLElement> = {

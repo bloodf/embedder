@@ -439,6 +439,7 @@ class Write(Base):
         with self.assertRaises(threemf.ThreeMFError) as cm:
             self.apply(src, add=[self.addition(src)])
         self.assertEqual(cm.exception.code, "cut_object")
+        self.assertEqual(cm.exception.detail, next(iter(threemf.read(src, FALLBACK).objects.values())).name)   # the bare name, for the page
 
     def test_ids_stay_unique_over_several_additions(self):
         src = self.make(fixtures.two_instances)

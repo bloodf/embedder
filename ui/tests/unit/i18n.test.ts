@@ -75,4 +75,6 @@ test('decimal input: the locale sign, and "2.5" pasted means two and a half in e
   assert.equal(pastedDecimal('-1.25', ','), '-1,25');
   assert.equal(pastedDecimal('abc', ','), null);
   assert.equal(pastedDecimal('1.2.3', ','), null);
+  assert.equal(pastedDecimal('2．5', '.'), '2.5');
+  assert.equal(pastedDecimal('2，5', ','), '2,5');
 });

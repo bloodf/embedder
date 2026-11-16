@@ -238,6 +238,30 @@ test('German decimals: "1.5" typed or pasted into a millimetre field is one and 
   eq(last('cmd', 'settings.save').args.settings.cover_magnet, 0.8, 'the number sent');
 `, { lang: 'de', intl: 'de-DE' });
 
+test('Chinese input: a full-width 。 or ． typed into a millimetre field is the decimal point', `
+  await ready();
+  await tab('settings');
+  const field = q('#set-cover_magnet');
+  await type(field, '1。5'); field.blur(); await settle();
+  eq(field.value, '1.5 mm', 'typed 。');
+  await type(field, '2．5'); field.blur(); await settle();
+  eq(field.value, '2.5 mm', 'typed ．');
+`, { lang: 'zh_CN', intl: 'zh-CN' });
+
+test('where a WebView cannot build a paste event, the field keeps its own paste', `
+  await ready();
+  await tab('settings');
+  const field = q('#set-cover_magnet');
+  window.DataTransfer = function () { throw new TypeError('Illegal constructor'); };
+  field.focus(); field.select();
+  const paste = new Event('paste', { bubbles: true, cancelable: true });
+  paste.clipboardData = { getData: () => '0.8' };   // needs rewriting for de, so the directive tries to build its event
+  field.dispatchEvent(paste);   // an exception in a listener would show in the page probe (window error)
+  assert(paste.defaultPrevented, 'InputNumber took the paste, nothing was swallowed');
+  field.blur(); await settle();
+  eq(field.value, '8,0 mm', 'InputNumber read it as it always did (the point is a group sign in German)');
+`, { lang: 'de', intl: 'de-DE' });
+
 test('Spanish decimals in a custom size: "2.5" typed is two and a half', `
   await loaded();
   await click(q('#f-custom'));
@@ -479,6 +503,23 @@ test('the list says which inserts to have ready, open pockets and copies include
   eq(qa('[data-test=inserts] li').map(text), ['2 × Ø6 × 3 mm disc', '1 × Ø25 mm sticker'], 'inserts lines');
   eq(qa('[data-test=inserts] .em-kind').map(e => e.dataset.kind), ['magnet', 'nfc'], 'each with the mark of its kind');
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Ø25 mm sticker', 'Cube · top · open']], 'rows');
+`);
+
+test('Apply refused for one staged pocket says which pocket and why', `
+  await loaded();
+  await place(PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  await fail(last('cmd', 'project.apply'), {code: 'pocket_blocked', detail: 'pocket 1: no_floor'});
+  assert(alerts().includes('A staged pocket can no longer be made (pocket 1: no printed layer would sit under the pocket'), 'alert: ' + alerts());
+`);
+
+test('a cut object is named in the error', `
+  await loaded();
+  const m = await place(null);
+  await fail(m, {code: 'cut_object', detail: 'Lid'});
+  assert(alerts().includes('This object was cut with connectors; Embedder cannot add parts to it (Lid)'), 'alert: ' + alerts());
 `);
 
 test('a project without a part list says why in words', `

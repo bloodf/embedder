@@ -52,10 +52,10 @@ export function decimalSign(locale: string): string {
   return new Intl.NumberFormat(locale).formatToParts(1.5).find(p => p.type === 'decimal')?.value ?? '.';
 }
 
-/** A pasted plain number ("2.5", "2,5", "2.5 mm") written with `sign` as its decimal sign; null for anything else.
+/** A pasted plain number ("2.5", "2,5", "2.5 mm", full-width "2．5") written with `sign` as its decimal sign; null for anything else.
  *  ponytail: one "." or "," is always the decimal sign. The fields hold millimetres below 1000, where a group sign
  *  never occurs; a field for larger numbers would need to tell "1.000" from "1.5". */
 export function pastedDecimal(text: string, sign: string): string | null {
-  const m = /^\s*(-?\d+)(?:[.,](\d+))?\s*(?:mm)?\s*$/i.exec(text);
+  const m = /^\s*(-?\d+)(?:[.,。．，](\d+))?\s*(?:mm)?\s*$/i.exec(text);
   return m ? (m[2] == null ? m[1] : `${m[1]}${sign}${m[2]}`) : null;
 }

@@ -572,9 +572,9 @@ def _component_tag(main_obj_text, first_part, new_id, matrix, prod):
 def _add_part(pkg, ed, add, new_id):
     obj = pkg.objects.get(add.object_id)
     if obj is None or obj.plain:
-        raise ThreeMFError("unsupported_object", "object %s has no parts list to add to" % add.object_id)
+        raise ThreeMFError("unsupported_object", obj.name if obj else str(add.object_id))   # the detail is the name
     if pkg.has_cut_connectors(obj.id):
-        raise ThreeMFError("cut_object", "object %s was cut with connectors" % obj.name)
+        raise ThreeMFError("cut_object", obj.name)
     matrix = _component_matrix(pkg, add)
     target = obj.parts[0].file
     text = ed.get(target)

@@ -35,8 +35,10 @@ All notable changes to this project are documented here. The format follows
 - The line under the 3D view now also says that a pocket can be dragged.
 - Insert names in the pocket list, the plan, the pauses and **Have ready at the printer** are written in the page
   language, the same way as in the insert menu ("Ø6 × 3 mm disc" rather than "6x3 magnet").
-- Error messages no longer repeat the plugin's English explanation after the translated sentence; a file path or
-  OrcaSlicer's own error text is still shown.
+- Error messages no longer repeat the plugin's English explanation after the translated sentence. A file path,
+  OrcaSlicer's own error text and the name of the object are still shown, and an Apply refused for one pocket says
+  which pocket and why. The pause text written into the project ("Embedder: insert 2 x 6x3 magnet") stays in
+  English: it is G-code that OrcaSlicer shows as is.
 - Number fields follow the page language. In Brazilian Portuguese, Portuguese "mesa" now names the plate.
 - In a narrow window, where the form sits above the 3D view, the view no longer jumps when a click or a drag
   changes the pocket panel above it.
