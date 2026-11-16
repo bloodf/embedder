@@ -6,6 +6,26 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-16
+
+### Changed
+
+- A pocket for a disc (a round magnet, an NFC sticker or coin) is now a hexagon instead of a circle. It is as
+  wide across the flats as the round pocket was, so the six flats hold the disc in place, and the six corners
+  stay open: air and spare glue get out, and the insert goes all the way down.
+- A pocket for a block keeps its size and gets a 1 mm round vent on each of its four corners, for the same
+  reason. The vents run the whole depth of the pocket.
+- The vertical slot behind a side face has the corner vents too. The two next to the wall open along the wall
+  only, so the wall keeps the thickness you asked for.
+- This applies to open and embedded pockets. Pause and cover heights are the same as before.
+- The new pocket panel names the shape and shows two sizes: the fit, and how wide the pocket is with its
+  corners or vents. The 3D view draws the pocket as it will be cut.
+- The warning for a pocket that reaches outside the part now follows the new outline: a corner of the hexagon
+  or a vent that comes through a thin wall is reported.
+
+A pocket added by an older version keeps its round or plain box shape. To change it, tick it for removal, add
+it again and apply.
+
 ## [0.2.0] - 2026-11-15
 
 ### Changed
