@@ -37,8 +37,8 @@ export async function loadProject(): Promise<void> {
   meshes.clear();
   pullToken++;
   s.mesh = { ...s.mesh, state: 'idle', done: 0, total: 0 };
-  letGo();
   Object.assign(s, { project: r.result, object: null, staged: [], remove: [], result: null, opened: '' });
+  letGo();
   if (r.result.objects.length) await selectObject(0);
 }
 
@@ -79,6 +79,7 @@ function note(text: string | null): void {
 function forgetPlans(planned: PlanArgs | null = null): void {
   planToken++;
   planOut = 0;
+  s.planning = false;
   planAgain = false;
   planKey = planned ? JSON.stringify(planned) : '';
   clearTimeout(planTimer);
@@ -87,6 +88,7 @@ function forgetPlans(planned: PlanArgs | null = null): void {
 
 /** Nothing in hand: no new pocket being placed, no pocket of the list selected. */
 function letGo(): void {
+  keepMove();
   forgetPlans();
   dragFrom = null;
   Object.assign(s, { selected: null, dragging: false, hit: null, plan: null, planArgs: null, note: '' });
@@ -94,8 +96,24 @@ function letGo(): void {
 
 /** Put a pocket of the list in hand as it is in the list: the form shows what it was planned with. */
 function takeStaged(x: Staged): void {
+  if (s.selected !== x.key) keepMove();
   forgetPlans(x.args);
   Object.assign(s, { selected: x.key, ...formOf(x.args, s.insert.preset), hit: hitOf(x.args), plan: x.plan, planArgs: x.args });
+}
+
+/** The pocket of the list in hand is let go while its last change is not its row yet (a drop, an arrow key or a
+ *  setting whose plan is out or not even asked): plan that change for the row, which takes the answer, or stays as it
+ *  was and says why. Called before the pocket in hand changes, so the answer is bound to the row, not to the hand. */
+function keepMove(): void {
+  const project = s.project, x = s.staged.find(p => p.key === s.selected), args = argsInHand();
+  if (!project || !x || !args || JSON.stringify(args) === JSON.stringify(x.args)) return;
+  const others = othersOf(s.staged, x.key);
+  bridge.command('pocket.plan', { job: project.job, ...args, ...(others.length ? { others } : {}) }).then((plan: Plan) => {
+    // Reloaded, removed, changed again, or back in hand (what the hand shows wins): the answer is for nothing now.
+    if (s.project !== project || s.selected === x.key || !s.staged.includes(x)) return;
+    if (plan.blocked) tracker.notify('info', t('edit.back', { reason: tMaybe(`block.${plan.blocked.code}`, plan.blocked.detail || plan.blocked.code) }));
+    else s.staged = restage(s.staged, x.key, args, plan);
+  }, e => tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) })));
 }
 
 /** Take a pocket of the list in hand (a click on its row or on its marker in the 3D view): the form then changes that
@@ -186,6 +204,7 @@ export async function replan(force = false): Promise<void> {
   }
   const token = ++planToken;
   planOut = planSent = Date.now();
+  s.planning = true;
   planAgain = false;
   planKey = key;
   const others = othersOf(s.staged, s.selected), said = s.note;
@@ -197,6 +216,7 @@ export async function replan(force = false): Promise<void> {
   }
   if (token !== planToken) return;
   planOut = 0;
+  s.planning = false;
   const now = argsInHand();
   const stale = planAgain || !now || JSON.stringify(now) !== key;   // the pocket moved on while Python planned
   // Under a drag every answer is shown (the preview slides on from it) and none is final: the release plans once more.
@@ -251,16 +271,24 @@ export async function replanStaged(): Promise<void> {
   await replan(true);
 }
 
+/** Add pocket stages what the plan shows: only once that plan is the answer for where the pocket is, with no drag on
+ *  and no plan out (a drop or an arrow key whose answer has not come would add the pocket where it was). */
+export function canAdd(): boolean {
+  const args = argsInHand();
+  return !!s.plan && !s.plan.blocked && !!s.planArgs && s.selected == null && !s.dragging && !s.planning
+    && !!args && JSON.stringify(args) === JSON.stringify(s.planArgs);
+}
+
 export function addStaged(): void {
-  if (!s.plan || s.plan.blocked || !s.planArgs || s.selected != null) return;
+  if (!canAdd() || !s.plan || !s.planArgs) return;
   const staged = stage(s.staged, s.planArgs, s.plan);
   letGo();
   Object.assign(s, { staged, result: null });
 }
 
 export function removeStaged(key: number): void {
+  s.staged = unstage(s.staged, key);   // first: a pocket that goes is not planned into its row again
   if (key === s.selected) letGo();
-  s.staged = unstage(s.staged, key);
 }
 export function markRemove(id: string, on: boolean): void { s.remove = toggle(s.remove, id, on); }
 
@@ -270,8 +298,8 @@ export async function apply(): Promise<void> {
   const r = await tracker.run<ApplyResult>({ key: 'apply', label: t('act.apply'), cmd: 'project.apply', timeoutMs: LONG_MS,
     args: { job: project.job, pockets: s.staged.map(x => x.args), remove: s.remove } });
   if (!r.ok) return;
-  letGo();
   Object.assign(s, { result: r.result, opened: '', staged: [], remove: [] });
+  letGo();
 }
 
 export async function openResult(): Promise<void> {

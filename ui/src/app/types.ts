@@ -95,6 +95,7 @@ export interface Plan {
   kind?: Kind;
   preview: { positions: number[]; indices: number[] } | null;
   warnings?: string[];
+  point?: [number, number, number];   // where it was planned: the face's middle under center
   copies?: number;          // instances of the object on the plate: each gets the insert
   blocked: { code: string; detail: string } | null;
 }

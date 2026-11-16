@@ -7,6 +7,7 @@ import { s } from '../app/store';
 import { currentObject, dragEnd, dragStart, meshesOf, moveTo, placeAt, removeInHand, selectStaged } from '../app/project';
 import { hitOf, previewsFor, sizeOf, turn } from '../app/logic';
 import { createScene, type InHand, type SceneApi } from '../core/scene';
+import type { Hit } from '../core/pick';
 import { theme } from '../core/theme';
 import { t, fmt } from '../core/i18n';
 
@@ -18,6 +19,7 @@ let scene: SceneApi | null = null;
 // The shape drawn for the pocket in hand: its last plan that had one. A plan that is blocked has none, so the pocket
 // keeps the shape it had, in red, at the spot that blocks it.
 let drawn: Omit<InHand, 'tone'> | null = null;
+let drawnFor: number | null = null;   // the pocket of the list it is the shape of; null: a new pocket
 const host = ref<HTMLElement | null>(null);
 const object = computed(() => currentObject());
 /** "60 × 40 × 8 mm": the object's own size, measured from the meshes the plugin sent. */
@@ -34,11 +36,17 @@ function showParts(refit = true) {
   scene.setParts(meshesOf(obj.object), part => normal.has(part), refit);
 }
 function showPockets() {
-  if (!s.hit) drawn = null;
-  else if (s.plan?.preview && s.planArgs) drawn = { preview: s.plan.preview, base: hitOf(s.planArgs) };
+  if (!s.hit || s.selected !== drawnFor) drawn = null;   // another pocket in hand never wears this one's shape
+  drawnFor = s.selected;
+  if (s.hit && s.plan?.preview && s.planArgs) drawn = { preview: s.plan.preview, base: hitOf(s.planArgs) };
   const tone = s.plan?.blocked ? 'blocked' : s.plan?.warnings?.length ? 'warn' : 'ok';
   scene?.setPockets(drawn && { ...drawn, tone }, previewsFor(s.staged, s.object, s.selected));
   scene?.pose(s.hit);
+}
+
+/** Where the pocket in hand is: the face's middle Python moved it to, while it is centred there; else where it was put. */
+function inHandAt(hit: Hit): Hit {
+  return s.center && s.planArgs?.center && s.plan?.point ? { ...hit, point: s.plan.point } : hit;
 }
 
 /** With a pocket in hand: arrows step it along its face, R turns it, Delete removes it, Escape lets go of it. */
@@ -53,7 +61,7 @@ function onKey(e: KeyboardEvent) {
   } else if (!s.hit || s.dragging) {
     return;
   } else if (arrow) {
-    moveTo(scene?.nudge(s.hit, arrow[0], arrow[1], e.shiftKey ? BIG_STEP_MM : STEP_MM) ?? null);
+    moveTo(scene?.nudge(inHandAt(s.hit), arrow[0], arrow[1], e.shiftKey ? BIG_STEP_MM : STEP_MM) ?? null);
   } else if (e.key === 'r' || e.key === 'R') {
     s.spin = turn(s.spin, e.shiftKey ? -TURN_DEG : TURN_DEG);
   } else if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -85,19 +93,30 @@ watch(theme, () => { showParts(false); showPockets(); });
 // In one column the form sits above the view, and its plan block grows and shrinks as the pocket in hand is planned.
 // While the user works in the view (it has the focus), the view stays where it is on the screen: a pocket must not
 // slip from under the pointer because the page above it changed height. `stageTop` is where the view was when the
-// user last pressed a button or a key in it.
-let stageTop = 0;
-const keepTop = () => { stageTop = host.value?.getBoundingClientRect().top ?? 0; };
+// user last pressed a button or a key in it, or scrolled the page; `stageAt` is where it was in the page then. A
+// scroll that leaves the view where it was in the page is the user's (or the correction's own) and stands; one that
+// comes with the page above changing height (the browser keeping the scroll in range) is left to the correction.
+let stageTop = 0, stageAt = 0;
+const keepTop = () => {
+  stageTop = host.value?.getBoundingClientRect().top ?? 0;
+  stageAt = stageTop + window.scrollY;
+};
+const scrolled = () => {
+  if (host.value && Math.abs(host.value.getBoundingClientRect().top + window.scrollY - stageAt) < 0.5) keepTop();
+};
 const pageGrew = new ResizeObserver(() => {
   if (!host.value || document.activeElement !== host.value) return;
-  const shift = host.value.getBoundingClientRect().top - stageTop;
+  const top = host.value.getBoundingClientRect().top, shift = top - stageTop;
+  stageAt = top + window.scrollY;   // the page moved the view; scrolling does not change this
   if (Math.abs(shift) >= 0.5) window.scrollBy(0, shift);
 });
 onMounted(() => {
   for (const type of ['focus', 'pointerdown', 'keydown']) host.value?.addEventListener(type, keepTop, true);
+  window.addEventListener('scroll', scrolled, { passive: true });
   pageGrew.observe(document.body);
 });
 onBeforeUnmount(() => {
+  window.removeEventListener('scroll', scrolled);
   pageGrew.disconnect();
   scene?.dispose();
   scene = null;

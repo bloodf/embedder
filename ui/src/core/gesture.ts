@@ -7,7 +7,8 @@ export type Mark = number | 'edit';
 export type Gesture = { kind: 'idle' } | { kind: 'press'; mark: Mark | null; x: number; y: number } | { kind: 'drag'; mark: Mark };
 export type Input = { type: 'down'; x: number; y: number; mark: Mark | null } | { type: 'move' | 'up'; x: number; y: number } | { type: 'cancel' };
 /** hold: a pocket is under the pointer, the camera must stay · start: the press became a drag · move: the drag goes on ·
- *  drop: released · cancel: the drag is called off · select: a click on a pocket · click: a click anywhere else. */
+ *  drop: released · cancel: the drag is called off · select: a click on a pocket of the list · click: a click anywhere
+ *  else, the pocket in hand too. */
 export type Effect = 'hold' | 'start' | 'move' | 'drop' | 'cancel' | 'select' | 'click' | null;
 
 export const IDLE: Gesture = { kind: 'idle' };
@@ -18,5 +19,6 @@ export function gesture(g: Gesture, e: Input): [Gesture, Effect] {
   if (g.kind === 'drag') return e.type === 'move' ? [g, 'move'] : [IDLE, 'drop'];
   if (g.kind !== 'press') return [g, null];
   if (e.type === 'move') return g.mark == null || isClick(g, e) ? [g, null] : [{ kind: 'drag', mark: g.mark }, 'start'];
-  return [IDLE, !isClick(g, e) ? null : g.mark == null ? 'click' : 'select'];
+  // A click on the pocket in hand is a click on the face under it: the pocket is placed there, as before it was drawn.
+  return [IDLE, !isClick(g, e) ? null : g.mark == null || g.mark === 'edit' ? 'click' : 'select'];
 }

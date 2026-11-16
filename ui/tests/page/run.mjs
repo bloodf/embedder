@@ -781,6 +781,107 @@ test('arrow keys step the pocket in hand along its face, R turns it, Delete remo
   assert(byTest('staged-empty') && text(byTest('staged-count')) === '0' && byTest('add'), 'Delete takes it off the list');
 `, { gl: true });
 
+test('a pocket of the list let go before its move is planned still moves; a move that cannot be made says so', `
+  await loaded3d();
+  await place3d(TOP_A);
+  await click(byTest('add'));
+  await dragTo(TOP_A, TOP_B);
+  await answerPlans(planAt);
+  await drop(TOP_B);
+  await until(() => open('pocket.plan').length === 1, 'the release plans');
+  await press('Escape');
+  eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'Escape let go of it before the answer came');
+  await answerPlans(args => planAt(args, {pause_z: 12.4}));
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row moved all the same');
+  await click(byTest('row-pick'));
+  stage().focus();
+  await press('ArrowLeft');
+  await until(() => open('pocket.plan').length === 1, 'the step is planned');
+  await click(byTest('done'));
+  await answerPlans(args => planAt(args, {pause_z: 7.2}));
+  eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'Done before the answer keeps the step');
+  await click(byTest('row-pick'));
+  stage().focus();
+  await press('ArrowLeft');
+  await until(() => open('pocket.plan').length === 1, 'the step is planned');
+  await press('Escape');
+  await answerPlans(() => TILTED);
+  eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'a step that cannot be made leaves the row');
+  assert(text(document.body).includes('The pocket stays as it was: the face is tilted'), 'and says so');
+  eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'without taking it back in hand');
+`, { gl: true });
+
+test('Add pocket waits for the plan of where the pocket is; the plan is announced when the drag ends', `
+  await loaded3d();
+  await place3d(TOP_A);
+  assert(!byTest('add').disabled, 'planned: it can be added');
+  await press('ArrowRight');
+  await until(() => open('pocket.plan').length === 1, 'the step is planned');
+  assert(byTest('add').disabled, 'not while the step is planned');
+  await answerPlans(planAt);
+  assert(!byTest('add').disabled, 'then it can');
+  await dragTo(TOP_A, TOP_B);
+  eq(q('[data-test=plan]').getAttribute('aria-live'), 'off', 'the plan is not read out on every move of a drag');
+  await answerPlans(planAt);
+  assert(byTest('add').disabled, 'nor while dragging');
+  await drop(TOP_B);
+  await until(() => open('pocket.plan').length === 1, 'the release plans');
+  eq(q('[data-test=plan]').getAttribute('aria-live'), 'polite', 'the plan of the drop is read out');
+  assert(byTest('add').disabled, 'nor before the release is planned');
+  const final = await answerPlans(planAt);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  eq(last('cmd', 'project.apply').args.pockets.map(p => p.point), [final.args.point], 'the pocket added is the one dropped');
+`, { gl: true });
+
+test('with Centre on the face the pocket is shown, and the arrows step it, from the middle of the face', `
+  await loaded3d();
+  await click(q('#f-center'));
+  const MID = [100, 100, 20];
+  const m = await clickAt(TOP_B);
+  assert(m && m.args.center && dist(m.args.point, MID) > 2, 'clicked well off the middle: ' + (m && m.args.point));
+  await answerPlans(args => args.center ? planAt({...args, point: MID}, {point: MID}) : planAt(args, {point: args.point}));
+  assert(/^X 100(\\.0)? · Y 100(\\.0)? · Z 20(\\.0)? mm$/.test(text(byTest('plan-at'))), 'the position is where the pocket was planned: ' + text(byTest('plan-at')));
+  await press('ArrowRight');
+  await until(() => open('pocket.plan').length === 1, 'the step is planned');
+  const step = open('pocket.plan')[0];
+  assert(Math.abs(dist(step.args.point, MID) - 0.5) < 1e-3 && step.args.point[0] > MID[0], 'half a millimetre right of the middle: ' + step.args.point);
+  assert(!('center' in step.args), 'no longer centred');
+`, { gl: true });
+
+test('in one column a scroll made while the view has the focus is not undone when the plan above grows', `
+  await loaded3d();
+  const top = () => canvas().getBoundingClientRect().top;
+  const m = await clickAt(FRONT);
+  assert(m && document.activeElement === stage(), 'the view has the focus and a plan is out');
+  const y = scrollY;
+  window.scrollBy(0, -80);
+  await settle();
+  assert(scrollY < y - 40, 'scrolled: ' + y + ' to ' + scrollY);
+  const after = top();
+  await answerPlans(planAt);
+  await until(() => !document.getAnimations().some(a => a.playState === 'running'), 'animations over');
+  await frame(); await frame();
+  assert(Math.abs(top() - after) <= 2, 'the view stays where the user scrolled it: ' + after + ' to ' + top());
+`, { gl: true, width: 480 });
+
+test('a click beside the pocket of the list in hand starts a new pocket without the shape of that pocket', `
+  await loaded3d();
+  await place3d(TOP_A);
+  await click(byTest('add'));
+  await click(byTest('row-pick'));
+  assert(await clickAt(FRONT), 'a new pocket is planned');
+  const p = spot(FRONT);
+  await pointer('mouseMoved', p.x + 1, p.y);
+  await settle();
+  assert(!stage().hasAttribute('data-over'), 'nothing to grab there before the new pocket is planned');
+  await answerPlans(planAt);
+  await pointer('mouseMoved', p.x, p.y);
+  await settle();
+  assert(stage().hasAttribute('data-over'), 'then its own shape is');
+`, { gl: true });
+
 test('the 3D view says how to move a pocket in Portuguese too, and the hint stays inside a narrow view', `
   await loaded3d();
   eq(stage().getAttribute('aria-label'), 'Visualização 3D', 'the widget is named');

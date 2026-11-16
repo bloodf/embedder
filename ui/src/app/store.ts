@@ -36,6 +36,7 @@ export const s = reactive({
   planArgs: null as PlanArgs | null,
   selected: null as number | null,
   dragging: false,
+  planning: false,   // a plan of the pocket in hand is out
   note: '',   // one passing line about the pocket in hand: the face ends there, the pocket went back
 
   staged: [] as Staged[],

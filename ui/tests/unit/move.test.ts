@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PerspectiveCamera, Vector3 } from 'three';
-import { anchorOf, boundsOf, fitCamera, nearest, normalAt, nudge, partMesh, slide, toScreen } from '../../src/core/pick.ts';
+import { anchorOf, boundsOf, centrePick, fitCamera, nearest, normalAt, nudge, partMesh, slide, toScreen } from '../../src/core/pick.ts';
 import { CUBE_IDX, CUBE_POS } from './cube.ts';
 
 const cube = (part = 0) => partMesh({ part, positions: CUBE_POS, indices: CUBE_IDX });
@@ -56,6 +56,31 @@ test('an arrow key steps along the face in the direction the camera shows; the s
   vec(far && new Vector3(...far.point), [100, 105, 20], 'Shift: 5 mm up the screen');
   assert.equal(nudge([cube()], cam, { ...TOP, point: [108, 100, 20] }, 1, 0, 5), null, 'past the edge there is no face');
   assert.equal(nudge([cube()], cam, { ...TOP, tri: 99 }, 1, 0, 5), null, 'nor on a face that is not there');
+});
+
+/** A 12-sided bar of radius 10 along X (x 80..120), one flat on top: a curved part as a slicer meshes it. */
+function bar(): ReturnType<typeof partMesh> {
+  const R = 10, n = 12, pos: number[] = [], idx: number[] = [];
+  for (const x of [80, 120]) for (let k = 0; k < n; k++) {
+    const a = Math.PI / 2 - Math.PI / n + (k * 2 * Math.PI) / n;
+    pos.push(x, 100 + R * Math.cos(a), R * Math.sin(a));
+  }
+  for (let k = 0; k < n; k++) {
+    const j = (k + 1) % n;
+    idx.push(k, n + j, n + k, k, j, n + j);   // wound outward
+  }
+  return partMesh({ part: 0, positions: new Float32Array(pos), indices: new Uint32Array(idx) });
+}
+
+test('a big step on a curved part follows the curve instead of losing the face', () => {
+  const round = bar(), top = centrePick([round], 'top');
+  assert.ok(top);
+  vec(normalAt([round], top), [0, 0, 1], 'the flat on top');
+  const big = nudge([round], above(), top, 0, 1, 5);
+  assert.ok(big, 'Shift steps onto the next flat');
+  const r = Math.hypot(big.point[1] - 100, big.point[2]);
+  assert.ok(big.point[1] > 104 && r > 9.6 && r < 10.01, 'on the surface, 5 mm on: ' + big.point);
+  assert.ok(nudge([round], above(), top, 0, 1, 0.5), 'a small step too');
 });
 
 test('on a wall, up on the screen is up the wall', () => {

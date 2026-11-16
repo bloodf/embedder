@@ -28,7 +28,10 @@ test('a press on the part that moves is the camera\'s: no click, no drag', () =>
 
 test('a press on a pocket holds the camera; released in place it selects the pocket', () => {
   assert.deepEqual(run([down(7), up(101, 100)]), { effects: ['hold', 'select'], state: IDLE });
-  assert.deepEqual(run([down('edit'), up(100, 100)]).effects, ['hold', 'select']);
+});
+
+test('a click on the pocket in hand is a click on the face under it: it places the pocket there', () => {
+  assert.deepEqual(run([down('edit'), up(100, 100)]), { effects: ['hold', 'click'], state: IDLE });
 });
 
 test('a press on a pocket becomes a drag after 5 px, then every move slides it and the release drops it', () => {

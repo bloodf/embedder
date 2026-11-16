@@ -9,7 +9,7 @@ import { OuiIcon, OuiPanel } from '../../shared/src/components';
 import { check, insert, magnet, plus, rfid, save, user } from '../../shared/src/icons';
 import PlanCard from './PlanCard.vue';
 import { s, savePreset } from '../app/store';
-import { addStaged, currentObject, replan, selectObject, selectStaged } from '../app/project';
+import { addStaged, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
 import { customDims, embeddedBlock, groupPresets } from '../app/logic';
 import type { Custom, Preset } from '../app/types';
 import { prompt } from '../core/dialog';
@@ -42,7 +42,7 @@ const coverDefault = computed(() => {
 });
 const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { value: 'nfc', label: t('kind.nfc') }]);
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
-const canAdd = computed(() => !!s.plan && !s.plan.blocked && !!s.planArgs);
+const canAdd = computed(addable);
 
 function setCustom(on: boolean) {
   const fresh: Custom = { kind: 'magnet', shape: 'disc', d: 6, l: 10, w: 5, t: 3 };

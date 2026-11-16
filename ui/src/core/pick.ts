@@ -4,7 +4,7 @@ import { Box3, BufferAttribute, BufferGeometry, Matrix4, Mesh, MeshBasicMaterial
 import type { PartMesh } from './mesh.ts';
 
 export const CLICK_PX = 5;
-const STEP_REACH = 0.5;   // mm above and below the face that an arrow-key step still finds the surface
+const STEP_REACH = 0.5;   // mm above and below the face that an arrow-key step still finds the surface, at least
 export interface Hit { part: number; tri: number; point: [number, number, number] }
 interface Rect { left: number; top: number; width: number; height: number }
 
@@ -104,8 +104,10 @@ export function nudge(targets: Mesh[], camera: PerspectiveCamera, hit: Hit, dx: 
   const right = new Vector3().setFromMatrixColumn(camera.matrixWorld, 0), up = new Vector3().setFromMatrixColumn(camera.matrixWorld, 1);
   const along = right.multiplyScalar(dx).add(up.multiplyScalar(dy)).projectOnPlane(n);
   if (along.lengthSq() < 1e-9) return null;   // the camera looks along the face: the arrow has no direction on it
-  const above = new Vector3(...hit.point).addScaledVector(along.normalize(), mm).addScaledVector(n, STEP_REACH);
-  return first(new Raycaster(above, n.clone().negate(), 0, 2 * STEP_REACH).intersectObjects(targets, false));
+  // A curved part bends away from the face's plane as far as the step goes: the reach grows with it.
+  const reach = Math.max(STEP_REACH, mm);
+  const above = new Vector3(...hit.point).addScaledVector(along.normalize(), mm).addScaledVector(n, reach);
+  return first(new Raycaster(above, n.clone().negate(), 0, 2 * reach).intersectObjects(targets, false));
 }
 
 export function boundsOf(targets: Mesh[]): Box3 {
