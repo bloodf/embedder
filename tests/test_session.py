@@ -310,6 +310,19 @@ class Apply(Base):
         self.assertEqual([(p["embedder"], p["vertices"]) for p in parts], [(False, 8), (True, 130), (True, 14)])
         self.assertEqual(out["pauses"][0]["extra"], "Embedder: insert 2 x 6x3 magnet")
 
+    def test_projects_saved_by_orca_2_5_1_and_other_writers(self):
+        for builder in (fixtures.orca_251, fixtures.odd_attributes):
+            r = self.load(builder)
+            out = self.apply(r["job"], [self.pocket()])
+            self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet"}], builder)
+            self.assertEqual([e.label for e in threemf.read(out["path"]).embedder_parts()], ["6x3 magnet"])
+            job_id, source = self.s.new_job()
+            shutil.copyfile(out["path"], source)
+            (existing,) = self.s.load(job_id, out["path"], 1, {})["existing"]
+            again = self.apply(job_id, remove=[existing["id"]])
+            pkg = threemf.read(again["path"])
+            self.assertEqual((pkg.embedder_parts(), pkg.layers), ((), ()), builder)
+
     def test_existing_user_gcode_at_the_same_layer(self):
         r = self.load(fixtures.user_pause, z=19.2)
         out = self.apply(r["job"], [self.pocket()])

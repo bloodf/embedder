@@ -13,8 +13,8 @@ All notable changes to this project are documented here. The format follows
 - A pocket for a disc (a round magnet, an NFC sticker or coin) is now a hexagon instead of a circle. It is as
   wide across the flats as the round pocket was, so the six flats hold the disc in place, and the six corners
   stay open: air and spare glue get out, and the insert goes all the way down.
-- A pocket for a block keeps its size and gets a 1 mm round vent on each of its four corners, for the same
-  reason. The vents run the whole depth of the pocket.
+- A pocket for a block keeps its size and gets a 1 mm round vent on each of its four corners (smaller on a very
+  narrow block), for the same reason. The vents run the whole depth of the pocket.
 - The vertical slot behind a side face has the corner vents too. The two next to the wall open along the wall
   only, so the wall keeps the thickness you asked for.
 - This applies to open and embedded pockets. Pause and cover heights are the same as before.
@@ -25,6 +25,15 @@ All notable changes to this project are documented here. The format follows
 
 A pocket added by an older version keeps its round or plain box shape. To change it, tick it for removal, add
 it again and apply.
+
+## [0.2.1] - 2026-11-16
+
+### Fixed
+
+- Apply works on projects saved by OrcaSlicer 2.5.1. It stopped with "object not found where expected" on
+  them, because OrcaSlicer 2.5.1 records one more detail on each object of a project.
+- Apply and removing pockets also work on projects whose XML is written in other valid ways: attributes in
+  another order, single quotes, or spaces around `=`. Everything Embedder does not change stays as it was.
 
 ## [0.2.0] - 2026-11-15
 
