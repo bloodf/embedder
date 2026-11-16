@@ -3,6 +3,7 @@ Phase 0 spike file that Orca accepted and sliced (scratchpad spike/make.py)."""
 
 import json
 import math
+import re
 import zipfile
 
 CORE = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
@@ -204,3 +205,40 @@ def plain_mesh(path, **kw):
             '  <item objectid="1" p:UUID="%s" transform="1 0 0 0 1 0 0 0 1 100 100 0" printable="1"/>\n </build>\n</model>\n'
             % (uid(5, 0), uid(4, 0)))
     return build(path, submodel=None, extra={"3D/3dmodel.model": main}, **kw)
+
+
+def _rewrite(path, edits):
+    """Rewrite text entries of a built project in place: edits = {entry name: function(text) -> text}."""
+    with zipfile.ZipFile(path) as z:
+        files = [(i.filename, z.read(i)) for i in z.infolist()]
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, data in files:
+            z.writestr(name, edits[name](data.decode("utf-8")) if name in edits else data)
+    return path
+
+
+def orca_251(path, **kw):
+    """model_settings.config as OrcaSlicer 2.5.1 writes it (a CLI export): <object id="N" auto_drop="1">."""
+    build(path, **kw)
+    return _rewrite(path, {"Metadata/model_settings.config":
+                           lambda t: re.sub(r'<object id="(\d+)">', r'<object id="\1" auto_drop="1">', t)})
+
+
+ODD_GCODE = ('<?xml version="1.0" encoding="utf-8"?>\n<custom_gcodes_per_layer>\n<plate>\n<plate_info id = \'1\' />\n'
+             "<layer type='1' top_z='5' extruder='1' color='' extra='Embedder: old' gcode=''/>\n"
+             "<mode value='SingleExtruder'/>\n</plate>\n</custom_gcodes_per_layer>\n")
+
+
+def odd_attributes(path, **kw):
+    """Well-formed XML written another way: attributes reordered and added, single quotes, spaces around '=' and a
+    line break inside a start tag, in the main model, the sub-model, model_settings and the custom G-code."""
+    build(path, gcode_xml=ODD_GCODE, **kw)
+    return _rewrite(path, {
+        "3D/3dmodel.model": lambda t: re.sub(
+            r'<component p:path="([^"]+)" objectid="(\d+)"', r"<component objectid='\2' p:path='\1'",
+            re.sub(r'<object id="(\d+)" (p:UUID="[^"]+") type="model">', "<object type=\"model\" \\2\n   id='\\1'>", t)),
+        "3D/Objects/object_1.model": lambda t: re.sub(r'<object id="(\d+)"', r"<object id='\1'", t),
+        "Metadata/model_settings.config": lambda t: re.sub(
+            r'<part id="(\d+)" (subtype="[^"]+")>', "<part \\2 id = '\\1' locked=\"0\">",
+            re.sub(r'<object id="(\d+)">', r"<object auto_drop='1' id='\1' >", t)),
+    })

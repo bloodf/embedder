@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-16
+
+### Fixed
+
+- Apply works on projects saved by OrcaSlicer 2.5.1. It stopped with "object not found where expected" on
+  them, because OrcaSlicer 2.5.1 records one more detail on each object of a project.
+- Apply and removing pockets also work on projects whose XML is written in other valid ways: attributes in
+  another order, single quotes, or spaces around `=`. Everything Embedder does not change stays as it was.
+
 ## [0.2.0] - 2026-11-15
 
 ### Changed

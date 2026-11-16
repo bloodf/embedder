@@ -463,9 +463,22 @@ def _prefix(text, uri):
     return None
 
 
-def _object_span(text, oid, settings=False):
-    pattern = r'<object id="%s">.*?</object>' if settings else r'<object\b[^>]*?\sid="%s"[^>]*>.*?</object>'
-    m = re.search(pattern % re.escape(oid), text, re.S)
+def _is(name, value):
+    """Regex for the attribute `name` equal to `value`: either quote, spaces around '=', anywhere in the tag."""
+    v = re.escape(value)
+    return r"""\s%s\s*=\s*(?:"%s"|'%s')""" % (name, v, v)
+
+
+def _value(tag, name):
+    """The unescaped value of attribute `name` in a start tag, or None."""
+    m = re.search(r"""\s%s\s*=\s*(?:"([^"]*)"|'([^']*)')""" % name, tag)
+    return None if m is None else html.unescape(m.group(1) if m.group(1) is not None else m.group(2))
+
+
+def _object_span(text, oid):
+    """The <object> element with this id, whatever other attributes its start tag carries (Orca 2.5.1 adds
+    auto_drop="1" in model_settings.config)."""
+    m = re.search(r"<object\b[^>]*?%s[^>]*(?<!/)>.*?</object>" % _is("id", oid), text, re.S)
     if not m:
         raise ThreeMFError("xml_layout", "object %s not found where expected" % oid)
     return m.span()
@@ -491,7 +504,8 @@ def _remove(text, span, pattern):
 
 
 def _max_id(texts):
-    return max([int(v) for t in texts for v in re.findall(r'(?<![\w:])(?:id|objectid)="(\d+)"', t)] or [0])
+    return max([int(v) for t in texts for v in re.findall(r"""(?<![\w:])(?:id|objectid)\s*=\s*["'](\d+)["']""", t)]
+               or [0])
 
 
 def _mesh_object(oid, verts, tris, prod):
@@ -539,18 +553,18 @@ def _remove_part(pkg, ed, pid):
     part = next(p for p in owner.parts if p.id == pid)
     main = ed.get(pkg.main_name)
     ed.set(pkg.main_name, _remove(main, _object_span(main, owner.id),
-                                  r'[ \t]*<component\b[^>]*?\sobjectid="%s"[^>]*/>[ \t]*\n?' % re.escape(pid)))
+                                  r'[ \t]*<component\b[^>]*?%s[^>]*/>[ \t]*\n?' % _is("objectid", pid)))
     text = ed.get(part.file)
-    ed.set(part.file, _remove(text, (0, len(text)), r'[ \t]*<object\b[^>]*?\sid="%s"[^>]*>.*?</object>[ \t]*\n?' % re.escape(pid)))
+    ed.set(part.file, _remove(text, (0, len(text)), r'[ \t]*<object\b[^>]*?%s[^>]*(?<!/)>.*?</object>[ \t]*\n?' % _is("id", pid)))
     cfg = ed.get(SETTINGS)
-    ed.set(SETTINGS, _remove(cfg, _object_span(cfg, owner.id, True), r'[ \t]*<part id="%s"[^>]*>.*?</part>[ \t]*\n?' % re.escape(pid)))
+    ed.set(SETTINGS, _remove(cfg, _object_span(cfg, owner.id), r'[ \t]*<part\b[^>]*?%s[^>]*(?<!/)>.*?</part>[ \t]*\n?' % _is("id", pid)))
 
 
 def _component_tag(main_obj_text, first_part, new_id, matrix, prod):
     """The new <component>: its p:path names the file the new mesh went into, the file of the first part."""
-    first = re.search(r'<[\w.:-]*component\b[^>]*?\sobjectid="%s"[^>]*>' % re.escape(first_part), main_obj_text)
-    path = re.search(r'\s([\w.-]+:path)="([^"]*)"', first.group(0)) if first else None
-    attrs = ' %s="%s"' % (path.group(1), path.group(2)) if path else ""
+    first = re.search(r'<[\w.:-]*component\b[^>]*?%s[^>]*>' % _is("objectid", first_part), main_obj_text)
+    path = re.search(r"""\s([\w.-]+:path\s*=\s*(?:"[^"]*"|'[^']*'))""", first.group(0)) if first else None
+    attrs = " " + path.group(1) if path else ""   # copied as written
     uid = ' %s:UUID="%s"' % (prod, uuid.uuid4()) if prod else ""
     return '    <component%s objectid="%s"%s transform="%s"/>\n' % (attrs, new_id, uid, geometry.to_3mf(matrix))
 
@@ -577,7 +591,7 @@ def _add_part(pkg, ed, add, new_id):
     tag = _component_tag(main[span[0]:span[1]], obj.parts[0].id, new_id, matrix, _prefix(main, PROD_URI))
     ed.set(pkg.main_name, _insert_before(main, span, "</components>", tag))
     cfg = ed.get(SETTINGS)
-    ed.set(SETTINGS, _insert_before(cfg, _object_span(cfg, obj.id, True), "</object>",
+    ed.set(SETTINGS, _insert_before(cfg, _object_span(cfg, obj.id), "</object>",
                                     _part_xml(new_id, add.name, matrix, obj.extruder, len(add.tris))))
 
 
@@ -586,9 +600,9 @@ def _layer_tag(z, extra):
 
 
 def _top_z(tag):
-    m = re.search(r'\stop_z="([^"]*)"', tag)
+    z = _value(tag, "top_z")
     try:
-        return float(m.group(1)) if m else -math.inf
+        return float(z) if z is not None else -math.inf
     except ValueError:
         return -math.inf
 
@@ -615,10 +629,11 @@ def gcode_xml(text, plate, pauses, new_mode='<mode value="MultiExtruder"/>'):
             return None
         text = '<?xml version="1.0" encoding="utf-8"?>\n<custom_gcodes_per_layer>\n</custom_gcodes_per_layer>\n'
     for m in re.finditer(r"<plate>(.*?)</plate>\s*", text, re.S):
-        info = re.search(r'<plate_info id="(\d+)"', m.group(1))
-        if info and int(info.group(1)) == plate:
+        info = re.search(r"<plate_info\b[^>]*>", m.group(1))
+        pid = (_value(info.group(0), "id") or "").strip() if info else ""
+        if pid.isdigit() and int(pid) == plate:
             layers = re.findall(r"<layer\b[^>]*/>", m.group(1))
-            kept = [t for t in layers if not _attr_extra(t).startswith(PAUSE_PREFIX)]
+            kept = [t for t in layers if not (_value(t, "extra") or "").startswith(PAUSE_PREFIX)]
             mode = re.search(r"<mode\b[^>]*/>", m.group(1))
             block = _plate_block(plate, kept, pauses, mode.group(0) if mode else new_mode)
             return text[:m.start()] + (block + "\n" if block else "") + text[m.end():]
@@ -655,11 +670,6 @@ def _publish(tmp, out):
     except BaseException:
         os.remove(out)
         raise
-
-
-def _attr_extra(tag):
-    m = re.search(r'\sextra="([^"]*)"', tag)
-    return html.unescape(m.group(1)) if m else ""
 
 
 def write(pkg, out, plate, additions=(), removals=(), pauses=()):
