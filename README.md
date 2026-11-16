@@ -116,6 +116,12 @@ exact spot, which is what you want for a lid, a base or a tile. The middle is ta
 face around the click; when that middle falls outside the face (a ring, a U shape), the clicked spot is
 kept.
 
+To move a pocket, drag it in the 3D view: it slides over the surface and turns to the face under it.
+Click a pocket, or its row under **Pockets to add**, to select it. The form then changes that pocket in
+place (size, type, rotation, cover), the arrow keys step it 0.5 mm along its face (5 mm with Shift), R
+turns it 15°, and Delete removes it. A pocket that an earlier Apply already wrote stays where it is: tick it
+for removal and place it again.
+
 Below the list of pockets, Embedder shows the inserts to have ready before you print, for example
 "2 x 6x3 magnet, 1 x 25 mm NFC sticker". Open pockets count too, and so does every copy of an object.
 

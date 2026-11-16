@@ -6,10 +6,10 @@ import SelectButton from 'primevue/selectbutton';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import { OuiIcon, OuiPanel } from '../../shared/src/components';
-import { insert, magnet, plus, rfid, save, user } from '../../shared/src/icons';
+import { check, insert, magnet, plus, rfid, save, user } from '../../shared/src/icons';
 import PlanCard from './PlanCard.vue';
 import { s, savePreset } from '../app/store';
-import { addStaged, currentObject, replan, selectObject } from '../app/project';
+import { addStaged, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
 import { customDims, embeddedBlock, groupPresets } from '../app/logic';
 import type { Custom, Preset } from '../app/types';
 import { prompt } from '../core/dialog';
@@ -42,7 +42,7 @@ const coverDefault = computed(() => {
 });
 const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { value: 'nfc', label: t('kind.nfc') }]);
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
-const canAdd = computed(() => !!s.plan && !s.plan.blocked && !!s.planArgs);
+const canAdd = computed(addable);
 
 function setCustom(on: boolean) {
   const fresh: Custom = { kind: 'magnet', shape: 'disc', d: 6, l: 10, w: 5, t: 3 };
@@ -64,7 +64,8 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
 </script>
 
 <template>
-  <OuiPanel :title="t('form.title')" :icon="insert">
+  <!-- The same form places a new pocket and changes the pocket of the list that is in hand. -->
+  <OuiPanel :title="t(s.selected == null ? 'form.title' : 'form.titleSelected')" :icon="insert">
     <div class="oui-stack">
       <div class="oui-field">
         <label id="obj-l">{{ t('form.object') }}</label>
@@ -136,7 +137,9 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
     <PlanCard />
 
     <template #footer>
-      <Button :label="t('plan.add')" severity="secondary" fluid :disabled="!canAdd" aria-describedby="em-plan-state" data-test="add" @click="addStaged">
+      <Button v-if="s.selected != null" :label="t('form.done')" severity="secondary" fluid aria-describedby="em-plan-state" data-test="done" @click="selectStaged(null)">
+        <template #icon><OuiIcon :icon="check" :size="14" /></template></Button>
+      <Button v-else :label="t('plan.add')" severity="secondary" fluid :disabled="!canAdd" aria-describedby="em-plan-state" data-test="add" @click="addStaged">
         <template #icon><OuiIcon :icon="plus" :size="14" /></template></Button>
     </template>
   </OuiPanel>
