@@ -799,25 +799,39 @@ test('in one column the view stays put under the pointer while the plan above it
   await loaded3d();
   const top = () => Math.round(canvas().getBoundingClientRect().top);
   const plan = () => Math.round(byTest('plan').getBoundingClientRect().height);
-  const still = (was, what) => assert(Math.abs(top() - was) <= 2, what + ': ' + was + ' to ' + top());   // scrolling snaps to whole pixels
+  // The messages of the plan animate their height, and the view is put back each time a frame is drawn. A layout forced
+  // between two frames sees more of the animation than was drawn, so measure once nothing moves. Scrolling snaps to
+  // whole pixels, hence the 2 px.
+  const still = async (was, what) => {
+    await until(() => !document.getAnimations().some(a => a.playState === 'running'), 'animations over');
+    await frame(); await frame();
+    assert(Math.abs(top() - was) <= 2, what + ': ' + was + ' to ' + top());
+  };
   assert(q('.em-form').getBoundingClientRect().bottom <= q('.em-stage-panel').getBoundingClientRect().top, 'the form is above the view');
   const at = top(), empty = plan();
   await place3d(FRONT);
   assert(plan() > empty + 100, 'the plan above the view grew: ' + empty + ' to ' + plan());
-  still(at, 'and the view did not move under the pointer');
+  await still(at, 'and the view did not move under the pointer');
   await click(byTest('add'));
   canvas().scrollIntoView({ block: 'center' });
   await settle();
   const held = top(), short = plan();
   await dragTo(FRONT, [0.05, 0.02]);
   assert(byTest('row-pick').getAttribute('aria-pressed') === 'true' && plan() > short + 100, 'the drag took the pocket in hand, and its plan is shown above');
-  still(held, 'the view stays where the drag began');
+  await still(held, 'the view stays where the drag began');
   await answerPlans(() => TILTED);
   assert(byTest('plan-blocked') && plan() < short + 100, 'a blocked spot makes the plan short again');
-  still(held, 'and the pocket does not slip from under the pointer');
+  await still(held, 'and the pocket does not slip from under the pointer');
+  // Every frame as it is drawn: an observer made after the page's own runs after it, once the view was put back.
+  const drawn = [];
+  const frames = new ResizeObserver(() => drawn.push(top()));
+  frames.observe(document.body);
   await drop([0.05, 0.02]);
   await answerPlans(() => TILTED);
-  still(held, 'nor when it is dropped and goes back');
+  assert(notes().includes('The pocket stays as it was'), 'dropped there, the pocket goes back and the plan says so: ' + notes());
+  await still(held, 'and the view is still in its place');
+  frames.disconnect();
+  assert(drawn.length > 1 && drawn.every(t => Math.abs(t - held) <= 2), 'in every frame drawn while the note unfolded: ' + drawn);
 `, { gl: true, width: 480 });
 
 // ------------------------------------------------------------------ runner
