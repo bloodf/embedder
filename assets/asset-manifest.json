@@ -2661,16 +2661,16 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-en.png in the panel at 846,96,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1251059,
+      "bytes": 1240188,
       "date": "2026-11-16"
     },
     {
       "file": "assets/orca-cloud/embedder-main-square-en.png",
       "source": "assets/marketing/source/embedder-workshop-main-square-en.png",
-      "operation": "crop to 1:1, scale to 900x900, small-main-dark-en.png in the panel at 490,292,865,667",
+      "operation": "crop to 1:1, scale to 900x900, panel-main-dark-en.png in the panel at 490,292,865,667",
       "width": 900,
       "height": 900,
-      "bytes": 799415,
+      "bytes": 812214,
       "date": "2026-11-16"
     },
     {
@@ -2679,7 +2679,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-placement-dark-en.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1275660,
+      "bytes": 1264334,
       "date": "2026-11-16"
     },
     {
@@ -2688,7 +2688,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-magnets-dark-en.png in the panel at 847,96,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1303886,
+      "bytes": 1293334,
       "date": "2026-11-16"
     },
     {
@@ -2697,7 +2697,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-nfc-dark-en.png in the panel at 847,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1288354,
+      "bytes": 1275205,
       "date": "2026-11-16"
     },
     {
@@ -2706,16 +2706,16 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-pause-dark-en.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1352610,
+      "bytes": 1325469,
       "date": "2026-11-16"
     },
     {
       "file": "assets/social/embedder-social-preview-en.png",
       "source": "assets/marketing/source/embedder-workshop-social-preview-en.png",
-      "operation": "crop to 2:1, scale to 1280x640, small-main-dark-en.png in the panel at 723,60,1209,545",
+      "operation": "crop to 2:1, scale to 1280x640, panel-main-dark-en.png in the panel at 723,60,1209,545",
       "width": 1280,
       "height": 640,
-      "bytes": 742604,
+      "bytes": 766914,
       "date": "2026-11-16"
     },
     {
@@ -2724,7 +2724,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-en.png in the panel at 847,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1347959,
+      "bytes": 1336239,
       "date": "2026-11-16"
     },
     {
@@ -2733,7 +2733,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-light-en.png in the panel at 845,95,1530,755",
       "width": 1600,
       "height": 900,
-      "bytes": 1296400,
+      "bytes": 1285386,
       "date": "2026-11-16"
     },
     {
@@ -2760,7 +2760,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 112628,
+      "bytes": 112632,
       "date": "2026-11-16"
     },
     {
@@ -2769,7 +2769,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 111162,
+      "bytes": 110511,
       "date": "2026-11-16"
     },
     {
@@ -2778,16 +2778,16 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-pt-BR.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1259421,
+      "bytes": 1247458,
       "date": "2026-11-16"
     },
     {
       "file": "assets/orca-cloud/embedder-main-square-pt-BR.png",
       "source": "assets/marketing/source/embedder-workshop-main-square-pt-BR.png",
-      "operation": "crop to 1:1, scale to 900x900, small-main-dark-pt-BR.png in the panel at 498,305,868,673",
+      "operation": "crop to 1:1, scale to 900x900, panel-main-dark-pt-BR.png in the panel at 498,305,868,673",
       "width": 900,
       "height": 900,
-      "bytes": 810510,
+      "bytes": 823914,
       "date": "2026-11-16"
     },
     {
@@ -2796,7 +2796,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-placement-dark-pt-BR.png in the panel at 846,95,1527,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1290945,
+      "bytes": 1280131,
       "date": "2026-11-16"
     },
     {
@@ -2805,7 +2805,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-magnets-dark-pt-BR.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1271576,
+      "bytes": 1260145,
       "date": "2026-11-16"
     },
     {
@@ -2814,7 +2814,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-nfc-dark-pt-BR.png in the panel at 847,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1310187,
+      "bytes": 1296437,
       "date": "2026-11-16"
     },
     {
@@ -2823,16 +2823,16 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-pause-dark-pt-BR.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1290792,
+      "bytes": 1262649,
       "date": "2026-11-16"
     },
     {
       "file": "assets/social/embedder-social-preview-pt-BR.png",
       "source": "assets/marketing/source/embedder-workshop-social-preview-pt-BR.png",
-      "operation": "crop to 2:1, scale to 1280x640, small-main-dark-pt-BR.png in the panel at 684,49,1222,549",
+      "operation": "crop to 2:1, scale to 1280x640, panel-main-dark-pt-BR.png in the panel at 684,49,1222,549",
       "width": 1280,
       "height": 640,
-      "bytes": 740537,
+      "bytes": 773945,
       "date": "2026-11-16"
     },
     {
@@ -2841,7 +2841,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-pt-BR.png in the panel at 846,95,1527,754",
       "width": 1600,
       "height": 900,
-      "bytes": 1294552,
+      "bytes": 1283018,
       "date": "2026-11-16"
     },
     {
@@ -2850,7 +2850,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-light-pt-BR.png in the panel at 846,95,1527,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1283018,
+      "bytes": 1147093,
       "date": "2026-11-16"
     },
     {
@@ -2877,7 +2877,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 123195,
+      "bytes": 123892,
       "date": "2026-11-16"
     },
     {
@@ -2886,7 +2886,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 119658,
+      "bytes": 121194,
       "date": "2026-11-16"
     }
   ],

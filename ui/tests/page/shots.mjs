@@ -19,9 +19,10 @@ const out = resolve(process.argv[2] ?? join(repo, 'dist', 'shots'));
 // window or their content); the small install cards get a small window, so their text stays readable at that size.
 const STORE = [1440, 900], CARD = [640, 400], SCALE = 2;
 const LANGS = ['en', 'pt-BR'];
-// The art's panels are 682 x 658 px in a 1600 x 900 export: PANEL is the narrowest window of that shape that still has
-// the form beside the 3D view. The square and social images have a smaller panel, so they get the one-column page.
-const PANEL = [912, 880], SMALL = [480, 480], RESULT = [960, 600];
+// The art's panels are 682 x 658 px in a 1600 x 900 export: PANEL is the narrowest window that still has the form beside
+// the 3D view and the whole header line in Portuguese (it is wider than the panel's shape; the render is fitted whole).
+// The square and social images reuse that render, fitted whole into their smaller panel.
+const PANEL = [1000, 880], RESULT = [960, 600];
 const LABELS = {
   en: { disc: 'Ø10 × 3 mm disc', sticker: 'Ø25 mm sticker', badge: 'Badge' },
   'pt-BR': { disc: 'Disco Ø10 × 3 mm', sticker: 'Adesivo Ø25 mm', badge: 'Crachá' },
@@ -122,11 +123,8 @@ const SHOTS = [
       + choose('preset', LABELS[lang].sticker) + CENTRE);
     await s.clickView(); await s.run(PLANNED);
   } },
-  { name: 'panel-pause', themes: ['dark'], langs: LANGS, size: PANEL, async go(s) {
-    await s.run(LOADED); await s.clickView(-60, 0); await s.run(PLANNED + ADD); await s.clickView(60, 0); await s.run(PLANNED + ADD + SCROLL('staged-count'));
-  } },
-  { name: 'small-main', themes: ['dark'], langs: LANGS, size: SMALL, async go(s) {
-    await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED + SCROLL('viewer'));
+  { name: 'panel-pause', themes: ['dark'], langs: LANGS, size: [1000, 1100], async go(s) {
+    await s.run(LOADED); await s.clickView(-60, 0); await s.run(PLANNED + ADD); await s.clickView(60, 0); await s.run(PLANNED + ADD);
   } },
   { name: 'screen-pockets', themes: ['dark', 'light'], langs: LANGS, async go(s) {
     await s.run(LOADED); await s.clickView(-60, 0); await s.run(PLANNED + ADD); await s.clickView(60, 0); await s.run(PLANNED + ADD);

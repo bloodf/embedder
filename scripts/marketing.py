@@ -35,12 +35,12 @@ EXPORTS = {"assets/orca-cloud/embedder-tile.png": ("embedder-workshop-tile.png",
 for _lang in ("en", "pt-BR"):
     for _name, _source, _size, _shot in (
             ("orca-cloud/embedder-main", "cover" if _lang == "en" else "main", WIDE, "panel-main-dark"),
-            ("orca-cloud/embedder-main-square", "main-square", SQUARE, "small-main-dark"),
+            ("orca-cloud/embedder-main-square", "main-square", SQUARE, "panel-main-dark"),
             ("orca-cloud/embedder-feature-01-placement", "feature-01-placement", WIDE, "panel-placement-dark"),
             ("orca-cloud/embedder-feature-02-magnets", "feature-02-magnets", WIDE, "panel-magnets-dark"),
             ("orca-cloud/embedder-feature-03-nfc", "feature-03-nfc", WIDE, "panel-nfc-dark"),
             ("orca-cloud/embedder-feature-04-pause", "feature-04-pause", WIDE, "panel-pause-dark"),
-            ("social/embedder-social-preview", "social-preview", SOCIAL, "small-main-dark"),
+            ("social/embedder-social-preview", "social-preview", SOCIAL, "panel-main-dark"),
             ("readme/embedder-hero-dark", "hero-dark", WIDE, "panel-main-dark"),
             ("readme/embedder-hero-light", "hero-light", WIDE, "panel-main-light"),
             ("readme/embedder-screen-pockets-dark", None, (1440, 900), "screen-pockets-dark"),
@@ -70,11 +70,38 @@ def panel(image):
     return mask, box
 
 
+def clean_bottom(render):
+    """Cut a render that ends in the top sliver of the next bar (a window one pixel too short for the page) at the
+    page background just above it, so the screenshot ends at a clean edge. A render that already ends on background
+    is left as it is."""
+    w, h = render.size
+    x = w // 10                                    # inside the left card, which spans the page's full width
+    bg = render.getpixel((4, h - 1))
+    near = lambda y: sum(abs(a - b) for a, b in zip(render.getpixel((x, y)), bg)) < 12
+    if near(h - 1):
+        return render
+    y = h - 1
+    while y > 0 and not near(y):
+        y -= 1
+    return render.crop((0, 0, w, y + 1))
+
+
+def fill(render, size):
+    """Fit the whole render in the panel, as wide as it goes, from the top left; page background fills what is left, so
+    no row, button or text is ever cut at the panel's edge."""
+    w, h = size
+    scale = min(w / render.width, h / render.height)
+    scaled = render.resize((round(render.width * scale), round(render.height * scale)), Image.LANCZOS)
+    out = Image.new("RGB", size, render.getpixel((4, render.height - 1)))
+    out.paste(scaled, ((w - scaled.width) // 2, 0))
+    return out
+
+
 def composite(source, size, shot):
     art = ImageOps.fit(Image.open(source).convert("RGB"), size, Image.LANCZOS)
     mask, box = panel(art)
     w, h = box[2] - box[0], box[3] - box[1]
-    render = ImageOps.fit(Image.open(shot).convert("RGB"), (w, h), Image.LANCZOS, centering=(0.5, 0.0))
+    render = fill(clean_bottom(Image.open(shot).convert("RGB")), (w, h))
     layer = art.copy()
     layer.paste(render, box[:2])
     return Image.composite(layer, art, mask), "crop to %d:%d, scale to %dx%d, %s.png in the panel at %s" % (

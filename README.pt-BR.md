@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/readme/embedder-hero-dark-pt-BR.png">
-    <img alt="Embedder: Bolsos para ímãs e NFC, com a pausa na camada certa." src="assets/readme/embedder-hero-light-pt-BR.png" width="100%">
+    <img alt="Embedder: bolsos para ímãs e NFC, com a pausa na camada certa" src="assets/readme/embedder-hero-light-pt-BR.png" width="100%">
   </picture>
 </p>
 
@@ -40,6 +40,8 @@ A partir de um arquivo (os menus do OrcaSlicer aparecem aqui com os nomes em ing
 2. No OrcaSlicer, abra **File > Plugins > Install local plugin** e escolha o arquivo.
 3. Marque **Activate** e permita a thread em segundo plano quando o OrcaSlicer pedir.
 4. Abra a aba **Embedder**, ao lado de Prepare, Preview e Device.
+
+O Embedder é um projeto independente, que não é feito nem mantido pela equipe do OrcaSlicer. Os créditos do código e das fontes em que ele se apoia estão no [NOTICE.md](NOTICE.md).
 
 | Requisito | Detalhe |
 |---|---|
@@ -208,12 +210,12 @@ Inglês e português do Brasil. O Embedder segue o idioma do OrcaSlicer, ou o qu
 
 | | Plugin | O que faz | |
 |:-:|---|---|---|
-| <img alt="Ícone do Organizer" src="https://raw.githubusercontent.com/bloodf/orca_organizer/main/assets/orca-cloud/orca_organizer-tile.png" width="40"> | 🧩 [Organizer](https://github.com/bloodf/orca_organizer) | Organize as peças pelo contorno real e encha a mesa com mais cópias. | [Instalar](https://cloud.orcaslicer.com/p/5bf381fd42d4) |
-| <img alt="Ícone do Embedder" src="assets/orca-cloud/embedder-tile.png" width="40"> | 🧲 **Embedder** · você está aqui | Bolsos para ímãs e NFC, com a pausa na camada certa. | |
-| <img alt="Ícone do Print Calculator" src="https://raw.githubusercontent.com/bloodf/orca_print_calculator/main/assets/orca-cloud/orca_print_calculator-tile.png" width="40"> | 💰 [Print Calculator](https://github.com/bloodf/orca_print_calculator) | Preço de cada mesa: filamento, energia, mão de obra, taxas e margem. | [Instalar](https://cloud.orcaslicer.com/p/521c07cf6de2) |
-| <img alt="Ícone do Spooler" src="https://raw.githubusercontent.com/bloodf/spooler/main/assets/orca-cloud/spooler-tile.png" width="40"> | 🧵 [Spooler](https://github.com/bloodf/spooler) | Seu estoque do Spoolman dentro do OrcaSlicer, com o que resta em cada bobina. | [Instalar](https://cloud.orcaslicer.com/p/50c35dcbd6f3) |
-| <img alt="Ícone do Kobra Control" src="https://raw.githubusercontent.com/bloodf/kobracontrol/main/assets/orca-cloud/kobracontrol-tile.png" width="40"> | 🟣 [Kobra Control](https://github.com/bloodf/kobracontrol) | Controle a Anycubic Kobra X pelo OrcaSlicer na sua rede. | [Instalar](https://cloud.orcaslicer.com/p/59c786285255) |
-| <img alt="Ícone do U1 Control" src="https://raw.githubusercontent.com/bloodf/u1control/main/assets/orca-cloud/u1control-tile.png" width="40"> | 🔵 [U1 Control](https://github.com/bloodf/u1control) | Controle a Snapmaker U1 pelo OrcaSlicer: cabeças, câmera, arquivos. | [Instalar](https://cloud.orcaslicer.com/p/55b8c347d443) |
+| <img src="https://raw.githubusercontent.com/bloodf/orca_organizer/main/assets/orca-cloud/orca_organizer-tile.png" alt="Ícone do Organizer" width="40"> | 🧩 [Organizer](https://github.com/bloodf/orca_organizer) | Organize as peças pelo contorno real e encha a mesa com mais cópias. | [Instalar](https://cloud.orcaslicer.com/p/5bf381fd42d4) |
+| <img src="assets/orca-cloud/embedder-tile.png" alt="Ícone do Embedder" width="40"> | 🧲 **Embedder** · você está aqui | Bolsos para ímãs e NFC, com a pausa na camada certa. | |
+| <img src="https://raw.githubusercontent.com/bloodf/orca_print_calculator/main/assets/orca-cloud/orca_print_calculator-tile.png" alt="Ícone do Print Calculator" width="40"> | 💰 [Print Calculator](https://github.com/bloodf/orca_print_calculator) | Preço de cada mesa: filamento, energia, mão de obra, taxas e margem. | [Instalar](https://cloud.orcaslicer.com/p/521c07cf6de2) |
+| <img src="https://raw.githubusercontent.com/bloodf/spooler/main/assets/orca-cloud/spooler-tile.png" alt="Ícone do Spooler" width="40"> | 🧵 [Spooler](https://github.com/bloodf/spooler) | Seu estoque do Spoolman dentro do OrcaSlicer, com o que resta em cada bobina. | [Instalar](https://cloud.orcaslicer.com/p/50c35dcbd6f3) |
+| <img src="https://raw.githubusercontent.com/bloodf/kobracontrol/main/assets/orca-cloud/kobracontrol-tile.png" alt="Ícone do Kobra Control" width="40"> | 🟣 [Kobra Control](https://github.com/bloodf/kobracontrol) | Controle a Anycubic Kobra X pelo OrcaSlicer na sua rede. | [Instalar](https://cloud.orcaslicer.com/p/59c786285255) |
+| <img src="https://raw.githubusercontent.com/bloodf/u1control/main/assets/orca-cloud/u1control-tile.png" alt="Ícone do U1 Control" width="40"> | 🔵 [U1 Control](https://github.com/bloodf/u1control) | Controle a Snapmaker U1 pelo OrcaSlicer: cabeças, câmera, arquivos. | [Instalar](https://cloud.orcaslicer.com/p/55b8c347d443) |
 
 Cada plugin funciona sozinho; instalados juntos, compartilham dados onde ajuda.
 
@@ -221,10 +223,8 @@ Cada plugin funciona sozinho; instalados juntos, compartilham dados onde ajuda.
 
 Relatos de problemas, projetos que não carregam e pull requests são bem-vindos: comece pelo [CONTRIBUTING.md](CONTRIBUTING.md) e abra uma [issue](https://github.com/bloodf/embedder/issues). O material para desenvolvedores está em [docs/](docs), em inglês: [bolsos, pausas e limites](docs/pockets.md), [arquitetura](docs/architecture.md), [notas sobre o 3MF](docs/3mf.md), [como publicar](docs/release.md) e a [descrição do Orca Cloud](docs/orca-cloud-description.md). Veja também o [changelog](CHANGELOG.md), o [código de conduta](CODE_OF_CONDUCT.md) e o [SECURITY.md](SECURITY.md).
 
-Para gerar o arquivo do plugin a partir do código, rode `python3 scripts/build.py`. Ele grava `dist/embedder_any.whl`.
-
 ## 📄 Licença
 
-[GPL-3.0-only](LICENSE). O Embedder é um projeto independente, que não é feito nem mantido pela equipe do OrcaSlicer. Os créditos estão no [NOTICE.md](NOTICE.md): o tratamento do 3MF foi adaptado do [orca_organizer](https://github.com/bloodf/orca_organizer), a visualização 3D usa o [three.js](https://threejs.org), e a página usa Vue e PrimeVue pela fundação compartilhada Orca UI 4.0.1, com os ícones Lucide e a fonte Manrope.
+GPL-3.0-only. Veja o [LICENSE](LICENSE).
 
 <p align="center"><sub>by bloodf</sub></p>

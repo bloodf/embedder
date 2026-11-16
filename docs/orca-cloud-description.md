@@ -74,7 +74,7 @@ Each plugin works on its own; installed together they share data where it helps.
 
 O Embedder coloca ímãs e etiquetas NFC dentro das suas peças. Escolha o tamanho do inserto, clique na face onde ele vai, e a impressão pausa na hora de colocá-lo.
 
-## Do que você precisa
+## O que você precisa
 
 - OrcaSlicer 2.5.0 ou mais novo.
 - Para bolsos selados dentro da peça, um perfil de impressora com G-code de pausa. A maioria tem.

@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/readme/embedder-hero-dark-en.png">
-    <img alt="Embedder: Magnet and NFC pockets, with the pause at the right layer." src="assets/readme/embedder-hero-light-en.png" width="100%">
+    <img alt="Embedder: magnet and NFC pockets, with the pause at the right layer" src="assets/readme/embedder-hero-light-en.png" width="100%">
   </picture>
 </p>
 
@@ -40,6 +40,8 @@ From a file:
 2. In OrcaSlicer, open **File > Plugins > Install local plugin** and pick the wheel.
 3. Tick **Activate** and allow the background thread when OrcaSlicer asks.
 4. Open the **Embedder** tab, next to Prepare, Preview and Device.
+
+Embedder is an independent project, not made or supported by the OrcaSlicer team. Credits for the code and fonts it builds on are in [NOTICE.md](NOTICE.md).
 
 | Requirement | Detail |
 |---|---|
@@ -208,12 +210,12 @@ English and Brazilian Portuguese. Embedder follows OrcaSlicer's language, or the
 
 | | Plugin | What it does | |
 |:-:|---|---|---|
-| <img alt="Organizer icon" src="https://raw.githubusercontent.com/bloodf/orca_organizer/main/assets/orca-cloud/orca_organizer-tile.png" width="40"> | 🧩 [Organizer](https://github.com/bloodf/orca_organizer) | Arrange parts by their real outline and fill a plate with more copies. | [Install](https://cloud.orcaslicer.com/p/5bf381fd42d4) |
-| <img alt="Embedder icon" src="assets/orca-cloud/embedder-tile.png" width="40"> | 🧲 **Embedder** · you are here | Magnet and NFC pockets, with the pause at the right layer. | |
-| <img alt="Print Calculator icon" src="https://raw.githubusercontent.com/bloodf/orca_print_calculator/main/assets/orca-cloud/orca_print_calculator-tile.png" width="40"> | 💰 [Print Calculator](https://github.com/bloodf/orca_print_calculator) | Price every plate: filament, energy, labour, fees and margin. | [Install](https://cloud.orcaslicer.com/p/521c07cf6de2) |
-| <img alt="Spooler icon" src="https://raw.githubusercontent.com/bloodf/spooler/main/assets/orca-cloud/spooler-tile.png" width="40"> | 🧵 [Spooler](https://github.com/bloodf/spooler) | Your Spoolman stock inside OrcaSlicer, with what is left on each spool. | [Install](https://cloud.orcaslicer.com/p/50c35dcbd6f3) |
-| <img alt="Kobra Control icon" src="https://raw.githubusercontent.com/bloodf/kobracontrol/main/assets/orca-cloud/kobracontrol-tile.png" width="40"> | 🟣 [Kobra Control](https://github.com/bloodf/kobracontrol) | Run the Anycubic Kobra X from OrcaSlicer over your LAN. | [Install](https://cloud.orcaslicer.com/p/59c786285255) |
-| <img alt="U1 Control icon" src="https://raw.githubusercontent.com/bloodf/u1control/main/assets/orca-cloud/u1control-tile.png" width="40"> | 🔵 [U1 Control](https://github.com/bloodf/u1control) | Run the Snapmaker U1 from OrcaSlicer: toolheads, camera, files. | [Install](https://cloud.orcaslicer.com/p/55b8c347d443) |
+| <img src="https://raw.githubusercontent.com/bloodf/orca_organizer/main/assets/orca-cloud/orca_organizer-tile.png" alt="Organizer icon" width="40"> | 🧩 [Organizer](https://github.com/bloodf/orca_organizer) | Arrange parts by their real outline and fill a plate with more copies. | [Install](https://cloud.orcaslicer.com/p/5bf381fd42d4) |
+| <img src="assets/orca-cloud/embedder-tile.png" alt="Embedder icon" width="40"> | 🧲 **Embedder** · you are here | Magnet and NFC pockets, with the pause at the right layer. | |
+| <img src="https://raw.githubusercontent.com/bloodf/orca_print_calculator/main/assets/orca-cloud/orca_print_calculator-tile.png" alt="Print Calculator icon" width="40"> | 💰 [Print Calculator](https://github.com/bloodf/orca_print_calculator) | Price every plate: filament, energy, labour, fees and margin. | [Install](https://cloud.orcaslicer.com/p/521c07cf6de2) |
+| <img src="https://raw.githubusercontent.com/bloodf/spooler/main/assets/orca-cloud/spooler-tile.png" alt="Spooler icon" width="40"> | 🧵 [Spooler](https://github.com/bloodf/spooler) | Your Spoolman stock inside OrcaSlicer, with what is left on each spool. | [Install](https://cloud.orcaslicer.com/p/50c35dcbd6f3) |
+| <img src="https://raw.githubusercontent.com/bloodf/kobracontrol/main/assets/orca-cloud/kobracontrol-tile.png" alt="Kobra Control icon" width="40"> | 🟣 [Kobra Control](https://github.com/bloodf/kobracontrol) | Run the Anycubic Kobra X from OrcaSlicer over your LAN. | [Install](https://cloud.orcaslicer.com/p/59c786285255) |
+| <img src="https://raw.githubusercontent.com/bloodf/u1control/main/assets/orca-cloud/u1control-tile.png" alt="U1 Control icon" width="40"> | 🔵 [U1 Control](https://github.com/bloodf/u1control) | Run the Snapmaker U1 from OrcaSlicer: toolheads, camera, files. | [Install](https://cloud.orcaslicer.com/p/55b8c347d443) |
 
 Each plugin works on its own; installed together they share data where it helps.
 
@@ -221,10 +223,8 @@ Each plugin works on its own; installed together they share data where it helps.
 
 Bug reports, projects that fail to load and pull requests are welcome: start with [CONTRIBUTING.md](CONTRIBUTING.md) and open an [issue](https://github.com/bloodf/embedder/issues). The developer material is in [docs/](docs): [pockets, pauses and limits](docs/pockets.md), [architecture](docs/architecture.md), [3MF notes](docs/3mf.md), [releasing](docs/release.md) and the [Orca Cloud description](docs/orca-cloud-description.md). See also the [changelog](CHANGELOG.md), the [code of conduct](CODE_OF_CONDUCT.md) and [SECURITY.md](SECURITY.md).
 
-To build the wheel from the source, run `python3 scripts/build.py`. It writes `dist/embedder_any.whl`.
-
 ## 📄 License
 
-[GPL-3.0-only](LICENSE). Embedder is an independent project, not made or supported by the OrcaSlicer team. Credits are in [NOTICE.md](NOTICE.md): the 3MF handling is adapted from [orca_organizer](https://github.com/bloodf/orca_organizer), the 3D view uses [three.js](https://threejs.org), and the page uses Vue and PrimeVue through the shared Orca UI foundation 4.0.1, with its Lucide icons and the Manrope typeface.
+GPL-3.0-only. See [LICENSE](LICENSE).
 
 <p align="center"><sub>by bloodf</sub></p>
