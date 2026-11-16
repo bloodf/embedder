@@ -21,14 +21,20 @@ import fake_orca  # noqa: E402
 import fixtures  # noqa: E402
 
 SHOWN_STORAGE = "~/OrcaSlicer/plugins/embedder"   # where the result card says the copy went
+NAMES = {"en": ("Fridge tile", "Badge"), "pt-BR": ("Ímã de geladeira", "Crachá")}   # the project and its objects, in the page's language
 LIVE = {"layer_height": "0.2", "initial_layer_print_height": "0.2", "machine_pause_gcode": "M601",
         "print_sequence": "by layer", "raft_layers": "0", "printable_area": ["0x0", "256x0", "256x256", "0x256"]}
 
 
+def names():
+    return NAMES.get(sys.argv[1] if len(sys.argv) > 1 else "en", NAMES["en"])
+
+
 def project(path):
     """A fridge tile for magnets and a round badge for an NFC sticker, side by side on plate 1."""
-    tile = {"name": "Fridge tile", "parts": [fixtures.part("Fridge tile", fixtures.box(60, 40, 8))]}
-    badge = {"name": "Badge", "parts": [fixtures.part("Badge", fixtures.cylinder(22, 5, n=64))]}
+    tile_name, badge_name = names()
+    tile = {"name": tile_name, "parts": [fixtures.part(tile_name, fixtures.box(60, 40, 8))]}
+    badge = {"name": badge_name, "parts": [fixtures.part(badge_name, fixtures.cylinder(22, 5, n=64))]}
     return fixtures.build(path, objects=[tile, badge],
                           items=[(0, "1 0 0 0 1 0 0 0 1 40 100 0"), (1, "1 0 0 0 1 0 0 0 1 170 120 0")])
 
@@ -39,8 +45,8 @@ def main():
     try:
         storage = os.path.join(work, "storage")
         os.makedirs(storage)
-        src = project(os.path.join(work, "Fridge tile.3mf"))
-        fake_orca.install_orca(preset=LIVE, storage=storage, source=src, project_path=os.path.join(work, "Fridge tile.3mf"))
+        path = os.path.join(work, names()[0] + ".3mf")
+        fake_orca.install_orca(preset=LIVE, storage=storage, source=project(path), project_path=path)
         import plugin
         with open(os.path.join(ROOT, "pyproject.toml"), "rb") as f:
             plugin.VERSION = tomllib.load(f)["project"]["version"]

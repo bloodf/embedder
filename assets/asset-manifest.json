@@ -1100,166 +1100,6 @@
       "png_bytes": 2046
     },
     {
-      "filename": "assets/readme/embedder-hero-light.svg",
-      "width": 1600,
-      "height": 640,
-      "category": "04 README",
-      "title": "README hero \u00b7 light",
-      "use": "README header; insert a real 16:10 screenshot into the empty right-hand frame.",
-      "theme": "light",
-      "background": "#ffffff",
-      "intended_background": "#ffffff",
-      "live_text": false,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        640
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Embedder",
-          "foreground": "#202731",
-          "background": "#ffffff",
-          "size_px": 80,
-          "weight": 700,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.043,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Magnet and NFC pockets for OrcaSlicer",
-          "foreground": "#202731",
-          "background": "#ffffff",
-          "size_px": 30,
-          "weight": 600,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.043,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer",
-          "foreground": "#526171",
-          "background": "#ffffff",
-          "size_px": 23,
-          "weight": 400,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 6.35,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 768,
-          "y": 80,
-          "width": 768,
-          "height": 480,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#00675b",
-        "#202731",
-        "#526171",
-        "#ccd3dc",
-        "#ffffff"
-      ],
-      "text_strings": [
-        "Embedder",
-        "Magnet and NFC pockets for OrcaSlicer",
-        "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer"
-      ],
-      "png": "assets/readme/embedder-hero-light.png",
-      "svg_bytes": 49146,
-      "png_bytes": 44288
-    },
-    {
-      "filename": "assets/readme/embedder-hero-dark.svg",
-      "width": 1600,
-      "height": 640,
-      "category": "04 README",
-      "title": "README hero \u00b7 dark",
-      "use": "README header; insert a real 16:10 screenshot into the empty right-hand frame.",
-      "theme": "dark",
-      "background": "#181c22",
-      "intended_background": "#181c22",
-      "live_text": false,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        640
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Embedder",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 80,
-          "weight": 700,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Magnet and NFC pockets for OrcaSlicer",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 30,
-          "weight": 600,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 23,
-          "weight": 400,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 768,
-          "y": 80,
-          "width": 768,
-          "height": 480,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#181c22",
-        "#566273",
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Embedder",
-        "Magnet and NFC pockets for OrcaSlicer",
-        "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer"
-      ],
-      "png": "assets/readme/embedder-hero-dark.png",
-      "svg_bytes": 49147,
-      "png_bytes": 44832
-    },
-    {
       "filename": "assets/diagrams/how-it-works-light.svg",
       "width": 1600,
       "height": 900,
@@ -1788,557 +1628,6 @@
       "png": "assets/diagrams/pocket-types-dark.png",
       "svg_bytes": 95519,
       "png_bytes": 37843
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-01-placement.svg",
-      "width": 1600,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "Click where it goes",
-      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Click where it goes",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Rotate the part and click a face.",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 640,
-          "y": 168,
-          "width": 896,
-          "height": 560,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#222831",
-        "#566273",
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Click where it goes",
-        "Rotate the part and click a face."
-      ],
-      "png": "assets/orca-cloud/embedder-01-placement.png",
-      "svg_bytes": 91766,
-      "png_bytes": 34351
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-02-magnets.svg",
-      "width": 1600,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "Magnet sizes built in",
-      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Magnet sizes",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Magnet sizes built in",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "built in",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Magnet sizes built in",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Common disc and block magnets,",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Common disc and block magnets, with clearance.",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "with clearance.",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Common disc and block magnets, with clearance.",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 640,
-          "y": 168,
-          "width": 896,
-          "height": 560,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#222831",
-        "#566273",
-        "#b6c0cd",
-        "#edf1f5",
-        "#f2bc7a"
-      ],
-      "text_strings": [
-        "Magnet sizes built in",
-        "Common disc and block magnets, with clearance."
-      ],
-      "png": "assets/orca-cloud/embedder-02-magnets.png",
-      "svg_bytes": 92070,
-      "png_bytes": 39966
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-03-nfc.svg",
-      "width": 1600,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "NFC stickers too",
-      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "NFC stickers too",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Round tags and cards under a",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Round tags and cards under a thin cover.",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "thin cover.",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Round tags and cards under a thin cover.",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 640,
-          "y": 168,
-          "width": 896,
-          "height": 560,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#222831",
-        "#566273",
-        "#b6c0cd",
-        "#c7b5ff",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "NFC stickers too",
-        "Round tags and cards under a thin cover."
-      ],
-      "png": "assets/orca-cloud/embedder-03-nfc.png",
-      "svg_bytes": 91853,
-      "png_bytes": 35536
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-04-pause.svg",
-      "width": 1600,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "Pause at the right layer",
-      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Pause at the",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Pause at the right layer",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "right layer",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "Pause at the right layer",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "The print stops right before the",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "The print stops right before the pocket closes.",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "pocket closes.",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "source_string": "The print stops right before the pocket closes.",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 640,
-          "y": 168,
-          "width": 896,
-          "height": 560,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#222831",
-        "#566273",
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Pause at the right layer",
-        "The print stops right before the pocket closes."
-      ],
-      "png": "assets/orca-cloud/embedder-04-pause.png",
-      "svg_bytes": 92094,
-      "png_bytes": 39228
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-05-custom-sizes.svg",
-      "width": 1600,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "Your own sizes",
-      "use": "Store screenshot frame; transparent artwork intended for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Your own sizes",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 56,
-          "weight": 700,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Save any insert as a preset.",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [
-        {
-          "x": 640,
-          "y": 168,
-          "width": 896,
-          "height": 560,
-          "aspect_ratio": "16:10",
-          "content": "empty"
-        }
-      ],
-      "png_color": null,
-      "colors": [
-        "#222831",
-        "#566273",
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Your own sizes",
-        "Save any insert as a preset."
-      ],
-      "png": "assets/orca-cloud/embedder-05-custom-sizes.png",
-      "svg_bytes": 91732,
-      "png_bytes": 30439
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-main.svg",
-      "width": 1600,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "Main store image",
-      "use": "Centered store signature; transparent artwork for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        1600,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Embedder",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 120,
-          "weight": 700,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [],
-      "png_color": null,
-      "colors": [
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Embedder",
-        "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+"
-      ],
-      "png": "assets/orca-cloud/embedder-main.png",
-      "svg_bytes": 96946,
-      "png_bytes": 40016
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-main-square.svg",
-      "width": 900,
-      "height": 900,
-      "category": "06 Orca Cloud",
-      "title": "Main store image \u00b7 square",
-      "use": "Centered store signature; transparent artwork for the dark family background.",
-      "theme": "dark",
-      "background": "transparent",
-      "intended_background": "#181c22",
-      "live_text": true,
-      "viewbox": [
-        0,
-        0,
-        900,
-        900
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Embedder",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 120,
-          "weight": 700,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 28,
-          "weight": 400,
-          "live": true,
-          "font": "Manrope",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [],
-      "png_color": null,
-      "colors": [
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Embedder",
-        "Magnets and NFC, built into your prints \u00b7 OrcaSlicer 2.5+"
-      ],
-      "png": "assets/orca-cloud/embedder-main-square.png",
-      "svg_bytes": 96991,
-      "png_bytes": 34877
-    },
-    {
-      "filename": "assets/orca-cloud/embedder-tile.svg",
-      "width": 512,
-      "height": 512,
-      "category": "06 Orca Cloud",
-      "title": "512px store tile",
-      "use": "Store thumbnail with generous protected padding.",
-      "theme": "dark",
-      "background": "#222831",
-      "intended_background": "#222831",
-      "live_text": false,
-      "viewbox": [
-        0,
-        0,
-        512,
-        512
-      ],
-      "root_attrs": "",
-      "text_records": [],
-      "screenshot_frames": [],
-      "png_color": null,
-      "colors": [
-        "#181c22",
-        "#222831",
-        "#79d8c7",
-        "#edf1f5"
-      ],
-      "text_strings": [],
-      "png": "assets/orca-cloud/embedder-tile.png",
-      "svg_bytes": 801,
-      "png_bytes": 10474
     },
     {
       "filename": "assets/install/embedder-install-01.svg",
@@ -2916,65 +2205,6 @@
       "png_bytes": 50823
     },
     {
-      "filename": "assets/social/embedder-social-preview.svg",
-      "width": 1280,
-      "height": 640,
-      "category": "08 Social",
-      "title": "GitHub social preview",
-      "use": "Opaque GitHub repository social preview; all main elements respect the 40px safe margin.",
-      "theme": "dark",
-      "background": "#181c22",
-      "intended_background": "#181c22",
-      "live_text": false,
-      "viewbox": [
-        0,
-        0,
-        1280,
-        640
-      ],
-      "root_attrs": "",
-      "text_records": [
-        {
-          "text": "Embedder",
-          "foreground": "#edf1f5",
-          "background": "#181c22",
-          "size_px": 112,
-          "weight": 700,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 15.066,
-          "wcag_aa_normal": true
-        },
-        {
-          "text": "Magnets and NFC, built into your prints",
-          "foreground": "#b6c0cd",
-          "background": "#181c22",
-          "size_px": 32,
-          "weight": 400,
-          "live": false,
-          "font": "Manrope",
-          "contrast": 9.292,
-          "wcag_aa_normal": true
-        }
-      ],
-      "screenshot_frames": [],
-      "png_color": null,
-      "colors": [
-        "#181c22",
-        "#566273",
-        "#79d8c7",
-        "#b6c0cd",
-        "#edf1f5"
-      ],
-      "text_strings": [
-        "Embedder",
-        "Magnets and NFC, built into your prints"
-      ],
-      "png": "assets/social/embedder-social-preview.png",
-      "svg_bytes": 26132,
-      "png_bytes": 33965
-    },
-    {
       "filename": "assets/releases/embedder-release-template.svg",
       "width": 1280,
       "height": 320,
@@ -3415,28 +2645,384 @@
     "text": "Brand sheet, logos, hero and social typography is outlined. Requested diagram, store, install and release copy remains live; brand wordmarks stay outlined.",
     "grid": "Master layout uses an 8px grid. Explicit micro/icon grids take precedence for native pixel clarity."
   },
-  "derived_assets": [
+  "exports": [
     {
-      "filename": "docs/related-plugins/embedder-icon.png",
-      "width": 80,
-      "height": 80,
-      "source": "assets/embedder-icon.png",
-      "background": "transparent outside #181c22 rounded tile",
-      "text_strings": [],
-      "use": "Related-plugin icon; resized from the app icon."
+      "file": "assets/orca-cloud/embedder-tile.png",
+      "source": "assets/marketing/source/embedder-workshop-tile.png",
+      "operation": "crop to the rounded square at 25,26,1229,1230, white outside it made transparent, scale to 512x512",
+      "width": 512,
+      "height": 512,
+      "bytes": 208310,
+      "date": "2026-11-16"
     },
     {
-      "filename": "docs/related-plugins/embedder-preview.png",
-      "width": 560,
-      "height": 224,
-      "source": "assets/readme/embedder-hero-dark.png",
-      "background": "#181c22",
-      "text_strings": [
-        "Embedder",
-        "Magnet and NFC pockets for OrcaSlicer",
-        "Click a face \u00b7 Pick a size \u00b7 Pause at the right layer"
-      ],
-      "use": "Related-plugin preview; resized from the dark README hero."
+      "file": "assets/orca-cloud/embedder-main-en.png",
+      "source": "assets/marketing/source/embedder-workshop-cover-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-en.png in the panel at 846,96,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1251059,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-main-square-en.png",
+      "source": "assets/marketing/source/embedder-workshop-main-square-en.png",
+      "operation": "crop to 1:1, scale to 900x900, small-main-dark-en.png in the panel at 490,292,865,667",
+      "width": 900,
+      "height": 900,
+      "bytes": 799415,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-01-placement-en.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-01-placement-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-placement-dark-en.png in the panel at 846,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1275660,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-02-magnets-en.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-02-magnets-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-magnets-dark-en.png in the panel at 847,96,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1303886,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-03-nfc-en.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-03-nfc-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-nfc-dark-en.png in the panel at 847,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1288354,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-04-pause-en.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-04-pause-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-pause-dark-en.png in the panel at 846,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1352610,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/social/embedder-social-preview-en.png",
+      "source": "assets/marketing/source/embedder-workshop-social-preview-en.png",
+      "operation": "crop to 2:1, scale to 1280x640, small-main-dark-en.png in the panel at 723,60,1209,545",
+      "width": 1280,
+      "height": 640,
+      "bytes": 742604,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-hero-dark-en.png",
+      "source": "assets/marketing/source/embedder-workshop-hero-dark-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-en.png in the panel at 847,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1347959,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-hero-light-en.png",
+      "source": "assets/marketing/source/embedder-workshop-hero-light-en.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-main-light-en.png in the panel at 845,95,1530,755",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1296400,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-pockets-dark-en.png",
+      "source": "ui/tests/page/shots.mjs: screen-pockets-dark-en.png",
+      "operation": "scale to 1440x900",
+      "width": 1440,
+      "height": 900,
+      "bytes": 230392,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-pockets-light-en.png",
+      "source": "ui/tests/page/shots.mjs: screen-pockets-light-en.png",
+      "operation": "scale to 1440x900",
+      "width": 1440,
+      "height": 900,
+      "bytes": 236021,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-applied-dark-en.png",
+      "source": "ui/tests/page/shots.mjs: screen-applied-dark-en.png",
+      "operation": "scale to 960x600",
+      "width": 960,
+      "height": 600,
+      "bytes": 112628,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-applied-light-en.png",
+      "source": "ui/tests/page/shots.mjs: screen-applied-light-en.png",
+      "operation": "scale to 960x600",
+      "width": 960,
+      "height": 600,
+      "bytes": 111162,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-main-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-main-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-pt-BR.png in the panel at 846,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1259421,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-main-square-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-main-square-pt-BR.png",
+      "operation": "crop to 1:1, scale to 900x900, small-main-dark-pt-BR.png in the panel at 498,305,868,673",
+      "width": 900,
+      "height": 900,
+      "bytes": 810510,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-01-placement-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-01-placement-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-placement-dark-pt-BR.png in the panel at 846,95,1527,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1290945,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-02-magnets-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-02-magnets-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-magnets-dark-pt-BR.png in the panel at 846,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1271576,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-03-nfc-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-03-nfc-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-nfc-dark-pt-BR.png in the panel at 847,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1310187,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/orca-cloud/embedder-feature-04-pause-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-feature-04-pause-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-pause-dark-pt-BR.png in the panel at 846,95,1528,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1290792,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/social/embedder-social-preview-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-social-preview-pt-BR.png",
+      "operation": "crop to 2:1, scale to 1280x640, small-main-dark-pt-BR.png in the panel at 684,49,1222,549",
+      "width": 1280,
+      "height": 640,
+      "bytes": 740537,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-hero-dark-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-hero-dark-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-pt-BR.png in the panel at 846,95,1527,754",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1294552,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-hero-light-pt-BR.png",
+      "source": "assets/marketing/source/embedder-workshop-hero-light-pt-BR.png",
+      "operation": "crop to 16:9, scale to 1600x900, panel-main-light-pt-BR.png in the panel at 846,95,1527,753",
+      "width": 1600,
+      "height": 900,
+      "bytes": 1283018,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-pockets-dark-pt-BR.png",
+      "source": "ui/tests/page/shots.mjs: screen-pockets-dark-pt-BR.png",
+      "operation": "scale to 1440x900",
+      "width": 1440,
+      "height": 900,
+      "bytes": 247723,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-pockets-light-pt-BR.png",
+      "source": "ui/tests/page/shots.mjs: screen-pockets-light-pt-BR.png",
+      "operation": "scale to 1440x900",
+      "width": 1440,
+      "height": 900,
+      "bytes": 252379,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-applied-dark-pt-BR.png",
+      "source": "ui/tests/page/shots.mjs: screen-applied-dark-pt-BR.png",
+      "operation": "scale to 960x600",
+      "width": 960,
+      "height": 600,
+      "bytes": 123195,
+      "date": "2026-11-16"
+    },
+    {
+      "file": "assets/readme/embedder-screen-applied-light-pt-BR.png",
+      "source": "ui/tests/page/shots.mjs: screen-applied-light-pt-BR.png",
+      "operation": "scale to 960x600",
+      "width": 960,
+      "height": 600,
+      "bytes": 119658,
+      "date": "2026-11-16"
+    }
+  ],
+  "sources": [
+    {
+      "file": "assets/marketing/source/embedder-workshop-cover-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1687389,
+      "sha256": "e8ee9e352c00e8ca67f35ae319e553cfc0b8ce023a3e6cc5a0c122bb9f25a0c9"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-01-placement-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1795143,
+      "sha256": "e1fb158f56937144bdd80f4bd7bcf0625f7c724b93a278f804994d11f8afcec3"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-01-placement-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1717269,
+      "sha256": "8258b1464132b25e8a0b1c9d2c633d03f63aefa37024ce40d97e4fc7f0b6d70f"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-02-magnets-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1760789,
+      "sha256": "1b4e1a253c28c66a4103791abe5337f2a5d7d9904864134c61b301b4186757bf"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-02-magnets-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1700207,
+      "sha256": "ffcd6a87b9fa3b8ee867c9fb4bd8977136a2dee47b55a2f0af029a4532313d53"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-03-nfc-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1725890,
+      "sha256": "cb03715b88937dee75921b2d4f5d5ad018f02efdc8edcfeed709de89bfe1fbda"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-03-nfc-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1729759,
+      "sha256": "200b8fdcbbd9198fdf41c8ea7c51a4b54d5fb6ce8326ecdfdc58f80ede1bb933"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-04-pause-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1792488,
+      "sha256": "7f8f653a04af669fe1192e6a52a96dba19a53def3fddf9aa8cb4915782158d7d"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-feature-04-pause-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1711953,
+      "sha256": "64ad017d9aa08eb99f698b8f5e2f9ae72d4753ad94d529b7e8576231bdb6e866"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-hero-dark-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1774067,
+      "sha256": "6ef967beccecd290c548ab559b85f251f10254d0d3b82bd8e9b24be7644a6dfa"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-hero-dark-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1716576,
+      "sha256": "33e4b11ce17e3b97ed348ba36c1f4752e38c40ca57b111ff04951ea5cdae81af"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-hero-light-en.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1671406,
+      "sha256": "b5a502c1dc8e941ae93188e841810a01cc63af55dd035faa85f4757421a1c8e8"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-hero-light-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1644498,
+      "sha256": "ce577c1f3c54052c0a3685849cb31b1f38616e93c313f64ea636c7cacae67be0"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-main-pt-BR.png",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1671950,
+      "sha256": "f44f6390ef069fff55433a811dfcd0cd70d16851157e06f6f9ae4d501761daa1"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-main-square-en.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1762722,
+      "sha256": "99dfee8d4874f61f132140ad296666a99220efcd6c0d4b30a8a874085c158af6"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-main-square-pt-BR.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1779399,
+      "sha256": "7e0314339a7c8e7f0b512affd71ab997fd6709cb9ca5fc04d70c854a5ee9597b"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-social-preview-en.png",
+      "width": 1774,
+      "height": 887,
+      "bytes": 1672529,
+      "sha256": "84aabaf35b2093a6286727e02dd391277a8bc642947e3e01ce508e04d8a3c0a4"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-social-preview-pt-BR.png",
+      "width": 1774,
+      "height": 887,
+      "bytes": 1683791,
+      "sha256": "3f08e8444a3cae18ebf3627a0b97be198e92bd08c3c0b466424f706835711490"
+    },
+    {
+      "file": "assets/marketing/source/embedder-workshop-tile.png",
+      "width": 1254,
+      "height": 1254,
+      "bytes": 1186903,
+      "sha256": "7850361887010f25fab2ab779f6bf51240eaeb4d4d6b00cb43f171d206bd559b"
     }
   ]
 }

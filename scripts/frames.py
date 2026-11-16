@@ -1,15 +1,13 @@
-"""Finish the brand PNGs that are uploaded, posted or shown in the README, from the kit's exports:
+"""Finish the brand kit's install cards and social formats, from the kit's exports. (The store images, the README
+heroes and the GitHub social preview are the marketing art and come from scripts/marketing.py.)
 
-1. Store, social and install images are made opaque on the background asset-manifest.json records for them
-   (`intended_background`): a transparent image shows its lettering on whatever page it lands on, and neither
-   Orca Cloud nor GitHub's two themes can be relied on. Identity marks, feature tiles and UI icons stay
-   transparent; the README picks their light or dark variant.
+1. Social and install images are made opaque on the background asset-manifest.json records for them
+   (`intended_background`): a transparent image shows its lettering on whatever page it lands on. Identity marks,
+   feature tiles and UI icons stay transparent.
 2. The real page renders (node ui/tests/page/shots.mjs) go into the empty 16:10 screenshot frames, at the
    coordinates in the manifest. The SVG masters keep their empty frames.
 3. Opaque images whose kit layout leaves a deeper margin below the content than above it (BALANCE) are moved down
    until both margins match; a balanced image is left as it is.
-4. docs/related-plugins/embedder-preview.png (560x224, shown by the sibling plugins) is resized from the
-   finished dark README hero.
 
 Running it again over its own output gives the same bytes: flattening an opaque image changes nothing and the
 renders are pasted with a hard-edged mask, so every pasted pixel is replaced, never blended with the last run.
@@ -25,20 +23,11 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-MAX_STORE_BYTES = 2_000_000          # Orca Cloud refuses images of 2 MB or more
 SUPERSAMPLE = 4                      # where the rounded-corner mask is measured before it is cut to 0 or 255
-OPAQUE = ("assets/orca-cloud/", "assets/social/", "assets/install/")   # shipped images that must not be transparent
-PREVIEW = ("assets/readme/embedder-hero-dark.png", "docs/related-plugins/embedder-preview.png", (560, 224))
+OPAQUE = ("assets/social/", "assets/install/")   # shipped images that must not be transparent
 # brand PNG -> render. A frame without a genuine render of its step is left empty (install-01 shows OrcaSlicer's
 # own plugin dialog, which the page cannot render).
 PLACES = {
-    "assets/readme/embedder-hero-dark.png": "placement-dark",
-    "assets/readme/embedder-hero-light.png": "placement-light",
-    "assets/orca-cloud/embedder-01-placement.png": "placement-dark",
-    "assets/orca-cloud/embedder-02-magnets.png": "magnets-dark",
-    "assets/orca-cloud/embedder-03-nfc.png": "nfc-dark",
-    "assets/orca-cloud/embedder-04-pause.png": "pause-dark",
-    "assets/orca-cloud/embedder-05-custom-sizes.png": "custom-dark",
     "assets/install/embedder-install-02.png": "load-light",
     "assets/install/embedder-install-03.png": "place-light",
     "assets/install/embedder-install-04.png": "applied-light",
@@ -70,10 +59,7 @@ def rounded_mask(size, radius):
 
 def save(image, target):
     image.save(ROOT / target, optimize=True)
-    size = (ROOT / target).stat().st_size
-    if "orca-cloud" in target and size >= MAX_STORE_BYTES:
-        raise SystemExit("%s is %d bytes; Orca Cloud takes less than 2 MB" % (target, size))
-    return size
+    return (ROOT / target).stat().st_size
 
 
 def flatten(target, background):
@@ -110,11 +96,6 @@ def place(target, shot, frame, background):
     return save(base, target)
 
 
-def preview():
-    source, target, size = PREVIEW
-    return save(Image.open(ROOT / source).convert("RGB").resize(size, Image.LANCZOS), target)
-
-
 def main():
     shots = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "dist" / "shots"
     assets = manifest()
@@ -132,7 +113,6 @@ def main():
         print("%-48s moved down %d px" % (target, balance(target, backgrounds[target])))
     for target in sorted(set(known) - set(PLACES)):
         print("%-48s    left empty" % target)
-    print("%-48s <- %-16s %7d bytes" % (PREVIEW[1], PREVIEW[0].split("/")[-1], preview()))
 
 
 if __name__ == "__main__":
