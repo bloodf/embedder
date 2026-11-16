@@ -112,7 +112,7 @@ O Embedder não usa a rede. Ele lê a cópia do projeto que o OrcaSlicer exporta
 
 ## Idiomas
 
-Português do Brasil, inglês, espanhol, alemão e chinês simplificado.
+Inglês, português do Brasil, espanhol, alemão e chinês simplificado.
 
 ## Mais plugins do bloodf
 
