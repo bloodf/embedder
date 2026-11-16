@@ -146,8 +146,8 @@ joined to it through shared edges; the clicked point stays when that middle is o
 
 Python is the single source of geometry. The page only draws the primitive Python returns. The point must
 lie within 1 mm of the triangle's plane. The reply carries the pocket's mode, face class, shape, size,
-transform, cavity `floor` and `top`, `pause_z`, the actual cover (never thinner than asked), label, kind,
-`copies` (instances of the object on the plate; each gets the insert), a preview mesh and `warnings`, or
+transform, the `point` it was planned at (the face's middle under `center`), cavity `floor` and `top`,
+`pause_z`, the actual cover (never thinner than asked), label, kind, `copies` (instances of the object on the plate; each gets the insert), a preview mesh and `warnings`, or
 a `blocked` object with a stable `code`. An embedded pocket whose pause height already carries someone
 else's custom G-code gets the `existing_gcode_at_layer` warning here too, not only from apply.
 
@@ -158,7 +158,8 @@ are refused while planning, so a pocket that apply could not write is never stag
 
 Moving adds no command: a moved pocket is the same `pocket.plan` request with another `tri` and `point`, so
 its size, cavity, pause, cover and warnings come from the same code as a click. `center` is dropped once a
-pocket is moved by hand, or it would be pulled back to the middle of the face.
+pocket is moved by hand, or it would be pulled back to the middle of the face. The first arrow key on a centred
+pocket steps from the `point` of its plan, where it is drawn, not from where it was clicked.
 
 One pocket is "in hand" on the page: the new one being placed, or a pocket of the list that was selected (a
 click on its marker in the 3D view or on its row). The form, the arrow keys (0.5 mm along the face, 5 mm
@@ -175,7 +176,11 @@ with Shift, in the direction the camera shows), R (15 degrees) and a drag all ch
   change made in between is planned after that, so a drag or a held arrow key never queues requests. An
   answer that arrives during a drag is shown (shape, warnings, blocked reason) but is not final. The release
   always plans once more, and that answer stands. A request unanswered after 1.5 s no longer holds the next
-  one back.
+  one back. **Add pocket** waits until the plan shown is the answer for where the pocket is, with no drag on and
+  no plan out.
+- **Letting go before the answer.** A pocket of the list let go (Escape, **Done**, another row, a click) while
+  its last change is unplanned or unanswered is planned once more for its row, and the row takes that answer
+  (or stays, saying why) even though the pocket is no longer in hand.
 - **A blocked answer.** A new pocket keeps it, flagged and without **Add pocket**, exactly as after a click
   there. A pocket of the list goes back to where it was and the pocket panel says why, because the list only
   holds pockets Apply can write (`verdict` in `ui/src/app/logic.ts`). Warnings never stop a move.
