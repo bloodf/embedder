@@ -6,6 +6,35 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+
+### Added
+
+- Pockets can be moved in the 3D view. Drag a pocket and it slides over the surface under the pointer, turning to
+  the face it is on; the camera stays still while you drag. When you let go, the pocket is worked out again for
+  that spot (size, cavity, pause layer, cover and warnings), the same way as after a click. Escape during a
+  drag puts it back.
+- Click a pocket in the 3D view, or its row under **Pockets to add**, to select it. The form then shows that
+  pocket and changes it in place: insert size, pocket type, rotation, cover and **Centre on the face**. Press
+  **Done**, Escape or click beside the part to let go of it. A click on a face still places a new pocket.
+- With a pocket selected and the 3D view focused, the arrow keys move it 0.5 mm along its face (5 mm with
+  Shift), R and Shift+R turn it 15°, and Delete removes it. A screen reader hears the new position.
+- While you drag, the pocket turns amber when it has a warning and red where it cannot be made, and the panel
+  says why. A new pocket left on such a spot stays there, marked, as it would after a click. A pocket that is
+  already on the list goes back to where it was, and the pocket panel gives the reason.
+- The pocket panel shows where the pocket is on the plate (X, Y, Z) and how far it is turned.
+
+### Changed
+
+- Moving a pocket by hand unticks **Centre on the face** for it. Tick it again to send the pocket back to the
+  middle of its face.
+- The line under the 3D view now also says that a pocket can be dragged.
+- In a narrow window, where the form sits above the 3D view, the view no longer jumps when a click or a drag
+  changes the pocket panel above it.
+
+Pockets that an earlier Apply already wrote into the project cannot be moved. Tick one for removal, place it
+again and apply.
+
 ## [0.3.0] - 2026-11-16
 
 ### Changed

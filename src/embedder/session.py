@@ -290,6 +290,10 @@ class Session:
 
     def _plan_one(self, job, args):
         """(entry, Pocket) or raises pocket.Blocked / SessionError."""
+        return self._plan_at(job, args)[:2]
+
+    def _plan_at(self, job, args):
+        """(entry, Pocket, the point it was planned at: the face's middle under center)."""
         if not isinstance(args, dict):
             raise SessionError("bad_request", "a pocket is an object")
         entry, j, req = self._request(job, args)
@@ -299,12 +303,12 @@ class Session:
         p = pocket.plan(req, ctx)
         if pocket.breaks_surface(p, *entry.meshes[j]):
             p = replace(p, warnings=p.warnings + ("breaks_surface",))
-        return entry, p
+        return entry, p, req.point
 
     def plan(self, args):
         job = self._current(args.get("job"))
         try:
-            entry, p = self._plan_one(job, args)
+            entry, p, point = self._plan_at(job, args)
         except pocket.Blocked as e:
             return {"blocked": {"code": e.code, "detail": e.detail}, "preview": None, "mode": args.get("mode")}
         warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], self._user_layers(job))[1]]
@@ -314,7 +318,8 @@ class Session:
         if others:
             planned = [p] + [q for _, q in self._plan_quiet(job, others)]
             warnings += [w[0] for w in pocket.proximity_warnings(planned) if 0 in w[1:]]
-        return {**_describe_pocket(p), "copies": job.copies(entry.obj.id), "warnings": warnings, "blocked": None}
+        return {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": job.copies(entry.obj.id),
+                "warnings": warnings, "blocked": None}
 
     def _plan_quiet(self, job, many):
         out = []

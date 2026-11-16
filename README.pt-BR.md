@@ -121,6 +121,8 @@ As regras completas dos formatos de bolso, da pausa, dos avisos e dos limites es
   </picture>
 </p>
 
+Para mover um bolso, arraste-o na vista 3D: ele desliza pela superfície e acompanha a face embaixo dele. Clique em um bolso, ou na linha dele em **Bolsos a adicionar**, para selecioná-lo. O formulário passa a alterar esse bolso no lugar (tamanho, tipo, rotação, cobertura), as setas o movem 0,5 mm pela face (5 mm com Shift), R o gira 15° e Delete o remove. Um bolso que um Aplicar anterior já gravou fica onde está: marque-o para remoção e coloque-o de novo.
+
 Um **Aplicar** por carga: para mudar os bolsos depois, abra o novo projeto, clique em **Carregar projeto** de novo e reaplique.
 
 ## 🔒 Privacidade e segurança

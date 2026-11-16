@@ -211,6 +211,7 @@ class Plan(Base):
         self.assertEqual(clicked["transform"][3::4][:2], [105, 104])
         centred = self.plan(r["job"], point=[105, 104, 20], center=True)
         self.assertEqual(centred["transform"][3::4][:2], [110, 110])
+        self.assertEqual((clicked["point"], centred["point"]), ([105, 104, 20], [110, 110, 20]), "where the pocket was planned")
         self.assertEqual(self.plan(r["job"], point=[105, 104, 20], center=True, mode="open")["transform"][3::4][:2], [110, 110])
         side = self.plan(r["job"], tri=SIDE_TRI, point=[120, 103, 5], center=True, mode="open")
         self.assertEqual([round(v, 6) for v in side["transform"][3::4][1:3]], [110, 10])

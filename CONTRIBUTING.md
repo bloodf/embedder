@@ -27,7 +27,8 @@ python3 -m unittest discover -s tests
 ```
 
 Page tests need Node and Chrome or Chromium (`CHROME=...`). Run headless Chrome with
-`--use-mock-keychain --password-store=basic`.
+`--use-mock-keychain --password-store=basic`. The scenarios of the 3D view (selecting and dragging a pocket)
+drive real mouse events in a second Chrome with software WebGL; the others run without WebGL.
 
 To try a build in OrcaSlicer: **File > Plugins > Install local plugin**, pick
 `dist/embedder_any.whl`, then **Activate**. Python errors and `print()` output go to
