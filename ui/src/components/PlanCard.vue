@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import Message from 'primevue/message';
 import { OuiIcon } from '../../shared/src/components';
-import { layers, pause, target, warning } from '../../shared/src/icons';
+import { info, layers, pause, target, warning } from '../../shared/src/icons';
 import { s } from '../app/store';
 import { t, tMaybe, fmt } from '../core/i18n';
 
@@ -10,6 +10,12 @@ const mm = (v: number | null | undefined) => (v == null ? '—' : fmt.number(v, 
 const size = computed(() => (s.plan?.size ?? []).map(v => fmt.number(v, 2)).join(' × '));
 const outer = computed(() => (s.plan?.outer ?? []).map(v => fmt.number(v, 2)).join(' × '));
 const planned = computed(() => !!s.hit && !!s.plan && !s.plan.blocked);
+/** Where the pocket is on the plate (and how far it is turned). This block is a live region, so a move with the
+ *  pointer or the arrow keys is announced through this line. */
+const at = computed(() => {
+  const [x, y, z] = (s.hit?.point ?? [0, 0, 0]).map(v => fmt.number(v, 1));
+  return t(s.spin ? 'plan.atTurned' : 'plan.atValue', { x, y, z, spin: fmt.number(s.spin ?? 0, 0) });
+});
 </script>
 
 <!-- The pocket the last click would make: the page's one strongly coloured block once there is a plan, a quiet
@@ -24,6 +30,7 @@ const planned = computed(() => !!s.hit && !!s.plan && !s.plan.blocked);
       <dl v-else-if="s.plan" class="em-facts oui-num">
         <dt>{{ t('plan.insert') }}</dt><dd data-test="plan-label">{{ s.plan.label }}</dd>
         <dt>{{ t('plan.face') }}</dt><dd>{{ tMaybe(`face.${s.plan.face}`, s.plan.face ?? '') }} · {{ t(`mode.${s.plan.mode}`) }}</dd>
+        <dt>{{ t('plan.at') }}</dt><dd data-test="plan-at">{{ at }}</dd>
         <dt>{{ t('plan.size') }}</dt><dd>{{ size }} mm</dd>
         <template v-if="s.plan.shape"><dt>{{ t('plan.shape') }}</dt><dd data-test="plan-shape">{{ tMaybe(`pocket.${s.plan.shape}`, s.plan.shape) }}</dd></template>
         <template v-if="outer"><dt>{{ t('plan.outer') }}</dt><dd data-test="plan-outer">{{ outer }} mm</dd></template>
@@ -35,6 +42,11 @@ const planned = computed(() => !!s.hit && !!s.plan && !s.plan.blocked);
       </dl>
       <p v-else class="em-note">{{ t('plan.working') }}</p>
     </div>
+    <!-- Said here, in the live region next to the plan, and not as a banner above the page: that would push the 3D
+         view down under the pointer. -->
+    <Message v-if="s.note" severity="info" size="small" data-test="plan-note">
+      <template #icon><OuiIcon :icon="info" :size="14" /></template>{{ s.note }}
+    </Message>
     <template v-if="planned">
       <Message v-for="w in s.plan?.warnings ?? []" :key="w" severity="warn" size="small" data-test="plan-warning">
         <template #icon><OuiIcon :icon="warning" :size="14" /></template>{{ tMaybe(`warn.${w}`, w) }}

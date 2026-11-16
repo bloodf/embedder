@@ -5,7 +5,7 @@ import Checkbox from 'primevue/checkbox';
 import { OuiEmpty, OuiIcon, OuiPanel } from '../../shared/src/components';
 import { check, insert, layers, pause, rfid, trash, warning } from '../../shared/src/icons';
 import { s, tracker } from '../app/store';
-import { apply, markRemove, removeStaged } from '../app/project';
+import { apply, markRemove, removeStaged, selectStaged } from '../app/project';
 import { insertsNeeded, pauseSummary, splitLead } from '../app/logic';
 import type { Staged } from '../app/types';
 import { locale, t, tn, tMaybe, fmt } from '../core/i18n';
@@ -31,16 +31,20 @@ function where(p: Staged): string {
 
     <OuiEmpty v-if="!s.staged.length" compact :icon="layers" tone="lime" :title="empty[0]" :text="empty[1]" data-test="staged-empty" />
     <ul v-else class="em-rows" data-test="staged">
-      <li v-for="p in s.staged" :key="p.key">
-        <span class="em-kind em-kind-lg" :data-kind="p.plan.kind ?? 'magnet'"><OuiIcon :icon="p.plan.kind === 'nfc' ? rfid : insert" :size="16" /></span>
-        <div class="em-row-id">
-          <p class="oui-strong">{{ p.plan.label }}</p>
-          <p class="oui-meta">{{ where(p) }}</p>
-          <p v-for="w in p.plan.warnings ?? []" :key="w" class="oui-meta em-warn em-note"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</p>
-        </div>
+      <li v-for="p in s.staged" :key="p.key" :data-selected="s.selected === p.key || undefined">
+        <!-- The row is a toggle: pressed, the pocket is in hand (the form changes it, the 3D view moves it). -->
+        <button type="button" class="em-row-pick" :aria-pressed="s.selected === p.key" data-test="row-pick" @click="selectStaged(s.selected === p.key ? null : p.key)">
+          <span class="em-kind em-kind-lg" :data-kind="p.plan.kind ?? 'magnet'"><OuiIcon :icon="p.plan.kind === 'nfc' ? rfid : insert" :size="16" /></span>
+          <span class="em-row-id">
+            <span class="oui-strong">{{ p.plan.label }}</span>
+            <span class="oui-meta">{{ where(p) }}</span>
+            <span v-for="w in p.plan.warnings ?? []" :key="w" class="oui-meta em-warn em-note"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</span>
+          </span>
+        </button>
         <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: p.plan.label })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
       </li>
     </ul>
+    <p v-if="s.staged.length" class="oui-meta em-list-help" data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</p>
 
     <div v-if="inserts.length || pauses.length" class="em-ready">
       <template v-if="inserts.length">
@@ -77,6 +81,17 @@ function where(p: Staged): string {
 </template>
 
 <style>
+/* foundation-gap: the foundation has no selectable list row (a row that is a toggle and shows which one is chosen), nor
+   a focus ring drawn inside an element that fills its container.
+   A staged pocket's row is a toggle button over the whole row but the trash button. The pocket in hand is marked by a
+   bar and a tint as well as by aria-pressed. */
+.em-row-pick { flex: 1 1 0; align-self: stretch; display: flex; align-items: center; gap: var(--oui-s3); min-width: 0;
+  margin: calc(-1 * var(--oui-s2)) 0 calc(-1 * var(--oui-s2)) calc(-1 * var(--oui-s4)); padding: var(--oui-s2) 0 var(--oui-s2) var(--oui-s4);
+  appearance: none; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+.orca-ui .em-row-pick:focus-visible { outline-offset: -2px; }
+.em-rows > li:has(> .em-row-pick:hover) { background: color-mix(in srgb, var(--oui-primary) 7%, transparent); }
+.em-rows > li[data-selected] { background: var(--oui-primary-soft); box-shadow: inset 3px 0 0 var(--oui-primary); }
+.em-list-help { padding: var(--oui-s2) var(--oui-s4) 0; }
 .em-ready { display: grid; gap: var(--oui-s1); padding: var(--oui-s4); }
 .em-ready > .oui-label:not(:first-child) { margin-top: var(--oui-s3); }
 .em-ready + .em-ready { border-top: 1px solid var(--oui-border); }

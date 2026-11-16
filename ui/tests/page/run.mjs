@@ -46,7 +46,8 @@ async function ready() {
 }
 async function tab(name) { await click(q('[data-tab="' + name + '"]')); }
 /** The rows of a list as [name, second line] pairs. */
-const rows = name => qa('[data-test=' + name + '] li').map(li => qa('.em-row-id > p', li).map(text));
+const rows = name => qa('[data-test=' + name + '] li').map(li => qa('.em-row-id > *', li).map(text));
+const notes = () => text(byTest('plan-note'));
 const alerts = () => qa('[role=alert] .oui-banner').map(text).join(' | ');
 const answered = new Set();
 const open = name => cmds(name).filter(m => !answered.has(m.id));
@@ -77,9 +78,66 @@ async function place(plan) {
   if (plan) await reply(last('cmd', 'pocket.plan'), plan);
   return last('cmd', 'pocket.plan');
 }
+
+// ---- the 3D view (scenarios with { gl: true }): real mouse events on the canvas, software WebGL
+const canvas = () => q('[data-test=viewer] canvas');
+const stage = () => byTest('stage');
+async function loaded3d(project) {
+  await ready();
+  await click(byTest('load'));
+  await until(() => last('cmd', 'project.load'), 'load sent');
+  await reply(last('cmd', 'project.load'), project || PROJECT);
+  await serveChunks(5);
+  await until(() => canvas() && text(q('[data-test=viewer] .oui-panel-meta')).includes('mm'), 'the cube is in the 3D view');
+  canvas().scrollIntoView({ block: 'center' });   // real mouse events only reach what is in the window
+  await settle();
+}
+// Spots of the view as fractions of its height from its centre (the camera is fitted by the height alone): two on the
+// cube's top face, one on its front wall, one beside it.
+const TOP_A = [0, -0.195], TOP_B = [0.08, -0.195], FRONT = [0, 0], NOTHING = [0, -0.47];
+function spot(s) { const r = canvas().getBoundingClientRect(); return { x: r.left + r.width / 2 + s[0] * r.height, y: r.top + r.height / 2 + s[1] * r.height }; }
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+/** A plan as the plugin would answer these arguments: a 5 mm box sunk 2 mm under the point, on the face of its triangle. */
+function planAt(args, extra) {
+  const n = [[0, 0, -1], [0, 0, 1], [0, -1, 0], [1, 0, 0], [0, 1, 0], [-1, 0, 0]][args.tri >> 1];
+  const c = args.point.map((v, i) => v - 2 * n[i]), positions = [];
+  for (const z of [-2.5, 2.5]) for (const y of [-2.5, 2.5]) for (const x of [-2.5, 2.5]) positions.push(c[0] + x, c[1] + y, c[2] + z);
+  return {...PLAN, mode: args.mode, face: n[2] > 0 ? 'top' : n[2] < 0 ? 'bottom' : 'side',
+    preview: {positions, indices: [0,1,3, 0,3,2, 4,7,5, 4,6,7, 0,5,1, 0,4,5, 2,3,7, 2,7,6, 0,2,6, 0,6,4, 1,5,7, 1,7,3]}, ...(extra || {})};
+}
+const TILTED = {blocked: {code: 'tilted_face', detail: 'tilted'}, preview: null, mode: 'embedded'};
+/** Answer every plan request still open, and the ones those answers set off, with make(args). Returns the last one answered. */
+async function answerPlans(make) {
+  let m, done = null;
+  while ((m = open('pocket.plan')[0])) { answered.add(m.id); await reply(m, make(m.args)); done = m; }
+  return done;
+}
+/** A real click on the 3D view; the plan request it sent (still open), or null when it planned nothing. */
+async function clickAt(s) {
+  const n = cmds('pocket.plan').length, p = spot(s);
+  await pointer('mouseMoved', p.x, p.y);
+  await pointer('mousePressed', p.x, p.y);
+  await pointer('mouseReleased', p.x, p.y);
+  return cmds('pocket.plan').length > n ? last('cmd', 'pocket.plan') : null;
+}
+/** Click a face and answer its plan. */
+async function place3d(s, extra) {
+  const m = await clickAt(s);
+  assert(m, 'a click on a face plans a pocket');
+  await answerPlans(args => planAt(args, extra));
+  return m;
+}
+/** Press on one spot and move to another in a few steps, the button still down. */
+async function dragTo(from, to) {
+  const a = spot(from), b = spot(to);
+  await pointer('mousePressed', a.x, a.y);
+  for (let k = 1; k <= 4; k++) await pointer('mouseMoved', a.x + ((b.x - a.x) * k) / 4, a.y + ((b.y - a.y) * k) / 4, true);
+}
+const drop = s => pointer('mouseReleased', spot(s).x, spot(s).y);
 `;
 
-// The page tests never rely on WebGL: every scenario runs as in a WebView without it (the numeric fallback).
+// Most page tests do not rely on WebGL: they run as in a WebView without it (the numeric fallback). The scenarios of the
+// 3D view itself ({ gl: true }) get a second Chrome with software WebGL.
 const NO_WEBGL = `
 const __getContext = HTMLCanvasElement.prototype.getContext;
 HTMLCanvasElement.prototype.getContext = function (type, ...rest) { return /webgl/i.test(type) ? null : __getContext.call(this, type, ...rest); };
@@ -523,6 +581,245 @@ test('one column when the window is narrow, in the order form, view, list; nothi
   for (const b of qa('button').filter(b => b.getClientRects().length)) assert(b.scrollWidth <= b.clientWidth + 1, 'label fits its button: ' + text(b));
 `, { width: 480, lang: 'pt_BR' });
 
+// ------------------------------------------------------------------ moving pockets
+test('a pocket of the list taken in hand is changed by the form in place; a change that blocks it is not taken', `
+  await loaded();
+  await place(PLAN);
+  await click(byTest('add'));
+  await place({...PLAN, label: 'Second'});
+  await click(byTest('add'));
+  eq(text(byTest('staged-help')), 'Select a pocket to change it.', 'without the 3D view there is no dragging to offer');
+  const picks = () => qa('[data-test=row-pick]');
+  const pressed = () => picks().map(b => b.getAttribute('aria-pressed'));
+  eq(pressed(), ['false', 'false'], 'nothing in hand at first');
+  const before = cmds('pocket.plan').length;
+  await click(picks()[1]);
+  eq(pressed(), ['false', 'true'], 'the row is a toggle');
+  eq(qa('[data-test=staged] li').map(li => li.hasAttribute('data-selected')), [false, true], 'and is marked');
+  eq(text(q('.em-form .oui-panel-title')), 'Selected pocket', 'the form says what it changes');
+  assert(byTest('done') && !byTest('add'), 'nothing to add: the pocket is on the list already');
+  assert(text(byTest('plan-label')) === 'Second' && text(byTest('plan-at')).startsWith('X 100.0 · Y 100.0 · Z 20.0 mm'), 'its plan and where it is: ' + text(byTest('plan')));
+  eq(cmds('pocket.plan').length, before, 'taking a pocket in hand plans nothing: it is shown as it is');
+  await click(qa('[data-test=mode] button').find(b => text(b) === 'Open'));
+  await until(() => cmds('pocket.plan').length > before, 'the change is planned');
+  const m = last('cmd', 'pocket.plan');
+  eq([m.args.mode, m.args.others.length], ['open', 1], 'the pocket in hand, checked against the other one only');
+  await reply(m, {...PLAN, mode: 'open', pause_z: null, label: 'Second'});
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Second', 'Cube · top · open']], 'its row follows');
+  eq(text(byTest('staged-count')), '2', 'no pocket was added');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × 6x3 magnet'], 'the pauses follow too');
+  await click(qa('[data-test=mode] button').find(b => text(b) === 'Embedded'));
+  await until(() => cmds('pocket.plan').length > before + 1, 'planned again');
+  await reply(last('cmd', 'pocket.plan'), {blocked: {code: 'no_floor', detail: ''}, preview: null, mode: 'embedded'});
+  assert(notes().includes('The pocket stays as it was: no printed layer would sit under the pocket'), 'the refusal is said: ' + notes());
+  eq(rows('staged')[1], ['Second', 'Cube · top · open'], 'and the pocket is as before');
+  assert(text(q('#em-mode-note')).includes('Open at the surface'), 'the form shows it as it is again: ' + text(q('#em-mode-note')));
+  eq(pressed(), ['false', 'true'], 'still in hand');
+  await click(byTest('done'));
+  eq(pressed(), ['false', 'false'], 'Done lets go of it');
+  assert(byTest('add') && byTest('plan-empty') && text(q('.em-form .oui-panel-title')) === 'New pocket', 'the form is for a new pocket again');
+  await click(picks()[0]);
+  await click(btn('Remove 6x3 magnet'));
+  assert(byTest('add') && !byTest('done') && text(byTest('staged-count')) === '1', 'removing the pocket in hand lets go of it');
+  await click(picks()[0]);
+  await place(PLAN);
+  eq(pressed(), ['false'], 'placing a new pocket lets go of the one in hand');
+  eq(text(byTest('staged-count')), '1', 'and moves nothing');
+`);
+
+test('a click on a pocket selects it, a click on its row too; Escape and a click on nothing let go of it', `
+  await loaded3d();
+  eq([stage().getAttribute('role'), stage().tabIndex, stage().getAttribute('aria-label')], ['application', 0, '3D view'], 'the view is one focusable widget');
+  const keys = q('#' + stage().getAttribute('aria-describedby'));
+  assert(keys.classList.contains('oui-sr') && text(keys).includes('arrow keys move it 0.5 mm'), 'its keys are described: ' + text(keys));
+  assert(text(q('.em-hint')).includes('drag a pocket to move it'), 'the hint says a pocket can be dragged: ' + text(q('.em-hint')));
+  const m = await place3d(TOP_A);
+  assert(Math.abs(m.args.point[2] - 20) < 1e-3 && dist(m.args.point, [100, 100, 20]) < 3, 'the spot is on the top face: ' + m.args.point);
+  await click(byTest('add'));
+  eq(text(byTest('staged-help')), 'Select a pocket to change it. Drag it in the 3D view to move it.', 'the list says how');
+  const pressed = () => byTest('row-pick').getAttribute('aria-pressed');
+  eq(pressed(), 'false', 'on the list, not in hand');
+  eq(await clickAt(TOP_A), null, 'a click on a pocket places nothing');
+  eq(pressed(), 'true', 'it takes the pocket in hand, and its row shows it');
+  assert(byTest('done') && text(byTest('plan-pause')).includes('19'), 'the form shows the pocket');
+  eq(document.activeElement, stage(), 'the keyboard is in the view');
+  await press('Escape');
+  eq(pressed(), 'false', 'Escape lets go');
+  assert(byTest('add') && byTest('plan-empty'), 'back to a new pocket');
+  await click(byTest('row-pick'));
+  eq(pressed(), 'true', 'the row takes it in hand as well');
+  eq(await clickAt(NOTHING), null, 'beside the part there is nothing to place');
+  eq(pressed(), 'false', 'a click on nothing lets go');
+  await click(byTest('row-pick'));
+  const fresh = await clickAt(FRONT);
+  assert(fresh && Math.abs(fresh.args.point[1] - 90) < 1e-3, 'a click on a face places a new pocket there: ' + (fresh && fresh.args.point));
+  eq([pressed(), text(byTest('staged-count')), fresh.args.others.length], ['false', '1', 1], 'the pocket that was in hand is let go, not moved');
+`, { gl: true });
+
+test('dragging a pocket slides it over the surface: the camera stays, one plan is out at a time, the release plans like a click', `
+  await loaded3d();
+  await click(q('#f-center'));
+  const m = await place3d(TOP_A);
+  eq(m.args.center, true, 'placed with Centre on the face');
+  const before = cmds('pocket.plan').length;
+  await dragTo(TOP_A, TOP_B);
+  assert(stage().hasAttribute('data-drag'), 'the pocket is being dragged');
+  eq(cmds('pocket.plan').length, before + 1, 'one plan is out, however many moves');
+  const live = last('cmd', 'pocket.plan');
+  assert(!('center' in live.args) && !q('#f-center').checked, 'centring is off for a pocket moved by hand');
+  assert(live.args.point[0] > m.args.point[0] + 0.2 && Math.abs(live.args.point[2] - 20) < 1e-3, 'planned on the way, on the surface: ' + live.args.point);
+  answered.add(live.id);
+  await reply(live, planAt(live.args, {warnings: ['breaks_surface']}));
+  assert(qa('[data-test=plan-warning]').map(text).join().includes('reaches outside the part'), 'a warning shows while dragging');
+  await until(() => open('pocket.plan').length === 1, 'the newest spot is planned once the answer is in');
+  eq(cmds('pocket.plan').length, before + 2, 'and only that one');
+  const there = await answerPlans(() => TILTED);
+  assert(text(byTest('plan-blocked')).includes('the face is tilted'), 'a spot that blocks the pocket says so while dragging');
+  await sleep(300);
+  eq(cmds('pocket.plan').length, before + 2, 'nothing more is asked while the pointer rests');
+  await drop(TOP_B);
+  assert(!stage().hasAttribute('data-drag'), 'released');
+  await until(() => open('pocket.plan').length === 1, 'the release plans where the pocket lies');
+  const final = open('pocket.plan')[0];
+  eq(final.args, there.args, 'the same arguments as a click there, without center');
+  assert(final.args.point[0] - m.args.point[0] > 2 && Math.abs(final.args.point[2] - 20) < 1e-3, 'well to the right, on the top face: ' + final.args.point);
+  await answerPlans(() => TILTED);
+  assert(text(byTest('plan-blocked')).includes('the face is tilted') && byTest('add').disabled, 'a new pocket dropped on a blocked spot stays there, flagged, as after a click');
+  await press('Delete');
+  assert(byTest('plan-empty'), 'Delete drops the pocket in hand');
+  const again = await clickAt(TOP_A);
+  assert(dist(again.args.point, m.args.point) < 1e-3, 'the camera did not turn under the drag: ' + again.args.point + ' vs ' + m.args.point);
+`, { gl: true });
+
+test('a pocket of the list dropped where it cannot be made goes back; a good drop updates its row, the pauses and Apply', `
+  await loaded3d();
+  const m = await place3d(TOP_A);
+  await click(byTest('add'));
+  await dragTo(TOP_A, TOP_B);
+  eq(byTest('row-pick').getAttribute('aria-pressed'), 'true', 'dragging a pocket of the list takes it in hand');
+  assert(!open('pocket.plan')[0].args.others, 'it is not checked against itself');
+  await answerPlans(planAt);
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the list waits for the release');
+  await drop(TOP_B);
+  await until(() => open('pocket.plan').length === 1, 'the release plans');
+  await answerPlans(() => TILTED);
+  assert(notes().includes('The pocket stays as it was: the face is tilted'), 'the refusal is said: ' + notes());
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the pocket is where it was');
+  assert(text(byTest('plan-pause')).includes('19') && byTest('row-pick').getAttribute('aria-pressed') === 'true', 'still in hand, as it was');
+  await dragTo(TOP_A, TOP_B);
+  await answerPlans(planAt);
+  await drop(TOP_B);
+  await until(() => open('pocket.plan').length === 1, 'the release plans');
+  const final = open('pocket.plan')[0];
+  await answerPlans(args => planAt(args, {pause_z: 12.4}));
+  eq(rows('staged'), [['6x3 magnet', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row follows the move');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 12.40 mm: insert 1 × 6x3 magnet'], 'and so do the pauses');
+  assert(!notes().includes('stays as it was'), 'the refusal is gone: ' + notes());
+  eq(text(byTest('staged-count')), '1', 'no pocket was added');
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  const written = last('cmd', 'project.apply').args.pockets;
+  const { job, ...moved } = final.args;
+  eq(written, [moved], 'Apply writes the pocket where it was dropped');
+  assert(written[0].point[0] - m.args.point[0] > 2, 'which is not where it was placed: ' + written[0].point);
+`, { gl: true });
+
+test('arrow keys step the pocket in hand along its face, R turns it, Delete removes it; a held key never floods the plugin', `
+  await loaded3d();
+  const m = await place3d(TOP_A);
+  eq(document.activeElement, stage(), 'a click puts the keyboard in the view');
+  const where = text(byTest('plan-at'));
+  await press('ArrowRight');
+  await until(() => open('pocket.plan').length === 1, 'the step is planned');
+  let step = await answerPlans(planAt);
+  assert(Math.abs(dist(step.args.point, m.args.point) - 0.5) < 1e-3 && step.args.point[0] > m.args.point[0], 'half a millimetre to the right: ' + step.args.point);
+  assert(Math.abs(step.args.point[2] - 20) < 1e-3, 'along the face');
+  assert(text(byTest('plan-at')) !== where, 'the position line, a live region, follows: ' + text(byTest('plan-at')));
+  eq(q('[data-test=plan]').getAttribute('aria-live'), 'polite', 'so a move is announced');
+  const from = step.args.point;
+  await press('ArrowUp', true);
+  await until(() => open('pocket.plan').length === 1, 'the big step is planned');
+  step = await answerPlans(planAt);
+  assert(Math.abs(dist(step.args.point, from) - 5) < 1e-3, 'Shift: 5 mm: ' + step.args.point);
+  const start = step.args.point, base = cmds('pocket.plan').length;
+  await sleep(150);   // past the pause between two plans, so the first press is planned at once
+  await press('ArrowRight'); await press('ArrowRight'); await press('ArrowRight');
+  await sleep(300);
+  eq(cmds('pocket.plan').length, base + 1, 'one plan is out while the key repeats');
+  await answerPlans(planAt);
+  await until(() => cmds('pocket.plan').length === base + 2, 'then the newest spot is planned');
+  await answerPlans(planAt);
+  step = last('cmd', 'pocket.plan');
+  assert(Math.abs(dist(step.args.point, start) - 1.5) < 1e-3, 'three steps on: ' + step.args.point);
+  await sleep(300);
+  eq(cmds('pocket.plan').length, base + 2, 'and only once');
+  for (let k = 0; k < 6 && !notes().includes('no face there'); k++) { await press('ArrowUp', true); await sleep(150); await answerPlans(planAt); }
+  assert(notes().includes('There is no face there'), 'the face ends: ' + notes());
+  const edge = cmds('pocket.plan').length;
+  await press('ArrowUp', true);
+  await sleep(300);
+  eq(cmds('pocket.plan').length, edge, 'and nothing is planned past it');
+  assert(notes().includes('There is no face there'), 'the line stays while the pocket is at the edge: ' + notes());
+  await press('r');
+  await until(() => open('pocket.plan').length === 1, 'the turn is planned');
+  step = await answerPlans(planAt);
+  eq(step.args.spin, 15, 'R: 15 degrees');
+  assert(text(byTest('plan-at')).endsWith('turned 15°') && !notes().includes('no face there'), 'said with the position: ' + text(byTest('plan-at')));
+  await press('r', true);
+  await until(() => open('pocket.plan').length === 1, 'the turn back is planned');
+  step = await answerPlans(planAt);
+  assert(!('spin' in step.args), 'Shift+R turns it back');
+  await click(byTest('add'));
+  await click(byTest('row-pick'));
+  stage().focus();
+  await press('ArrowLeft');
+  await until(() => open('pocket.plan').length === 1, 'a pocket of the list steps too');
+  assert(!open('pocket.plan')[0].args.others, 'not checked against itself');
+  await answerPlans(args => planAt(args, {pause_z: 12.4}));
+  eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 12.40 mm', 'its row follows');
+  await press('Delete');
+  assert(byTest('staged-empty') && text(byTest('staged-count')) === '0' && byTest('add'), 'Delete takes it off the list');
+`, { gl: true });
+
+test('the 3D view says how to move a pocket in Portuguese too, and the hint stays inside a narrow view', `
+  await loaded3d();
+  eq(stage().getAttribute('aria-label'), 'Visualização 3D', 'the widget is named');
+  assert(text(q('#em-view-keys')).includes('as setas o movem 0,5 mm'), 'keys: ' + text(q('#em-view-keys')));
+  const hint = q('.em-hint'), box = q('.em-stage').getBoundingClientRect(), r = hint.getBoundingClientRect();
+  assert(text(hint).includes('arraste um bolso para movê-lo'), 'hint: ' + text(hint));
+  assert(r.left >= box.left && r.right <= box.right && r.bottom <= box.bottom && r.top > box.top + box.height / 2, 'the hint sits at the foot of the view');
+  await place3d([0, 0]);
+  await click(byTest('add'));
+  eq(text(byTest('staged-help')), 'Selecione um bolso para alterá-lo. Arraste-o na visualização 3D para movê-lo.', 'the list says how');
+  for (const b of qa('button').filter(b => b.getClientRects().length && text(b))) assert(b.scrollWidth <= b.clientWidth + 1, 'label fits its button: ' + text(b));
+  eq(document.documentElement.scrollWidth, document.documentElement.clientWidth, 'nothing wider than the window');
+`, { gl: true, width: 480, lang: 'pt_BR' });
+
+test('in one column the view stays put under the pointer while the plan above it grows and shrinks', `
+  await loaded3d();
+  const top = () => Math.round(canvas().getBoundingClientRect().top);
+  const plan = () => Math.round(byTest('plan').getBoundingClientRect().height);
+  const still = (was, what) => assert(Math.abs(top() - was) <= 2, what + ': ' + was + ' to ' + top());   // scrolling snaps to whole pixels
+  assert(q('.em-form').getBoundingClientRect().bottom <= q('.em-stage-panel').getBoundingClientRect().top, 'the form is above the view');
+  const at = top(), empty = plan();
+  await place3d(FRONT);
+  assert(plan() > empty + 100, 'the plan above the view grew: ' + empty + ' to ' + plan());
+  still(at, 'and the view did not move under the pointer');
+  await click(byTest('add'));
+  canvas().scrollIntoView({ block: 'center' });
+  await settle();
+  const held = top(), short = plan();
+  await dragTo(FRONT, [0.05, 0.02]);
+  assert(byTest('row-pick').getAttribute('aria-pressed') === 'true' && plan() > short + 100, 'the drag took the pocket in hand, and its plan is shown above');
+  still(held, 'the view stays where the drag began');
+  await answerPlans(() => TILTED);
+  assert(byTest('plan-blocked') && plan() < short + 100, 'a blocked spot makes the plan short again');
+  still(held, 'and the pocket does not slip from under the pointer');
+  await drop([0.05, 0.02]);
+  await answerPlans(() => TILTED);
+  still(held, 'nor when it is dropped and goes back');
+`, { gl: true, width: 480 });
+
 // ------------------------------------------------------------------ runner
 const workers = Number(process.env.WORKERS ?? 4);
 if (!Number.isSafeInteger(workers) || workers < 1) throw new Error('WORKERS must be a positive integer');
@@ -531,6 +828,7 @@ const chosen = scenarios.filter(s => !filter || s.name.includes(filter));
 const page = await builtPage();
 const dir = await mkdtemp(join(tmpdir(), 'embedder-page-'));
 const browser = await launch();
+const glBrowser = chosen.some(s => s.gl) ? await launch({ gpu: true }) : null;
 let failed = 0;
 const results = [];
 try {
@@ -540,11 +838,11 @@ try {
       const boot = { version: 'test', lang: sc.lang ?? 'en', pref: sc.pref ?? 'auto' };
       const file = join(dir, `p${k}.html`);
       await writeFile(file, preparePage(page, boot));
-      const p = await browser.newPage();
+      const p = await (sc.gl ? glBrowser : browser).newPage();
       const started = Date.now();
       try {
         await p.size(sc.width ?? 1280, 900);
-        await p.init(MOCK_HOST + NO_WEBGL + 'try { localStorage.clear(); } catch {}');
+        await p.init(MOCK_HOST + (sc.gl ? '' : NO_WEBGL) + 'try { localStorage.clear(); } catch {}');
         await p.goto(pathToFileURL(file).href);
         const body = `(async () => { ${HELPERS} ${PRELUDE}
           await until(() => document.querySelector('#app > *'), 'app mounted');
@@ -567,6 +865,7 @@ try {
   }));
 } finally {
   await browser.close();
+  await glBrowser?.close();
   await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 }
 if (process.env.RESULTS) await writeFile(process.env.RESULTS, JSON.stringify(results, null, 2));

@@ -92,6 +92,10 @@ async function openPage(port) {
       if (req.op === 'clickAt') {
         for (const type of ['mousePressed', 'mouseReleased']) await call('Input.dispatchMouseEvent', { type, x: req.x, y: req.y, button: 'left', clickCount: 1 });
       }
+      if (req.op === 'mouse') {   // one real mouse event (mousePressed, mouseMoved, mouseReleased); `held`: moving with the button down
+        const down = req.type === 'mousePressed' || req.held;
+        await call('Input.dispatchMouseEvent', { type: req.type, x: req.x, y: req.y, button: req.type === 'mouseMoved' && !req.held ? 'none' : 'left', buttons: down ? 1 : 0, clickCount: 1 });
+      }
     } finally {
       await call('Runtime.evaluate', { expression: `window.__t.acks.add(${JSON.stringify(req.id)})` });
     }
@@ -176,6 +180,8 @@ let __n = 0;
 async function cdp(req) { const id = 'r' + (++__n); __cdp(JSON.stringify({ ...req, id })); await until(() => __t.acks.has(id), 'cdp ' + req.op); await settle(); }
 async function type(el, value) { assert(el, 'element to type into'); el.focus(); if (el.select) el.select(); await cdp({ op: 'key', key: 'Backspace' }); if (value !== '') await cdp({ op: 'type', text: value }); }
 const press = (key, shift) => cdp({ op: 'key', key, shift: !!shift });
+/** One real mouse event at a point of the window: 'mousePressed', 'mouseMoved' (held: with the button down), 'mouseReleased'. */
+const pointer = (type, x, y, held) => cdp({ op: 'mouse', type, x, y, held: !!held });
 async function mouse(el) { assert(el, 'element for a real click'); el.scrollIntoView({ block: 'center' }); await settle(); const r = el.getBoundingClientRect(); await cdp({ op: 'clickAt', x: r.left + r.width / 2, y: r.top + r.height / 2 }); }
 async function answer(which) { await until(dialogOpen, 'dialog'); const el = dialogEl(); await click(q('[data-dlg="' + which + '"]', el)); await until(() => dialogEl() !== el, 'dialog closed'); }
 const yes = () => answer('confirm');

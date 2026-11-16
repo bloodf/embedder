@@ -29,10 +29,15 @@ export const s = reactive({
   spin: null as number | null,
   cover: null as number | null,
   center: false,
-  // the last click, its plan, the staged pockets and the applied copy
+  // the pocket in hand (where it is, its plan), the staged pockets and the applied copy. `selected`: the staged pocket
+  // that is in hand (its key), or null while a new one is being placed. `dragging`: the pointer is sliding it.
   hit: null as Hit | null,
   plan: null as Plan | null,
   planArgs: null as PlanArgs | null,
+  selected: null as number | null,
+  dragging: false,
+  note: '',   // one passing line about the pocket in hand: the face ends there, the pocket went back
+
   staged: [] as Staged[],
   remove: [] as string[],
   result: null as ApplyResult | null,

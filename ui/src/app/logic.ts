@@ -53,11 +53,45 @@ export function insertsNeeded(staged: readonly Staged[]): InsertCount[] {
   return [...counts.values()].sort((a, b) => (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === 'magnet' ? -1 : 1));
 }
 
-export type KindPreview = NonNullable<Plan['preview']> & { kind: Kind };
+export type KindPreview = NonNullable<Plan['preview']> & { kind: Kind; key: number; base: Hit };
 
-/** Previews of the staged pockets on one object (the viewer shows one object at a time), with the insert kind that colours them. */
-export function previewsFor(staged: readonly Staged[], object: number | null): KindPreview[] {
-  return staged.flatMap(x => (x.args.object === object && x.plan.preview ? [{ ...x.plan.preview, kind: x.plan.kind ?? 'magnet' }] : []));
+/** Previews of the staged pockets on one object (the viewer shows one object at a time), each with the insert kind
+ *  that colours it, its key in the list and the face it was planned on. `except`: the pocket in hand, drawn apart. */
+export function previewsFor(staged: readonly Staged[], object: number | null, except: number | null = null): KindPreview[] {
+  return staged.flatMap(x => (x.args.object === object && x.key !== except && x.plan.preview
+    ? [{ ...x.plan.preview, kind: x.plan.kind ?? 'magnet', key: x.key, base: hitOf(x.args) }] : []));
+}
+
+// ---- a pocket of the list taken in hand: the form shows it, and a change plans it again in its place
+
+export const hitOf = (a: PlanArgs): Hit => ({ part: a.part, tri: a.tri, point: a.point });
+
+/** The form values a pocket was planned with; planArgs() of them gives the same arguments back. `preset`: where the
+ *  preset list stays while a custom size is shown. */
+export function formOf(a: PlanArgs, preset: string | null): Required<Options> & { insert: InsertChoice } {
+  const insert: InsertChoice = a.custom ? { preset, custom: { d: 6, l: 10, w: 5, ...a.custom } as Custom } : { preset: a.preset ?? null, custom: null };
+  return { insert, mode: a.mode, spin: a.spin ?? null, cover: a.cover ?? null, center: !!a.center };
+}
+
+/** The list with one pocket planned anew, in its place. */
+export function restage(list: readonly Staged[], key: number, args: PlanArgs, plan: Plan): Staged[] {
+  return list.map(x => (x.key === key ? { key, args, plan } : x));
+}
+
+/** The pockets that go along with a plan for the NFC-near-magnet check: all of the list but the one being planned. */
+export function othersOf(list: readonly Staged[], key: number | null): PlanArgs[] {
+  return list.filter(x => x.key !== key).map(x => x.args);
+}
+
+/** What a finished plan means. A new pocket shows it as it is, blocked or not, as after a click. A pocket of the list
+ *  takes it, unless it is blocked: the list only holds pockets Apply can write, so that pocket goes back. */
+export function verdict(listed: boolean, plan: Plan): 'show' | 'take' | 'back' {
+  return !listed ? 'show' : plan.blocked ? 'back' : 'take';
+}
+
+/** A turn of `by` degrees on top of `spin`, round after a full turn; null for no turn (the empty field). */
+export function turn(spin: number | null, by: number): number | null {
+  return ((spin ?? 0) + by) % 360 || null;
 }
 
 /** The bounding size (x, y, z in mm) of meshes in the plate frame; null without vertices. */
