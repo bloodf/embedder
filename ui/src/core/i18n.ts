@@ -1,21 +1,23 @@
 import { computed, ref } from 'vue';
 import { en, ptBR, type MessageKey } from './messages';
-import { interpolate, resolveLocale, type LangPref, type Locale } from './i18n-core';
+import { es } from './messages-es';
+import { de } from './messages-de';
+import { zhCN } from './messages-zh';
+import { interpolate, isLocale, parseInsertLabel, resolveLocale, type LangPref, type Locale } from './i18n-core';
 import { boot } from './boot';
 
 const PREF_KEY = 'embedder.lang';
-const dicts: Record<Locale, Record<MessageKey, string>> = { en, 'pt-BR': ptBR };
+const dicts: Record<Locale, Record<MessageKey, string>> = { en, 'pt-BR': ptBR, es, de, 'zh-CN': zhCN };
 
 // The explicit choice lives in the plugin's settings (boot "pref"); localStorage is only a fallback cache.
 let persist: (value: LangPref) => void = () => {};
 export function onLangPref(fn: (value: LangPref) => void): void { persist = fn; }
 function readPref(): LangPref {
   const fromHost = (boot as { pref?: unknown }).pref;
-  if (fromHost === 'en' || fromHost === 'pt-BR') return fromHost;
-  if (fromHost === 'auto') return 'auto';
+  if (isLocale(fromHost) || fromHost === 'auto') return fromHost;
   try {
     const v = localStorage.getItem(PREF_KEY);
-    return v === 'en' || v === 'pt-BR' ? v : 'auto';
+    return isLocale(v) ? v : 'auto';
   } catch { return 'auto'; }
 }
 
@@ -48,3 +50,13 @@ export const fmt = {
   number: (v: number, digits = 0) => new Intl.NumberFormat(locale.value, { maximumFractionDigits: digits, minimumFractionDigits: digits }).format(v),
   time: (unix: number) => new Intl.DateTimeFormat(locale.value, { timeStyle: 'short' }).format(new Date(unix * 1000)),
 };
+
+/** "6x3 magnet" as the page language writes it ("Ø6 × 3 mm disc"); the user's own preset names stay as typed. */
+export function insertLabel(label: string | undefined): string {
+  if (label == null) return '?';
+  const parsed = parseInsertLabel(label);
+  if (!parsed) return label;
+  const nf = new Intl.NumberFormat(locale.value, { maximumFractionDigits: 2 });
+  const dims = Object.fromEntries(Object.entries(parsed.dims).map(([k, v]) => [k, nf.format(v)]));
+  return t(parsed.key, dims);
+}

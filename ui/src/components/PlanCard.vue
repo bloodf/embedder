@@ -4,7 +4,7 @@ import Message from 'primevue/message';
 import { OuiIcon } from '../../shared/src/components';
 import { info, layers, pause, target, warning } from '../../shared/src/icons';
 import { s } from '../app/store';
-import { t, tMaybe, fmt } from '../core/i18n';
+import { t, tMaybe, fmt, insertLabel } from '../core/i18n';
 
 const mm = (v: number | null | undefined) => (v == null ? '—' : fmt.number(v, 2));
 const size = computed(() => (s.plan?.size ?? []).map(v => fmt.number(v, 2)).join(' × '));
@@ -29,7 +29,7 @@ const at = computed(() => {
       <p v-else-if="s.plan?.blocked" class="em-note" data-test="plan-blocked"><OuiIcon :icon="warning" tone="warn" :size="16" />
         {{ t('plan.blocked', { reason: tMaybe(`block.${s.plan.blocked.code}`, s.plan.blocked.detail || s.plan.blocked.code) }) }}</p>
       <dl v-else-if="s.plan" class="em-facts oui-num">
-        <dt>{{ t('plan.insert') }}</dt><dd data-test="plan-label">{{ s.plan.label }}</dd>
+        <dt>{{ t('plan.insert') }}</dt><dd data-test="plan-label">{{ insertLabel(s.plan.label) }}</dd>
         <dt>{{ t('plan.face') }}</dt><dd>{{ tMaybe(`face.${s.plan.face}`, s.plan.face ?? '') }} · {{ t(`mode.${s.plan.mode}`) }}</dd>
         <dt>{{ t('plan.at') }}</dt><dd data-test="plan-at">{{ at }}</dd>
         <dt>{{ t('plan.size') }}</dt><dd>{{ size }} mm</dd>

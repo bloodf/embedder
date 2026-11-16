@@ -3,7 +3,7 @@
 export interface Boot {
   version: string;
   lang: string | null;
-  pref?: 'auto' | 'en' | 'pt-BR';
+  pref?: 'auto' | 'en' | 'pt-BR' | 'es' | 'de' | 'zh-CN';
 }
 
 function readJson<T>(id: string, fallback: T): T {

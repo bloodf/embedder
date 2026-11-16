@@ -3,6 +3,7 @@
 // module, on a project built in code). Nothing on a screenshot is drawn by hand; scripts/frames.py then places
 // them in the empty 16:10 frames of the brand PNGs.
 //   node ui/tests/page/shots.mjs [out-dir]        default out-dir: dist/shots
+//   SHOT_LANG=de (es, pt-BR, zh-CN) renders the page in that language, into files named <shot>-<theme>-<lang>.png
 import { spawn, execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
@@ -19,6 +20,7 @@ const out = resolve(process.argv[2] ?? join(repo, 'dist', 'shots'));
 // or their content); the small install cards get a small window, so their text stays readable at that size.
 const STORE = [1440, 900], TALL = [1600, 1000], CARD = [640, 400], SCALE = 2;
 const THEMES = { dark: '#151515', light: '#f4f4f4' };   // the host colour the page follows (--orca-bg)
+const LANG = process.env.SHOT_LANG ?? 'en';
 
 const page = process.env.PAGE ? await readFile(process.env.PAGE, 'utf8')
   : execFileSync('python3', ['-c', 'import sys; sys.path.insert(0, "scripts"); import build; sys.stdout.write(build.page_html("app.html"))'],
@@ -27,7 +29,7 @@ const page = process.env.PAGE ? await readFile(process.env.PAGE, 'utf8')
 /** One fresh page wired to one fresh plugin process; `run(steps)` evaluates scenario code with the test helpers. */
 async function session(browser, dir, theme, [W, H]) {
   const file = join(dir, `shot-${theme}-${Date.now()}.html`);
-  await writeFile(file, preparePage(page, { version: 'shots', lang: 'en', pref: 'en' }));
+  await writeFile(file, preparePage(page, { version: 'shots', lang: LANG, pref: LANG }));
   const host = spawn('python3', [join(here, 'shots_host.py')], { cwd: repo, stdio: ['pipe', 'pipe', 'inherit'] });
   const p = await browser.newPage();
   await p.size(W, H, SCALE);
@@ -81,14 +83,15 @@ const CENTRE = `await click(q('#f-center'));`;
 /** Scroll the page so `test` sits near the top; the 3D view is sticky and stays in sight. */
 const SCROLL = test => `window.scrollTo(0, byTest('${test}').getBoundingClientRect().top + window.scrollY - 90); await sleep(300);`;
 
+// english: the shot picks an option by its English label, so it is rendered in English only.
 const SHOTS = [
   { name: 'placement', themes: ['dark', 'light'], async go(s) {
     await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED);
   } },
-  { name: 'magnets', themes: ['dark'], async go(s) {
+  { name: 'magnets', themes: ['dark'], english: true, async go(s) {
     await s.run(LOADED + choose('preset', 'Ø10 × 3 mm disc') + CENTRE); await s.clickView(); await s.run(PLANNED + `await click(q('[data-test=preset]')); await sleep(400);`);
   } },
-  { name: 'nfc', themes: ['dark'], async go(s) {
+  { name: 'nfc', themes: ['dark'], english: true, async go(s) {
     await s.run(LOADED + choose('object', 'Badge') + `await until(() => !text(byTest('viewer')).includes('Loading'), 'badge mesh', 30000); await sleep(400);`
       + choose('preset', 'Ø25 mm sticker') + CENTRE);
     await s.clickView(); await s.run(PLANNED);
@@ -103,6 +106,7 @@ const SHOTS = [
       await type(q('#f-d'), '12'); q('#f-d').blur(); await type(q('#f-t'), '4'); q('#f-t').blur(); await settle();` + CENTRE);
     await s.clickView(); await s.run(PLANNED);
   } },
+  { name: 'settings', themes: ['light'], size: TALL, async go(s) { await s.run(`await until(() => last('cmd', 'hello'), 'ready'); await click(q('[data-tab=settings]')); await sleep(400);`); } },
   { name: 'load', themes: ['light'], size: CARD, async go(s) { await s.run(LOADED); } },
   { name: 'place', themes: ['light'], size: CARD, async go(s) { await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED + SCROLL('plan')); } },
   { name: 'applied', themes: ['light'], size: CARD, async go(s) {
@@ -116,15 +120,16 @@ const dir = await mkdtemp(join(tmpdir(), 'embedder-shots-'));
 const browser = await launch({ gpu: true });
 let failed = 0;
 try {
-  for (const shot of SHOTS.filter(s => !process.env.ONLY || s.name === process.env.ONLY)) {
+  for (const shot of SHOTS.filter(s => (!process.env.ONLY || s.name === process.env.ONLY) && (LANG === 'en' || !s.english))) {
     for (const theme of shot.themes) {
       const s = await session(browser, dir, theme, shot.size ?? STORE);
       try {
         await shot.go(s);
         const probe = await s.p.evaluate('JSON.stringify({ v: __t.violations, r: __t.rejections, e: __t.errors })');
         if (probe !== '{"v":[],"r":[],"e":[]}') throw new Error('page problems: ' + probe);
-        await writeFile(join(out, `${shot.name}-${theme}.png`), await s.p.screenshot());
-        console.log(`ok   ${shot.name}-${theme}`);
+        const name = `${shot.name}-${theme}${LANG === 'en' ? '' : '-' + LANG}`;
+        await writeFile(join(out, `${name}.png`), await s.p.screenshot());
+        console.log(`ok   ${name}`);
       } catch (e) {
         failed++;
         console.log(`FAIL ${shot.name}-${theme}: ${String(e.message || e).split('\n')[0]}`);

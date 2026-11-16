@@ -1,6 +1,7 @@
-// Every visible string of the Embedder page, in English and Brazilian Portuguese. Texts that come from Python
-// (error details, insert labels, pause texts) are shown inside these, not translated. Codes from Python map to
-// err.<code>, block.<code> and warn.<code>.
+// Every visible string of the Embedder page, in English and Brazilian Portuguese; Spanish, German and Simplified
+// Chinese live in messages-es.ts, messages-de.ts and messages-zh.ts. Codes from Python map to err.<code>,
+// block.<code> and warn.<code>; the English insert labels Python sends ("6x3 magnet") go through insertLabel().
+// Error details that are data (paths, OrcaSlicer's own error text) are shown as they come.
 export const en = {
   'app.title': 'Embedder',
   'app.brand': 'Embedder',
@@ -237,6 +238,9 @@ export const en = {
   'lang.auto': 'Automatic ({current})',
   'lang.en': 'English',
   'lang.pt-BR': 'Português (Brasil)',
+  'lang.es': 'Español',
+  'lang.de': 'Deutsch',
+  'lang.zh-CN': '简体中文',
   'about.text': 'Embedder {version}',
   'about.title': 'About',
   'about.version': 'Version',
@@ -281,10 +285,10 @@ export const ptBR: Record<MessageKey, string> = {
   'load.label': 'Carregando o projeto',
   'load.exporting': 'Exportando uma cópia do projeto…',
   'load.progress': 'Lendo objetos: {done} de {total}',
-  'load.plate': 'placa {plate} de {plates}',
+  'load.plate': 'mesa {plate} de {plates}',
   'load.objects_one': '{n} objeto',
   'load.objects_other': '{n} objetos',
-  'load.noObjects': 'Não há objetos nesta placa.',
+  'load.noObjects': 'Não há objetos nesta mesa.',
 
   'act.load': 'Carregar projeto',
   'act.mesh': 'Carregando o modelo 3D',
@@ -413,7 +417,7 @@ export const ptBR: Record<MessageKey, string> = {
   'result.pruned_one': '{n} cópia antiga foi apagada da pasta do plugin.',
   'result.pruned_other': '{n} cópias antigas foram apagadas da pasta do plugin.',
 
-  'block.title': 'Bolsos embutidos estão desativados nesta placa. Bolsos abertos continuam funcionando.',
+  'block.title': 'Bolsos embutidos estão desativados nesta mesa. Bolsos abertos continuam funcionando.',
   'block.tilted_face': 'a face está inclinada; bolsos embutidos precisam de uma face plana ou vertical',
   'block.by_object': 'a sequência de impressão é Por objeto, e o OrcaSlicer ignora pausas nesse caso',
   'block.no_pause_gcode': 'o perfil da impressora não tem G-code de pausa',
@@ -422,7 +426,7 @@ export const ptBR: Record<MessageKey, string> = {
   'block.instances_differ': 'as cópias deste objeto estão inclinadas de formas diferentes',
   'block.below_bed': 'o bolso passaria abaixo da mesa',
   'block.no_floor': 'nenhuma camada impressa ficaria sob o bolso; suba-o ou use um bolso aberto',
-  'block.instances_other_plate': 'há cópias deste objeto em outra placa, e a pausa é gravada só para esta placa',
+  'block.instances_other_plate': 'há cópias deste objeto em outra mesa, e a pausa é gravada só para esta mesa',
   'block.pause_too_low': 'a pausa viria antes da segunda camada',
   'block.no_layer_height': 'a altura de camada é desconhecida',
   'block.bad_mode': 'o tipo de bolso é desconhecido',
@@ -495,6 +499,9 @@ export const ptBR: Record<MessageKey, string> = {
   'lang.auto': 'Automático ({current})',
   'lang.en': 'English',
   'lang.pt-BR': 'Português (Brasil)',
+  'lang.es': 'Español',
+  'lang.de': 'Deutsch',
+  'lang.zh-CN': '简体中文',
   'about.text': 'Embedder {version}',
   'about.title': 'Sobre',
   'about.version': 'Versão',

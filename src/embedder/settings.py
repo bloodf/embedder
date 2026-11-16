@@ -7,7 +7,7 @@ import threading
 
 import presets
 
-UI_LANGUAGES = ("auto", "en", "pt-BR")   # "auto": OrcaSlicer's language, then the system's
+UI_LANGUAGES = ("auto", "en", "pt-BR", "es", "de", "zh-CN")   # "auto": OrcaSlicer's language, then the system's
 DEFAULTS = {
     "ui_language": "auto",
     "xy_clearance": 0.2,     # mm added to the insert's width/diameter on each side
