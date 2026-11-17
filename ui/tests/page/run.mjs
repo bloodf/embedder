@@ -55,7 +55,10 @@ async function tab(name) { await click(q('[data-tab="' + name + '"]')); }
 /** The rows of a list as [name, second line] pairs. */
 const rows = name => qa('[data-test=' + name + '] li').map(li => qa('.em-row-id > *', li).map(text));
 const notes = () => text(byTest('plan-note'));
-const alerts = () => qa('[role=alert] .oui-banner').map(text).join(' | ');
+/** The toasts as one line each (title, then the rest), and what the alert banners say. */
+const toastText = el => [q('.oui-toast-text > strong', el), q('.oui-toast-body', el)].map(text).filter(Boolean).join(' ');
+const toasts = () => qa('.oui-toasts .oui-toast');
+const alerts = () => [...qa('.oui-toast[role=alert]').map(toastText), ...qa('[role=alert] .oui-banner').map(text)].join(' | ');
 const answered = new Set();
 const open = name => cmds(name).filter(m => !answered.has(m.id));
 const b64 = u => btoa(String.fromCharCode(...u));
@@ -160,6 +163,7 @@ test('hello is the first command; the version shows once it answers', `
   eq(text(byTest('state')), 'No project', 'the bar says what the plugin holds');
   await tab('settings');
   eq(text(byTest('version')), '0.1.0', 'version shown under Settings, About');
+  await reveal(byTest('version'));
   assert(byTest('version').getClientRects().length, 'version visible');
 `);
 
@@ -273,7 +277,7 @@ test('Spanish decimals in a custom size: "2.5" typed is two and a half', `
 
 test('icons come from the shared set; the bar carries the brand mark', `
   await ready();
-  eq(qa('[role=tab] svg.oui-icon').length, 2, 'tab icons drawn');
+  eq(qa('.oui-appbar [role=tab] svg.oui-icon').length, 2, 'tab icons drawn');
   eq(qa('.oui-appbar-mark svg rect').length, 6, 'the micro mark: six bars');
   eq(qa('.oui-appbar-mark svg circle').length, 1, 'and the insert');
   assert(q('[data-test=load] svg.oui-icon'), 'the primary action carries its icon');
@@ -387,6 +391,111 @@ test('a project-level block shows the banner and starts in Open', `
   eq(byTest('mode').getAttribute('aria-describedby'), byTest('blocks').id, 'the disabled choice points at the banner');
   const m = await place(null);
   eq(m.args.mode, 'open', 'Open by default');
+`);
+
+test('a closed banner stays closed while its state holds and comes back when it changes', `
+  const blocked = {...PROJECT, blocks: ['by_object'], objects: [object(0, {embedded_block: 'by_object'})]};
+  await loaded(blocked);
+  const close = q('[data-test=blocks] .oui-banner-close');
+  eq(close.getAttribute('aria-label'), 'Close', 'the X is named');
+  await click(close);
+  assert(!byTest('blocks'), 'closed');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
+  await reply(last('cmd', 'project.load'), blocked);
+  await settle();
+  assert(!byTest('blocks'), 'the same project with the same block: still closed');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 3, 'loads a third time');
+  await reply(last('cmd', 'project.load'), {...blocked, job: 'j2', blocks: ['by_object', 'raft']});
+  await until(() => byTest('blocks'), 'another block: the banner is back');
+`);
+
+test('a closed banner shows again after its condition clears and returns (same key)', `
+  const blocked = {...PROJECT, blocks: ['by_object'], objects: [object(0, {embedded_block: 'by_object'})]};
+  await loaded(blocked);
+  await click(q('[data-test=blocks] .oui-banner-close'));
+  assert(!byTest('blocks'), 'closed');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  await until(() => !byTest('blocks') && byTest('mode'), 'the block is gone');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 3, 'loads a third time');
+  await reply(last('cmd', 'project.load'), blocked);
+  await until(() => byTest('blocks'), 'the same block back: the banner shows again');
+`);
+
+test('the start error shows again when hello fails again with the same text', `
+  await until(() => last('cmd', 'hello'), 'hello sent');
+  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
+  await click(byTest('hello-retry'));
+  await until(() => cmds('hello').length === 2, 'asks again');
+  await click(q('[data-test=hello-error] .oui-banner-close'));
+  assert(!byTest('hello-error'), 'closed while the retry is out');
+  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
+  await until(() => byTest('hello-error'), 'the same failure again: the banner is back');
+`);
+
+test('a second apply to the same path shows its result; a closed waiting notice shows for the next send', `
+  await loaded();
+  const path = '/storage/cube-embedder-20261114-120000-j1.3mf';
+  const res = {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 1, removed: 0, pauses: [], warnings: [], pruned: 0};
+  await place(PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  await reply(last('cmd', 'project.apply'), res);
+  await until(() => byTest('result-banner'), 'result shown');
+  await click(q('[data-test=result-banner] .oui-banner-close'));
+  assert(!byTest('result-banner'), 'result closed');
+
+  await click(byTest('open'));
+  await until(() => byTest('waiting'), 'waiting for OrcaSlicer');
+  await click(q('[data-test=waiting] .oui-banner-close'));
+  assert(!byTest('waiting'), 'waiting closed');
+  await reply(last('cmd', 'project.open'), {open: 'asked'});
+  await settle();
+  assert(!byTest('waiting'), 'the answer came: no waiting notice');
+  await click(byTest('open'));
+  await until(() => byTest('waiting'), 'sent again: the waiting notice is back');
+  await reply(last('cmd', 'project.open'), {open: 'asked'});
+
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  await serveChunks(5);
+  await until(() => !byTest('fallback-place').disabled, 'meshes ready');
+  await place(PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => cmds('project.apply').length === 2, 'applied again');
+  await reply(last('cmd', 'project.apply'), res);
+  await until(() => byTest('result-banner'), 'a second apply to the same path: its result shows');
+`);
+
+test('a toast sits bottom-left with a Close button, and goes when closed', `
+  await ready();
+  await tab('settings');
+  await until(() => last('cmd', 'copies.status'), 'status asked');
+  await reply(last('cmd', 'copies.status'), {count: 3, bytes: 3 * 1024 * 1024, kept: 2});
+  await click(byTest('copies-clear'));
+  await yes();
+  await until(() => last('cmd', 'copies.clear'), 'clear sent');
+  await reply(last('cmd', 'copies.clear'), {removed: 3, freed: 3 * 1024 * 1024, failed: 0, count: 0, bytes: 0, kept: 2});
+  await until(() => toasts().length === 1, 'one toast');
+  const el = toasts()[0];
+  eq(toastText(el), 'Deleted 3 old copies, 3.0 MB freed.', 'what it says');
+  eq(el.getAttribute('role'), 'status', 'a success is polite');
+  await until(() => !document.getAnimations().some(a => a.playState === 'running'), 'the toast is in');
+  const r = el.getBoundingClientRect();
+  assert(r.left <= 24 && r.right < innerWidth / 2 + 200, 'left: ' + JSON.stringify(r));
+  const gap = () => q('.oui-settings-foot').getBoundingClientRect().top - el.getBoundingClientRect().bottom;
+  await until(() => gap() >= 0 && gap() <= 24, 'at the bottom, just above the save bar');
+  const close = q('.oui-toast-close', el);
+  eq(close.getAttribute('aria-label'), 'Close', 'the X is named');
+  await click(close);
+  await until(() => !toasts().length, 'closed');
 `);
 
 test('warnings are shown in words', `
@@ -903,7 +1012,7 @@ test('a pocket of the list let go before its move is planned still moves; a move
   await press('Escape');
   await answerPlans(() => TILTED);
   eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'a step that cannot be made leaves the row');
-  assert(text(document.body).includes('The pocket stays as it was: the face is tilted'), 'and says so');
+  assert(toasts().map(toastText).join(' | ').includes('The pocket stays as it was: the face is tilted'), 'and says so: ' + toasts().map(toastText));
   eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'without taking it back in hand');
 `, { gl: true });
 

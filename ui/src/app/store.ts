@@ -1,11 +1,12 @@
 import { reactive } from 'vue';
 import * as bridge from '../core/bridge';
-import { Tracker, message } from '../core/tracker';
-import { t, tMaybe, onLangPref } from '../core/i18n';
+import { Tracker, message, type Notice } from '../core/tracker';
+import { showToast, type OuiToastTone } from '../../shared/src/components/toast';
+import { t, tMaybe, fmt, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';
 import type { Hit } from '../core/pick';
-import type { InsertChoice } from './logic';
+import { splitLead, type InsertChoice } from './logic';
 import type { ApplyResult, Hello, Mode, Plan, PlanArgs, Preset, Project, Settings, Staged } from './types';
 
 export const DEFAULT_PRESET = 'magnet-disc-6x3';
@@ -15,6 +16,9 @@ export const s = reactive({
   version: '',
   settings: null as Settings | null,
   error: '',
+  // Each failed hello is a new notice (the same text again included). Never below the clock, so a reload of the tab
+  // (the closed notices are kept for the session) does not count from 1 again onto a closed one.
+  helloFails: 0,
   webgl: null as boolean | null,
   builtin: [] as Preset[],
   user: [] as Preset[],
@@ -42,6 +46,7 @@ export const s = reactive({
   staged: [] as Staged[],
   remove: [] as string[],
   result: null as ApplyResult | null,
+  applies: 0,   // each apply is a new result notice, a copy at the same path included (never below the clock, as above)
   opened: '' as '' | 'asked' | 'none',
 });
 
@@ -63,9 +68,20 @@ export function errorText(e: unknown): string {
   return message(e);
 }
 
+// The tracker's notices are the page's toasts: the first sentence is the title. An unknown outcome is a warning
+// that stays until closed, like an error: the user has to know the command may or may not have happened. Those two
+// carry the time they were said, since they may be read long after.
+const TONE: Record<Notice['kind'], OuiToastTone> = { error: 'error', unknown: 'warn', success: 'success', info: 'info' };
+export function toast(n: Notice): void {
+  const [title, rest] = splitLead(n.text);
+  const lasting = n.kind === 'error' || n.kind === 'unknown';
+  const body = [rest, lasting ? fmt.time(Date.now() / 1000) : ''].filter(Boolean).join(' · ');
+  showToast({ tone: TONE[n.kind], title, body: body || undefined, key: n.key && 'cmd:' + n.key, timeout: n.kind === 'unknown' ? 0 : undefined });
+}
+
 export const tracker = new Tracker(
   (cmd, args) => bridge.command(cmd, args).catch(e => { throw new Error(errorText(e)); }),
-  (key, params) => t(key, params));
+  (key, params) => t(key, params), toast);
 bridge.setErrorSink(e => tracker.notify('error', t('msg.plugin', { error: message(e) })));
 
 export async function hello(): Promise<void> {
@@ -76,6 +92,7 @@ export async function hello(): Promise<void> {
     s.error = '';
   } catch (e) {
     s.error = errorText(e);
+    s.helloFails = Math.max(s.helloFails + 1, Date.now());
   }
 }
 

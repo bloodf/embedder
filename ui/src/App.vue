@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import { OuiAppBar, OuiIcon, OuiStatus, type OuiState } from '../shared/src/components';
+import { OuiAppBar, OuiIcon, OuiStatus, OuiToastHost, type OuiState } from '../shared/src/components';
 import { magnet, refresh, settings } from '../shared/src/icons';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import NoticeArea from './components/NoticeArea.vue';
@@ -54,6 +54,7 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
     <div v-show="s.tab === 'settings'" id="em-view-settings" class="em-view" role="tabpanel" aria-labelledby="oui-tab-settings"><SettingsView /></div>
   </main>
   <ConfirmDialog />
+  <OuiToastHost :close-label="t('common.close')" :label="t('msg.region')" />
 </template>
 
 <style>
@@ -65,7 +66,6 @@ html:lang(zh-CN) { --oui-font: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK 
    On the root, where the 3D view reads them. */
 :root { --em-magnet: #8c4b08; --em-nfc: #6541a6; --em-ink: #202731; }
 :root.orca-dark { --em-magnet: #f2bc7a; --em-nfc: #c7b5ff; }
-html, body, #app { min-height: 100%; }
 /* A classic scrollbar (Windows) appearing when the page grows must not narrow the page and flip the Embed layout. */
 html { scrollbar-gutter: stable; }
 .em-mark-insert { fill: var(--em-ink); }
