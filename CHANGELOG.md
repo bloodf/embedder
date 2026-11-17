@@ -6,19 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Changed
-- The page fills the whole tab at every height, also after the window is resized: no more grey under a short page.
-- Settings are tabs: one section at a time, and the save bar stays on screen at any window height.
-- Notifications appear bottom-left and each one can be closed; warnings and notices on the page can be dismissed.
-- Notifications wait while OrcaSlicer is in another tab or app; errors stay until closed.
-- A closed notice shows again when its problem goes away and comes back, when the plugin fails to start again, and for every new copy written.
-
-## [0.4.1] - 2026-11-16
+## [0.4.1] - 2026-11-17
 
 ### Changed
 
 - The plugin icon is the new brand tile. The Embedder tab in OrcaSlicer shows the store tile instead of the white
   line mark.
+- The page fills the whole tab at every height, also after the window is resized: no more grey under a short page.
+- Settings are tabs: one section at a time, and the save bar stays on screen at any window height.
+- Notifications appear bottom-left and each one can be closed; warnings and notices on the page can be dismissed.
+- Notifications wait while OrcaSlicer is in another tab or app; errors stay until closed.
+- A closed notice shows again when its problem goes away and comes back, when the plugin fails to start again, and for every new copy written.
 
 ## [0.4.0] - 2026-11-16
 
