@@ -251,7 +251,6 @@ export const zhCN: Record<MessageKey, string> = {
   'common.save': '保存',
   'common.close': '关闭',
   'common.goBack': '返回',
-  'common.dismiss': '关闭',
   'common.retry': '重试',
 
   'msg.region': '消息',

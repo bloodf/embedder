@@ -250,7 +250,6 @@ export const de: Record<MessageKey, string> = {
   'common.save': 'Speichern',
   'common.close': 'Schließen',
   'common.goBack': 'Zurück',
-  'common.dismiss': 'Ausblenden',
   'common.retry': 'Erneut versuchen',
 
   'msg.region': 'Meldungen',
