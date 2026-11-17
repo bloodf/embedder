@@ -88,8 +88,12 @@ def _asset(name):
     """From the generated _assets module in the wheel; from src/embedder/ui during development."""
     if __package__:
         from . import _assets
-        return {"app.html": _assets.APP_HTML, "icon.svg": _assets.ICON_SVG}[name]
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", name), encoding="utf-8") as f:
+        return {"app.html": _assets.APP_HTML, "icon.png": _assets.ICON_PNG}[name]
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", name)
+    if name.endswith(".png"):
+        with open(path, "rb") as f:
+            return f.read()
+    with open(path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -283,19 +287,22 @@ class EmbedderPage(orca.pages.PagesPluginCapabilityBase):
         return "Embedder"
 
     def get_icon(self):
-        """The icon file in the plugin storage folder (data_dir(), writable for the plugin); none without it."""
-        svg = _asset("icon.svg")
+        """The icon file in the plugin storage folder (data_dir(), writable for the plugin); none without it.
+
+        The brand tile at 64x64 (OrcaSlicer draws it at 20 px). The host tries an .svg of the same name before the
+        .png, so the file is not called embedder.png: 0.4.0 and earlier left an embedder.svg in this folder."""
+        png = _asset("icon.png")
         for folder in [f for f in [_storage()] if f]:
-            path = os.path.join(folder, "embedder.svg")
+            path = os.path.join(folder, "embedder-icon.png")
             try:
                 try:
-                    with open(path, encoding="utf-8") as f:
-                        same = f.read() == svg
+                    with open(path, "rb") as f:
+                        same = f.read() == png
                 except OSError:
                     same = False
                 if not same:
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(svg)
+                    with open(path, "wb") as f:
+                        f.write(png)
                 return path
             except OSError as e:
                 log("icon: can't write %s (%s)" % (path, e))

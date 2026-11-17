@@ -77,7 +77,7 @@ command line or the GUI and check the pocket and the pause in the G-code.
 
 ## Assets
 
-Images live in `assets/` and the tab icon in `src/embedder/ui/icon.svg`. There are two sets.
+Images live in `assets/` and the tab icon in `src/embedder/ui/icon.png` (the store tile at 64x64). There are two sets.
 
 **The marketing art** is what the README, the Orca Cloud listing and the GitHub social preview show: the store tile,
 the main, square and four feature images, the social preview and the README heroes, in English and Brazilian

@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-16
+
+### Changed
+
+- The plugin icon is the new brand tile. The Embedder tab in OrcaSlicer shows the store tile instead of the white
+  line mark.
+
 ## [0.4.0] - 2026-11-16
 
 ### Added
