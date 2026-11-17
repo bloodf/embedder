@@ -411,6 +411,69 @@ test('a closed banner stays closed while its state holds and comes back when it 
   await until(() => byTest('blocks'), 'another block: the banner is back');
 `);
 
+test('a closed banner shows again after its condition clears and returns (same key)', `
+  const blocked = {...PROJECT, blocks: ['by_object'], objects: [object(0, {embedded_block: 'by_object'})]};
+  await loaded(blocked);
+  await click(q('[data-test=blocks] .oui-banner-close'));
+  assert(!byTest('blocks'), 'closed');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  await until(() => !byTest('blocks') && byTest('mode'), 'the block is gone');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 3, 'loads a third time');
+  await reply(last('cmd', 'project.load'), blocked);
+  await until(() => byTest('blocks'), 'the same block back: the banner shows again');
+`);
+
+test('the start error shows again when hello fails again with the same text', `
+  await until(() => last('cmd', 'hello'), 'hello sent');
+  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
+  await click(byTest('hello-retry'));
+  await until(() => cmds('hello').length === 2, 'asks again');
+  await click(q('[data-test=hello-error] .oui-banner-close'));
+  assert(!byTest('hello-error'), 'closed while the retry is out');
+  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
+  await until(() => byTest('hello-error'), 'the same failure again: the banner is back');
+`);
+
+test('a second apply to the same path shows its result; a closed waiting notice shows for the next send', `
+  await loaded();
+  const path = '/storage/cube-embedder-20261114-120000-j1.3mf';
+  const res = {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 1, removed: 0, pauses: [], warnings: [], pruned: 0};
+  await place(PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  await reply(last('cmd', 'project.apply'), res);
+  await until(() => byTest('result-banner'), 'result shown');
+  await click(q('[data-test=result-banner] .oui-banner-close'));
+  assert(!byTest('result-banner'), 'result closed');
+
+  await click(byTest('open'));
+  await until(() => byTest('waiting'), 'waiting for OrcaSlicer');
+  await click(q('[data-test=waiting] .oui-banner-close'));
+  assert(!byTest('waiting'), 'waiting closed');
+  await reply(last('cmd', 'project.open'), {open: 'asked'});
+  await settle();
+  assert(!byTest('waiting'), 'the answer came: no waiting notice');
+  await click(byTest('open'));
+  await until(() => byTest('waiting'), 'sent again: the waiting notice is back');
+  await reply(last('cmd', 'project.open'), {open: 'asked'});
+
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  await serveChunks(5);
+  await until(() => !byTest('fallback-place').disabled, 'meshes ready');
+  await place(PLAN);
+  await click(byTest('add'));
+  await click(byTest('apply'));
+  await until(() => cmds('project.apply').length === 2, 'applied again');
+  await reply(last('cmd', 'project.apply'), res);
+  await until(() => byTest('result-banner'), 'a second apply to the same path: its result shows');
+`);
+
 test('a toast sits bottom-left with a Close button, and goes when closed', `
   await ready();
   await tab('settings');

@@ -301,7 +301,7 @@ export async function apply(): Promise<void> {
   const r = await tracker.run<ApplyResult>({ key: 'apply', label: t('act.apply'), cmd: 'project.apply', timeoutMs: LONG_MS,
     args: { job: project.job, pockets: s.staged.map(x => x.args), remove: s.remove } });
   if (!r.ok) return;
-  Object.assign(s, { result: r.result, opened: '', staged: [], remove: [] });
+  Object.assign(s, { result: r.result, applies: Math.max(s.applies + 1, Date.now()), opened: '', staged: [], remove: [] });
   letGo();
 }
 

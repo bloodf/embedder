@@ -16,6 +16,9 @@ export const s = reactive({
   version: '',
   settings: null as Settings | null,
   error: '',
+  // Each failed hello is a new notice (the same text again included). Never below the clock, so a reload of the tab
+  // (the closed notices are kept for the session) does not count from 1 again onto a closed one.
+  helloFails: 0,
   webgl: null as boolean | null,
   builtin: [] as Preset[],
   user: [] as Preset[],
@@ -43,6 +46,7 @@ export const s = reactive({
   staged: [] as Staged[],
   remove: [] as string[],
   result: null as ApplyResult | null,
+  applies: 0,   // each apply is a new result notice, a copy at the same path included (never below the clock, as above)
   opened: '' as '' | 'asked' | 'none',
 });
 
@@ -88,6 +92,7 @@ export async function hello(): Promise<void> {
     s.error = '';
   } catch (e) {
     s.error = errorText(e);
+    s.helloFails = Math.max(s.helloFails + 1, Date.now());
   }
 }
 

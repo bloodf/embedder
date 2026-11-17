@@ -19,6 +19,11 @@ const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`bloc
 </script>
 
 <template>
+  <!-- Mounted whatever the panel below, so it follows its condition (the project's blocks) through a load: a block
+       that goes and comes back shows again; one that holds stays closed. Out of sight while a project loads. -->
+  <OuiBanner v-show="!s.loading" :show="blocks.length > 0" id="em-blocks" tone="warn" :title="t('block.title')" data-test="blocks"
+    dismissible :dismiss-key="'blocks:' + s.project?.job + ':' + s.project?.blocks.join(',')" :close-label="t('common.close')">{{ blocks.join('; ') }}.</OuiBanner>
+
   <OuiPanel v-if="s.loading" class="em-solo" flush data-test="loading" role="status">
     <OuiEmpty state="loading" :title="s.loading.total ? t('load.progress', { done: s.loading.done, total: s.loading.total }) : t('load.exporting')">
       <template #actions>
@@ -39,8 +44,6 @@ const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`bloc
   </OuiPanel>
 
   <template v-else>
-    <OuiBanner v-if="blocks.length" id="em-blocks" tone="warn" :title="t('block.title')" data-test="blocks"
-      dismissible :dismiss-key="'blocks:' + s.project.job + ':' + s.project.blocks.join(',')" :close-label="t('common.close')">{{ blocks.join('; ') }}.</OuiBanner>
     <ResultCard v-if="s.result" />
     <OuiPanel v-else-if="!s.project.objects.length" class="em-solo" flush data-test="no-objects">
       <OuiEmpty :icon="box" :title="t('load.noObjects')" />

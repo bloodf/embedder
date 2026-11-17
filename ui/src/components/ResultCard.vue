@@ -12,7 +12,7 @@ import { t, tn, tMaybe, fmt } from '../core/i18n';
      Load project again before any more pockets (a second Apply on the old copy would drop the first one's). -->
 <template>
   <section v-if="s.result" class="em-result" data-test="result" :aria-label="t('result.title')">
-    <OuiBanner tone="success" :title="t('result.title')" data-test="result-banner" dismissible :dismiss-key="'result:' + s.result.path" :close-label="t('common.close')"><span>{{ t('result.body', { name: s.result.name, pockets: s.result.pockets, removed: s.result.removed }) }}</span></OuiBanner>
+    <OuiBanner tone="success" :title="t('result.title')" data-test="result-banner" dismissible :dismiss-key="'result:' + s.applies + ':' + s.result.path" :close-label="t('common.close')"><span>{{ t('result.body', { name: s.result.name, pockets: s.result.pockets, removed: s.result.removed }) }}</span></OuiBanner>
 
     <OuiPanel :title="s.result.name" :icon="file" flush>
       <!-- What to do at the printer is the main line: where the print stops and what goes in. -->
