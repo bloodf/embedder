@@ -160,6 +160,7 @@ test('hello is the first command; the version shows once it answers', `
   eq(text(byTest('state')), 'No project', 'the bar says what the plugin holds');
   await tab('settings');
   eq(text(byTest('version')), '0.1.0', 'version shown under Settings, About');
+  await reveal(byTest('version'));
   assert(byTest('version').getClientRects().length, 'version visible');
 `);
 
@@ -273,7 +274,7 @@ test('Spanish decimals in a custom size: "2.5" typed is two and a half', `
 
 test('icons come from the shared set; the bar carries the brand mark', `
   await ready();
-  eq(qa('[role=tab] svg.oui-icon').length, 2, 'tab icons drawn');
+  eq(qa('.oui-appbar [role=tab] svg.oui-icon').length, 2, 'tab icons drawn');
   eq(qa('.oui-appbar-mark svg rect').length, 6, 'the micro mark: six bars');
   eq(qa('.oui-appbar-mark svg circle').length, 1, 'and the insert');
   assert(q('[data-test=load] svg.oui-icon'), 'the primary action carries its icon');
