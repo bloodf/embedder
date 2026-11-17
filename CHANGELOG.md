@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-17
+
 ### Added
 
 - Polish (pl) translation. Thanks to @xtronets for asking (u1control#20). Embedder follows OrcaSlicer when it runs in
