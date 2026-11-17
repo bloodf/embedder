@@ -426,9 +426,9 @@ test('a toast sits bottom-left with a Close button, and goes when closed', `
   eq(el.getAttribute('role'), 'status', 'a success is polite');
   await until(() => !document.getAnimations().some(a => a.playState === 'running'), 'the toast is in');
   const r = el.getBoundingClientRect();
-  const foot = q('.oui-settings-foot').getBoundingClientRect();
   assert(r.left <= 24 && r.right < innerWidth / 2 + 200, 'left: ' + JSON.stringify(r));
-  assert(r.bottom <= foot.top && foot.top - r.bottom <= 24, 'at the bottom, just above the save bar: ' + JSON.stringify([r, foot]));
+  const gap = () => q('.oui-settings-foot').getBoundingClientRect().top - el.getBoundingClientRect().bottom;
+  await until(() => gap() >= 0 && gap() <= 24, 'at the bottom, just above the save bar');
   const close = q('.oui-toast-close', el);
   eq(close.getAttribute('aria-label'), 'Close', 'the X is named');
   await click(close);

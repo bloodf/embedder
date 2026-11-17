@@ -13,15 +13,20 @@ import { t, tn } from './core/i18n';
 
 const stop = start();
 onBeforeUnmount(stop);
-// Settings keeps its save bar near the bottom edge: the toasts sit above it. Measured when a toast comes, the bar shows
-// or wraps, or the window changes size.
+// Settings keeps its save bar near the bottom edge: the toasts sit above it. Measured when a toast comes, the bar or the
+// page changes size (the bar wraps, settings fit themselves to the window), or the page scrolls.
 const lift = ref(0);
 let foot: Element | null = null;
 const measure = () => { const r = foot?.getBoundingClientRect(); lift.value = r?.height ? Math.ceil(innerHeight - r.top) + 12 : 0; };
 const feet = new ResizeObserver(measure);
 watch(() => [s.tab, useToast().list.list.length], measure, { flush: 'post' });
-onMounted(() => { foot = document.querySelector('.oui-settings-foot'); if (foot) feet.observe(foot); addEventListener('resize', measure); });
-onBeforeUnmount(() => { feet.disconnect(); removeEventListener('resize', measure); });
+onMounted(() => {
+  foot = document.querySelector('.oui-settings-foot');
+  if (foot) feet.observe(foot);
+  feet.observe(document.body);
+  addEventListener('resize', measure); addEventListener('scroll', measure, { passive: true });
+});
+onBeforeUnmount(() => { feet.disconnect(); removeEventListener('resize', measure); removeEventListener('scroll', measure); });
 const toastLift = computed(() => (s.tab === 'settings' && lift.value > 0 ? { '--oui-toast-bottom': lift.value + 'px' } : undefined));
 const tabs = computed(() => [
   { value: 'embed', label: t('nav.embed'), icon: magnet },
