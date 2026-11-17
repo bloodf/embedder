@@ -55,7 +55,10 @@ async function tab(name) { await click(q('[data-tab="' + name + '"]')); }
 /** The rows of a list as [name, second line] pairs. */
 const rows = name => qa('[data-test=' + name + '] li').map(li => qa('.em-row-id > *', li).map(text));
 const notes = () => text(byTest('plan-note'));
-const alerts = () => qa('[role=alert] .oui-banner').map(text).join(' | ');
+/** The toasts as one line each (title, then the rest), and what the alert banners say. */
+const toastText = el => [q('.oui-toast-text > strong', el), q('.oui-toast-body', el)].map(text).filter(Boolean).join(' ');
+const toasts = () => qa('.oui-toasts .oui-toast');
+const alerts = () => [...qa('.oui-toast[role=alert]').map(toastText), ...qa('[role=alert] .oui-banner').map(text)].join(' | ');
 const answered = new Set();
 const open = name => cmds(name).filter(m => !answered.has(m.id));
 const b64 = u => btoa(String.fromCharCode(...u));
@@ -388,6 +391,48 @@ test('a project-level block shows the banner and starts in Open', `
   eq(byTest('mode').getAttribute('aria-describedby'), byTest('blocks').id, 'the disabled choice points at the banner');
   const m = await place(null);
   eq(m.args.mode, 'open', 'Open by default');
+`);
+
+test('a closed banner stays closed while its state holds and comes back when it changes', `
+  const blocked = {...PROJECT, blocks: ['by_object'], objects: [object(0, {embedded_block: 'by_object'})]};
+  await loaded(blocked);
+  const close = q('[data-test=blocks] .oui-banner-close');
+  eq(close.getAttribute('aria-label'), 'Close', 'the X is named');
+  await click(close);
+  assert(!byTest('blocks'), 'closed');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 2, 'loads again');
+  await reply(last('cmd', 'project.load'), blocked);
+  await settle();
+  assert(!byTest('blocks'), 'the same project with the same block: still closed');
+  await click(byTest('reload'));
+  await until(() => cmds('project.load').length === 3, 'loads a third time');
+  await reply(last('cmd', 'project.load'), {...blocked, job: 'j2', blocks: ['by_object', 'raft']});
+  await until(() => byTest('blocks'), 'another block: the banner is back');
+`);
+
+test('a toast sits bottom-left with a Close button, and goes when closed', `
+  await ready();
+  await tab('settings');
+  await until(() => last('cmd', 'copies.status'), 'status asked');
+  await reply(last('cmd', 'copies.status'), {count: 3, bytes: 3 * 1024 * 1024, kept: 2});
+  await click(byTest('copies-clear'));
+  await yes();
+  await until(() => last('cmd', 'copies.clear'), 'clear sent');
+  await reply(last('cmd', 'copies.clear'), {removed: 3, freed: 3 * 1024 * 1024, failed: 0, count: 0, bytes: 0, kept: 2});
+  await until(() => toasts().length === 1, 'one toast');
+  const el = toasts()[0];
+  eq(toastText(el), 'Deleted 3 old copies, 3.0 MB freed.', 'what it says');
+  eq(el.getAttribute('role'), 'status', 'a success is polite');
+  await until(() => !document.getAnimations().some(a => a.playState === 'running'), 'the toast is in');
+  const r = el.getBoundingClientRect();
+  const foot = q('.oui-settings-foot').getBoundingClientRect();
+  assert(r.left <= 24 && r.right < innerWidth / 2 + 200, 'left: ' + JSON.stringify(r));
+  assert(r.bottom <= foot.top && foot.top - r.bottom <= 24, 'at the bottom, just above the save bar: ' + JSON.stringify([r, foot]));
+  const close = q('.oui-toast-close', el);
+  eq(close.getAttribute('aria-label'), 'Close', 'the X is named');
+  await click(close);
+  await until(() => !toasts().length, 'closed');
 `);
 
 test('warnings are shown in words', `
@@ -904,7 +949,7 @@ test('a pocket of the list let go before its move is planned still moves; a move
   await press('Escape');
   await answerPlans(() => TILTED);
   eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'a step that cannot be made leaves the row');
-  assert(text(document.body).includes('The pocket stays as it was: the face is tilted'), 'and says so');
+  assert(toasts().map(toastText).join(' | ').includes('The pocket stays as it was: the face is tilted'), 'and says so: ' + toasts().map(toastText));
   eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'without taking it back in hand');
 `, { gl: true });
 

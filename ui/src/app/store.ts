@@ -1,11 +1,12 @@
 import { reactive } from 'vue';
 import * as bridge from '../core/bridge';
-import { Tracker, message } from '../core/tracker';
-import { t, tMaybe, onLangPref } from '../core/i18n';
+import { Tracker, message, type Notice } from '../core/tracker';
+import { showToast, type OuiToastTone } from '../../shared/src/components/toast';
+import { t, tMaybe, fmt, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';
 import type { Hit } from '../core/pick';
-import type { InsertChoice } from './logic';
+import { splitLead, type InsertChoice } from './logic';
 import type { ApplyResult, Hello, Mode, Plan, PlanArgs, Preset, Project, Settings, Staged } from './types';
 
 export const DEFAULT_PRESET = 'magnet-disc-6x3';
@@ -63,9 +64,20 @@ export function errorText(e: unknown): string {
   return message(e);
 }
 
+// The tracker's notices are the page's toasts: the first sentence is the title. An unknown outcome is a warning
+// that stays until closed, like an error: the user has to know the command may or may not have happened. Those two
+// carry the time they were said, since they may be read long after.
+const TONE: Record<Notice['kind'], OuiToastTone> = { error: 'error', unknown: 'warn', success: 'success', info: 'info' };
+export function toast(n: Notice): void {
+  const [title, rest] = splitLead(n.text);
+  const lasting = n.kind === 'error' || n.kind === 'unknown';
+  const body = [rest, lasting ? fmt.time(Date.now() / 1000) : ''].filter(Boolean).join(' · ');
+  showToast({ tone: TONE[n.kind], title, body: body || undefined, key: n.key && 'cmd:' + n.key, timeout: n.kind === 'unknown' ? 0 : undefined });
+}
+
 export const tracker = new Tracker(
   (cmd, args) => bridge.command(cmd, args).catch(e => { throw new Error(errorText(e)); }),
-  (key, params) => t(key, params));
+  (key, params) => t(key, params), toast);
 bridge.setErrorSink(e => tracker.notify('error', t('msg.plugin', { error: message(e) })));
 
 export async function hello(): Promise<void> {

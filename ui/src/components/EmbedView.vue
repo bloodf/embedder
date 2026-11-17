@@ -39,7 +39,8 @@ const blocks = computed(() => (s.project?.blocks ?? []).map(code => tMaybe(`bloc
   </OuiPanel>
 
   <template v-else>
-    <OuiBanner v-if="blocks.length" id="em-blocks" tone="warn" :title="t('block.title')" data-test="blocks">{{ blocks.join('; ') }}.</OuiBanner>
+    <OuiBanner v-if="blocks.length" id="em-blocks" tone="warn" :title="t('block.title')" data-test="blocks"
+      dismissible :dismiss-key="'blocks:' + s.project.job + ':' + s.project.blocks.join(',')" :close-label="t('common.close')">{{ blocks.join('; ') }}.</OuiBanner>
     <ResultCard v-if="s.result" />
     <OuiPanel v-else-if="!s.project.objects.length" class="em-solo" flush data-test="no-objects">
       <OuiEmpty :icon="box" :title="t('load.noObjects')" />

@@ -250,7 +250,6 @@ export const es: Record<MessageKey, string> = {
   'common.save': 'Guardar',
   'common.close': 'Cerrar',
   'common.goBack': 'Volver',
-  'common.dismiss': 'Descartar',
   'common.retry': 'Reintentar',
 
   'msg.region': 'Mensajes',

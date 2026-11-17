@@ -250,7 +250,6 @@ export const en = {
   'common.save': 'Save',
   'common.close': 'Close',
   'common.goBack': 'Go back',
-  'common.dismiss': 'Dismiss',
   'common.retry': 'Try again',
 
   'msg.region': 'Messages',
@@ -512,7 +511,6 @@ export const ptBR: Record<MessageKey, string> = {
   'common.save': 'Salvar',
   'common.close': 'Fechar',
   'common.goBack': 'Voltar',
-  'common.dismiss': 'Dispensar',
   'common.retry': 'Tentar de novo',
 
   'msg.region': 'Mensagens',

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import { OuiAppBar, OuiIcon, OuiStatus, type OuiState } from '../shared/src/components';
+import { OuiAppBar, OuiIcon, OuiStatus, OuiToastHost, useToast, type OuiState } from '../shared/src/components';
 import { magnet, refresh, settings } from '../shared/src/icons';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import NoticeArea from './components/NoticeArea.vue';
@@ -13,6 +13,16 @@ import { t, tn } from './core/i18n';
 
 const stop = start();
 onBeforeUnmount(stop);
+// Settings keeps its save bar near the bottom edge: the toasts sit above it. Measured when a toast comes, the bar shows
+// or wraps, or the window changes size.
+const lift = ref(0);
+let foot: Element | null = null;
+const measure = () => { const r = foot?.getBoundingClientRect(); lift.value = r?.height ? Math.ceil(innerHeight - r.top) + 12 : 0; };
+const feet = new ResizeObserver(measure);
+watch(() => [s.tab, useToast().list.list.length], measure, { flush: 'post' });
+onMounted(() => { foot = document.querySelector('.oui-settings-foot'); if (foot) feet.observe(foot); addEventListener('resize', measure); });
+onBeforeUnmount(() => { feet.disconnect(); removeEventListener('resize', measure); });
+const toastLift = computed(() => (s.tab === 'settings' && lift.value > 0 ? { '--oui-toast-bottom': lift.value + 'px' } : undefined));
 const tabs = computed(() => [
   { value: 'embed', label: t('nav.embed'), icon: magnet },
   { value: 'settings', label: t('nav.settings'), icon: settings },
@@ -54,6 +64,7 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
     <div v-show="s.tab === 'settings'" id="em-view-settings" class="em-view" role="tabpanel" aria-labelledby="oui-tab-settings"><SettingsView /></div>
   </main>
   <ConfirmDialog />
+  <OuiToastHost :close-label="t('common.close')" :label="t('msg.region')" :style="toastLift" />
 </template>
 
 <style>
