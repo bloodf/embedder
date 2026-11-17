@@ -205,7 +205,7 @@ test('Portuguese from the host language', `
   eq(document.documentElement.lang, 'pt-BR', 'document language');
 `, { lang: 'pt_BR' });
 
-for (const [lang, host, title] of [['es', 'es', 'Ningún proyecto cargado'], ['de', 'de', 'Kein Projekt geladen'], ['zh-CN', 'zh_CN', '未加载项目']]) {
+for (const [lang, host, title] of [['es', 'es', 'Ningún proyecto cargado'], ['de', 'de', 'Kein Projekt geladen'], ['zh-CN', 'zh_CN', '未加载项目'], ['pl', 'pl_PL', 'Nie wczytano projektu']]) {
   test(`${lang} from the host language, with no English left on the main screens`, `
   const english = () => ENGLISH.filter(s => document.body.innerText.includes(s));
   await ready();
@@ -739,8 +739,8 @@ test('the language choice is sent to the plugin and the page follows it', `
   await ready();
   await tab('settings');
   await click(byTest('lang'));
-  await until(() => qa('[role=option]').length === 6, 'language options');
-  eq(qa('[role=option]').map(text).slice(1), ['English', 'Português (Brasil)', 'Español', 'Deutsch', '简体中文'], 'each language in its own name');
+  await until(() => qa('[role=option]').length === 7, 'language options');
+  eq(qa('[role=option]').map(text).slice(1), ['English', 'Português (Brasil)', 'Español', 'Deutsch', '简体中文', 'Polski'], 'each language in its own name');
   await click(qa('[role=option]').find(o => text(o) === 'Português (Brasil)'));
   eq(last('ui_language').value, 'pt-BR', 'choice sent');
   eq(document.documentElement.lang, 'pt-BR', 'document language');

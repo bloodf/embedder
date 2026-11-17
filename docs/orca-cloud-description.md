@@ -1,7 +1,7 @@
 # Orca Cloud description
 
 The text of the Embedder listing on Orca Cloud, in English and Brazilian Portuguese. Paste the block for the listing's
-language as it is; each one is under 4000 characters (3172 and 3302). The images are the four store feature
+language as it is; each one is under 4000 characters (3180 and 3311). The images are the four store feature
 images on `main`, so they show once the commit that adds them is merged. The line for each plugin of the set is the same
 in all six repositories; keep it in step with the README's "More plugins by bloodf" table.
 
@@ -50,7 +50,7 @@ Embedder does not use the network. It reads the project copy OrcaSlicer exports,
 
 ## Languages
 
-English, Brazilian Portuguese, Spanish, German and Simplified Chinese.
+English, Brazilian Portuguese, Spanish, German, Simplified Chinese and Polish.
 
 ## More plugins by bloodf
 
@@ -112,7 +112,7 @@ O Embedder não usa a rede. Ele lê a cópia do projeto que o OrcaSlicer exporta
 
 ## Idiomas
 
-Inglês, português do Brasil, espanhol, alemão e chinês simplificado.
+Inglês, português do Brasil, espanhol, alemão, chinês simplificado e polonês.
 
 ## Mais plugins do bloodf
 

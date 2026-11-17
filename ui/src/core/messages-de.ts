@@ -242,6 +242,7 @@ export const de: Record<MessageKey, string> = {
   'lang.es': 'Español',
   'lang.de': 'Deutsch',
   'lang.zh-CN': '简体中文',
+  'lang.pl': 'Polski',
   'about.text': 'Embedder {version}',
   'about.title': 'Über',
   'about.version': 'Version',
