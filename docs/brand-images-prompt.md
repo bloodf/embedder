@@ -21,7 +21,7 @@ Where each asset goes in this repo:
 | Wordmark and lockup | `assets/embedder-wordmark.*`, `assets/embedder-wordmark-dark.*` |
 | Micro marks | `assets/embedder-micro-{16,20,24}.*`, `assets/embedder-micro-dark-{16,20,24}.*` |
 | Brand sheet | `assets/embedder-brand-sheet.*` |
-| Tab icon (64x64 PNG, the store tile since 0.4.1; was a 24x24 line mark) | `src/embedder/ui/icon.png` |
+| Tab icon (40x40 RGBA PNG, the store tile since 0.4.1; was a 24x24 line mark) | `src/embedder/ui/icon.png` |
 
 Since 0.2.0 the page takes its UI icons from the shared Orca UI foundation and its empty-state picture
 from the foundation's Embedder illustration, so the UI icon set and the empty-state spots described

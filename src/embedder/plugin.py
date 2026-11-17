@@ -289,7 +289,7 @@ class EmbedderPage(orca.pages.PagesPluginCapabilityBase):
     def get_icon(self):
         """The icon file in the plugin storage folder (data_dir(), writable for the plugin); none without it.
 
-        The brand tile at 64x64 (OrcaSlicer draws it at 20 px). The host tries an .svg of the same name before the
+        The brand tile at 40x40 RGBA with a transparent surround (OrcaSlicer draws it at 20 px). The host tries an .svg of the same name before the
         .png, so the file is not called embedder.png: 0.4.0 and earlier left an embedder.svg in this folder."""
         png = _asset("icon.png")
         for folder in [f for f in [_storage()] if f]:
