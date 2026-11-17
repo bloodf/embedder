@@ -1,15 +1,13 @@
 # Orca Cloud description
 
 The text of the Embedder listing on Orca Cloud, in English and Brazilian Portuguese. Paste the block for the listing's
-language as it is; each one is under 4000 characters (3172 and 3302). The images are the four store feature
+language as it is; each one is under 4000 characters (3144 and 3281). The images are the four store feature
 images on `main`, so they show once the commit that adds them is merged. The line for each plugin of the set is the same
 in all six repositories; keep it in step with the README's "More plugins by bloodf" table.
 
 ## English
 
-````markdown
-**Magnet and NFC pockets, with the pause at the right layer.**
-
+```markdown
 Embedder puts magnets and NFC stickers inside your prints. Pick an insert size, click the face where it goes, and the print pauses when it is time to drop the insert in.
 
 ## What you need
@@ -65,13 +63,11 @@ Each plugin works on its own; installed together they share data where it helps.
 ## Source code
 
 [github.com/bloodf/embedder](https://github.com/bloodf/embedder), GPL-3.0-only. An independent project by bloodf, not made or supported by the OrcaSlicer team.
-````
+```
 
 ## Português (Brasil)
 
-````markdown
-**Bolsos para ímãs e NFC, com a pausa na camada certa.**
-
+```markdown
 O Embedder coloca ímãs e etiquetas NFC dentro das suas peças. Escolha o tamanho do inserto, clique na face onde ele vai, e a impressão pausa na hora de colocá-lo.
 
 ## O que você precisa
@@ -127,4 +123,4 @@ Cada plugin funciona sozinho; instalados juntos, compartilham dados onde ajuda.
 ## Código-fonte
 
 [github.com/bloodf/embedder](https://github.com/bloodf/embedder), GPL-3.0-only. Um projeto independente do bloodf, que não é feito nem mantido pela equipe do OrcaSlicer.
-````
+```
