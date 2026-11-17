@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Polish (pl) translation. Thanks to @xtronets for asking (u1control#20). Embedder follows OrcaSlicer when it runs in
+  Polish (`pl_PL`), or pick **Polski** under **Settings > Language**. Every screen is in Polish, millimetres are
+  written with a decimal comma (2,5 mm), and counts use Polish's three plural forms (1 obiekt, 2 obiekty, 5 obiektów).
+
 ## [0.4.1] - 2026-11-17
 
 ### Changed

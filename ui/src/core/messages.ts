@@ -1,5 +1,5 @@
-// Every visible string of the Embedder page, in English and Brazilian Portuguese; Spanish, German and Simplified
-// Chinese live in messages-es.ts, messages-de.ts and messages-zh.ts. Codes from Python map to err.<code>,
+// Every visible string of the Embedder page, in English and Brazilian Portuguese; Spanish, German, Simplified
+// Chinese and Polish live in messages-es.ts, messages-de.ts, messages-zh.ts and messages-pl.ts. Codes from Python map to err.<code>,
 // block.<code> and warn.<code>; the English insert labels Python sends ("6x3 magnet") go through insertLabel().
 // Error details that are data (paths, OrcaSlicer's own error text) are shown as they come.
 export const en = {
@@ -242,6 +242,7 @@ export const en = {
   'lang.es': 'Español',
   'lang.de': 'Deutsch',
   'lang.zh-CN': '简体中文',
+  'lang.pl': 'Polski',
   'about.text': 'Embedder {version}',
   'about.title': 'About',
   'about.version': 'Version',
@@ -262,6 +263,8 @@ export const en = {
 } as const;
 
 export type MessageKey = keyof typeof en;
+/** The plural messages: "<base>_one" / "<base>_other" in every language, plus "<base>_few" in Polish. */
+export type PluralBase = MessageKey extends infer K ? K extends `${infer B}_other` ? B : never : never;
 
 export const ptBR: Record<MessageKey, string> = {
   'app.title': 'Embedder',
@@ -503,6 +506,7 @@ export const ptBR: Record<MessageKey, string> = {
   'lang.es': 'Español',
   'lang.de': 'Deutsch',
   'lang.zh-CN': '简体中文',
+  'lang.pl': 'Polski',
   'about.text': 'Embedder {version}',
   'about.title': 'Sobre',
   'about.version': 'Versão',

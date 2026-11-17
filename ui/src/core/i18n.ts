@@ -3,11 +3,12 @@ import { en, ptBR, type MessageKey } from './messages';
 import { es } from './messages-es';
 import { de } from './messages-de';
 import { zhCN } from './messages-zh';
-import { interpolate, isLocale, parseInsertLabel, resolveLocale, type LangPref, type Locale } from './i18n-core';
+import { pl } from './messages-pl';
+import { interpolate, isLocale, parseInsertLabel, pluralKey, resolveLocale, type LangPref, type Locale } from './i18n-core';
 import { boot } from './boot';
 
 const PREF_KEY = 'embedder.lang';
-const dicts: Record<Locale, Record<MessageKey, string>> = { en, 'pt-BR': ptBR, es, de, 'zh-CN': zhCN };
+const dicts: Record<Locale, Record<MessageKey, string>> = { en, 'pt-BR': ptBR, es, de, 'zh-CN': zhCN, pl };
 
 // The explicit choice lives in the plugin's settings (boot "pref"); localStorage is only a fallback cache.
 let persist: (value: LangPref) => void = () => {};
@@ -36,10 +37,11 @@ export function setLangPref(value: LangPref): void {
 export function t(key: MessageKey, params?: Record<string, unknown>): string {
   return interpolate(dicts[locale.value][key] ?? en[key] ?? key, params);
 }
-/** Plural keys come in pairs "<base>_one" / "<base>_other". */
+/** Plural keys come as "<base>_one" / "<base>_other", plus "<base>_few" in Polish (pluralKey). */
 export function tn(base: string, n: number, params?: Record<string, unknown>): string {
-  const key = (new Intl.PluralRules(locale.value).select(n) === 'one' ? `${base}_one` : `${base}_other`) as MessageKey;
-  return t(key, { n, ...params });
+  const table = dicts[locale.value] as Record<string, string>;
+  const key = pluralKey(locale.value, base, n, k => k in table) as MessageKey;
+  return interpolate(table[key] ?? en[key] ?? key, { n, ...params });
 }
 /** A message key when it exists (state names, codes from Python); otherwise the raw value. */
 export function tMaybe(key: string, fallback: string, params?: Record<string, unknown>): string {

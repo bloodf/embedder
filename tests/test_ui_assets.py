@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import build  # noqa: E402
 
 UI = ROOT / "src" / "embedder" / "ui"
-MAX_BUILT_BYTES = 420_000   # the wheel measures ~408 kB with three.js, OrbitControls, the panel and five languages (page ~1.32 MB raw, deflated)
+MAX_BUILT_BYTES = 440_000   # the wheel measures ~420 kB with three.js, OrbitControls, the panel and six languages (page ~1.35 MB raw, deflated)
 SHARED_ICONS = ROOT / "ui" / "shared" / "src" / "icons.ts"
 ICON_SHA256 = "584571402c06e72fb4bcc1da62ed6433cfd1b085a11a5a87d87071a290c408a6"   # src/embedder/ui/icon.png
 
@@ -37,7 +37,7 @@ class UiAssets(unittest.TestCase):
         """Codes raised in Python reach the page as err.<code> (refusals) or block.<code> (plan blocks)."""
         source = "".join(p.read_text("utf-8") for p in (ROOT / "src" / "embedder").glob("*.py"))
         core = ROOT / "ui" / "src" / "core"
-        tables = {"en and pt-BR": 2, "messages-es": 1, "messages-de": 1, "messages-zh": 1}
+        tables = {"en and pt-BR": 2, "messages-es": 1, "messages-de": 1, "messages-zh": 1, "messages-pl": 1}
         texts = {name: (core / ("messages.ts" if name == "en and pt-BR" else name + ".ts")).read_text("utf-8") for name in tables}
         errors = set(re.findall(r'(?:SessionError|ThreeMFError|PresetError|CommandError)\("([a-z_]+)"', source))
         blocks = set(re.findall(r'Blocked\("([a-z_]+)"', source))

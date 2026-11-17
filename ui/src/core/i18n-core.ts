@@ -1,14 +1,14 @@
 // Locale resolution, kept free of Vue so the unit tests can import it directly.
-export const LOCALES = ['en', 'pt-BR', 'es', 'de', 'zh-CN'] as const;
+export const LOCALES = ['en', 'pt-BR', 'es', 'de', 'zh-CN', 'pl'] as const;
 export type Locale = typeof LOCALES[number];
 export type LangPref = 'auto' | Locale;
 export const isLocale = (value: unknown): value is Locale => (LOCALES as readonly unknown[]).includes(value);
 
-// By primary subtag: OrcaSlicer reports "pt_BR", "es", "de", "zh_CN" or "zh_TW"; browsers "es-MX", "de-AT", "zh-Hans-CN".
+// By primary subtag: OrcaSlicer reports "pt_BR", "es", "de", "zh_CN", "zh_TW" or "pl_PL"; browsers "es-MX", "de-AT", "zh-Hans-CN".
 // Traditional Chinese takes the Simplified page: closer to its reader than English.
-const BY_LANGUAGE: Record<string, Locale> = { en: 'en', pt: 'pt-BR', es: 'es', de: 'de', zh: 'zh-CN' };
+const BY_LANGUAGE: Record<string, Locale> = { en: 'en', pt: 'pt-BR', es: 'es', de: 'de', zh: 'zh-CN', pl: 'pl' };
 
-/** "pt_BR", "pt" → "pt-BR"; "es_ES" → "es"; "de-AT" → "de"; "zh_CN", "zh_TW" → "zh-CN"; any English → "en"; anything else → null. */
+/** "pt_BR", "pt" → "pt-BR"; "es_ES" → "es"; "de-AT" → "de"; "zh_CN", "zh_TW" → "zh-CN"; "pl_PL" → "pl"; any English → "en"; anything else → null. */
 export function normalizeLocale(value: unknown): Locale | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   return BY_LANGUAGE[value.trim().toLowerCase().split(/[-_]/)[0]] ?? null;
@@ -18,6 +18,14 @@ export function normalizeLocale(value: unknown): Locale | null {
 export function resolveLocale(pref: LangPref, host: unknown, browser: readonly string[]): Locale {
   if (isLocale(pref)) return pref;
   return normalizeLocale(host) ?? browser.map(normalizeLocale).find((l): l is Locale => !!l) ?? 'en';
+}
+
+/** The key of a plural message for `n`: "<base>_one", a language's own form ("<base>_few" in Polish) when its table
+ *  has it, else "<base>_other". Polish "many" (0, 5–21, 25…) is its "_other". */
+export function pluralKey(locale: string, base: string, n: number, has: (key: string) => boolean): string {
+  const form = new Intl.PluralRules(locale).select(n);
+  if (form === 'one') return `${base}_one`;
+  return has(`${base}_${form}`) ? `${base}_${form}` : `${base}_other`;
 }
 
 export function interpolate(text: string, params?: Record<string, unknown>): string {
@@ -47,7 +55,7 @@ export function parseInsertLabel(label: string): { key: InsertLabelKey; dims: Re
   return null;
 }
 
-/** The decimal sign of a locale: "." in en and zh-CN, "," in pt-BR, es and de. */
+/** The decimal sign of a locale: "." in en and zh-CN, "," in pt-BR, es, de and pl. */
 export function decimalSign(locale: string): string {
   return new Intl.NumberFormat(locale).formatToParts(1.5).find(p => p.type === 'decimal')?.value ?? '.';
 }
