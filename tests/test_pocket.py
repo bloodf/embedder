@@ -227,7 +227,7 @@ class Shapes(unittest.TestCase):
         ("disc", "circle"): (6.4, 6.4), ("disc", "hexagon"): (6.4, 6.4), ("disc", "square"): (6.4, 6.4),
         ("disc", "rectangle"): (6.4, 6.4),
         ("block", "circle"): (math.hypot(10.4, 5.4),) * 2,
-        ("block", "hexagon"): ((math.sqrt(3) * 10.4 + 5.4) / 2,) * 2,   # the block's corners touch two slanted flats
+        ("block", "hexagon"): (10.4, 10.4),   # turned: flats across X hold the length, the corners clear the slants
         ("block", "square"): (10.4, 10.4), ("block", "rectangle"): (10.4, 5.4),
     }
 
@@ -270,7 +270,25 @@ class Shapes(unittest.TestCase):
         square = pocket.plan(req(insert=BLOCK, shape="square"), CTX)
         self.assertEqual(square.mesh(), g.vented_box_mesh(10.4, 10.4, square.size[2], pocket.VENT_DIAMETER / 2))
         hexagon = pocket.plan(req(insert=BLOCK, shape="hexagon"), CTX)
-        self.assertEqual(hexagon.mesh(), g.hexagon_mesh(hexagon.size[0], hexagon.size[2]))
+        self.assertTrue(hexagon.turned)
+        self.assertEqual(hexagon.mesh(), g.hexagon_mesh(10.4, hexagon.size[2], turned=True))
+        xs = [q[0] for q in hexagon.mesh()[0]]
+        self.assertAlmostEqual(max(xs) - min(xs), 10.4)                                  # flats across X
+        self.assertFalse(pocket.plan(req(shape="hexagon"), CTX).turned)                  # a disc: corners on X, as before
+
+    def test_a_block_hexagon_is_the_smallest_that_holds_it_at_any_turn(self):
+        """Across-flats a hexagon needs for an l x w rectangle at every turn (0.01 degree steps over the 60 degree
+        period): the plan's hexagon is the minimum, turned or not, also for a long thin block and a square one."""
+        def need(l, w, th):
+            return max(l * abs(math.cos(th + k * math.pi / 3)) + w * abs(math.sin(th + k * math.pi / 3)) for k in range(3))
+        for l, w, turned in ((10, 5, True), (30, 0.4, False), (85.6, 54, True), (5, 5, False), (5, 10, False)):   # a square block: a tie, kept on X
+            insert = presets.resolve({"custom": {"kind": "magnet", "shape": "block", "l": l, "w": w, "t": 2}}, [])
+            p = pocket.plan(req(insert=insert, mode="open", shape="hexagon"), CTX)
+            lc, wc = l + 0.4, w + 0.4
+            best = min(need(lc, wc, i * math.pi / 3 / 6000) for i in range(6001))
+            self.assertAlmostEqual(p.size[0], best, places=6, msg=(l, w))
+            self.assertEqual(p.turned, turned, (l, w))
+            self.assertTrue(all(_in_footprint(*p.mesh(), q) for q in _outline(insert, 0.2 - 1e-6)), (l, w))
 
     def test_a_shape_turns_with_the_spin(self):
         p = pocket.plan(req(insert=BLOCK, shape="rectangle", spin=90), CTX)
@@ -357,6 +375,16 @@ class Pauses(unittest.TestCase):
         near = pocket.plan(req(insert=NFC, point=(25, 5, 20), cover=0.6), CTX)
         far = pocket.plan(req(insert=NFC, point=(80, 5, 20), cover=0.6), CTX)
         self.assertEqual(pocket.proximity_warnings([a, near]), (("nfc_near_magnet", 0, 1),))
+        self.assertEqual(pocket.proximity_warnings([a, far]), ())
+
+    def test_nearness_counts_a_pockets_corners(self):
+        """A block's hexagon (10.4 across flats, 12.0 corner to corner) 29 mm from a 25 mm NFC circle: 10.6 mm apart
+        by the fit, under 10 mm by the corners, which is where the cavity reaches."""
+        a = pocket.plan(req(insert=BLOCK, point=(5, 5, 20), shape="hexagon"), CTX)
+        b = pocket.plan(req(insert=NFC, point=(34, 5, 20), cover=0.6, shape="circle"), CTX)
+        self.assertGreater(29 - max(a.size[:2]) / 2 - b.size[0] / 2, pocket.NEAR_MM)
+        self.assertEqual(pocket.proximity_warnings([a, b]), (("nfc_near_magnet", 0, 1),))
+        far = pocket.plan(req(insert=NFC, point=(36, 5, 20), cover=0.6, shape="circle"), CTX)
         self.assertEqual(pocket.proximity_warnings([a, far]), ())
 
 

@@ -91,6 +91,8 @@ export async function hello(): Promise<void> {
     s.version = r.version;
     s.settings = r.settings;
     s.error = '';
+    // A preset chosen before the settings came (presets listed after a failed hello): its kept shape now applies.
+    if (s.pocketShape == null && !s.insert.custom && s.selected == null) s.pocketShape = rememberedShape(r.settings.pocket_shapes, s.insert.preset);
   } catch (e) {
     s.error = errorText(e);
     s.helloFails = Math.max(s.helloFails + 1, Date.now());
@@ -125,6 +127,7 @@ export async function deletePreset(id: string): Promise<void> {
   const r = await tracker.run<{ user: Preset[] }>({ key: 'preset-del-' + id, label: t('act.presetDelete'), cmd: 'presets.delete', args: { id } });
   if (!r.ok) return;
   s.user = r.result.user;
+  if (s.settings) s.settings = { ...s.settings, pocket_shapes: withoutKey(s.settings.pocket_shapes ?? {}, id) };   // Python dropped it too
   if (s.insert.preset === id) choosePreset(DEFAULT_PRESET);
 }
 
@@ -134,14 +137,35 @@ export function choosePreset(id: string | null): void {
   s.pocketShape = rememberedShape(s.settings?.pocket_shapes, id);
 }
 
-/** A pocket shape is picked. For a preset it is kept (quietly: a failed save says so) and comes back with it. */
+const withoutKey = <T>(map: Record<string, T>, key: string): Record<string, T> =>
+  Object.fromEntries(Object.entries(map).filter(([k]) => k !== key));
+
+// The kept shapes the newest pick asks for while a save is out: quick picks are saved in turn, the last one last.
+let wantedShapes: Record<string, PocketShape> | null = null;
+
+/** A pocket shape is picked. For a preset it is kept (quietly: a failed save says so) and comes back with it; the
+ *  newest pick goes last, since Python keeps the newest MAX_POCKET_SHAPES. */
 export async function choosePocketShape(shape: PocketShape): Promise<void> {
   s.pocketShape = shape;
   const id = s.insert.custom ? null : s.insert.preset;
-  if (!id || !s.settings || s.settings.pocket_shapes?.[id] === shape) return;
-  const r = await tracker.run<Settings>({ key: 'pocket-shape', label: t('act.settings'), cmd: 'settings.save',
-    args: { settings: { pocket_shapes: { ...s.settings.pocket_shapes, [id]: shape } } } });
-  if (r.ok) s.settings = r.result;
+  if (!id || !s.settings) return;
+  const base = wantedShapes ?? s.settings.pocket_shapes ?? {};
+  if (!wantedShapes && base[id] === shape) return;
+  const saving = wantedShapes != null;
+  wantedShapes = { ...withoutKey(base, id), [id]: shape };
+  if (saving) return;   // the save that is out sends it when it is back
+  try {
+    let want: Record<string, PocketShape>;
+    do {
+      want = wantedShapes;
+      const r = await tracker.run<Settings>({ key: 'pocket-shape', label: t('act.settings'), cmd: 'settings.save',
+        args: { settings: { pocket_shapes: want } } });
+      if (!r.ok) break;
+      s.settings = r.result;
+    } while (wantedShapes !== want);
+  } finally {
+    wantedShapes = null;
+  }
 }
 
 export function start(): () => void {

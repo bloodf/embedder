@@ -121,6 +121,7 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'pocket.hexagon': 'Sześciokąt · narożniki odprowadzają powietrze i klej',
   'form.pocketShape': 'Kształt kieszeni',
   'form.pocketShapeHelp': '{shape} dla tej wkładki, chyba że wybierzesz inny. Wybór zostaje zapamiętany dla profilu.',
+  'form.pocketShapeSlot': 'Na ścianie bocznej osadzona wkładka stoi na krawędzi w szczelinie. Kształt dotyczy płaskich powierzchni i otwartych kieszeni.',
   'cut.circle': 'Koło',
   'cut.hexagon': 'Sześciokąt',
   'cut.square': 'Kwadrat',

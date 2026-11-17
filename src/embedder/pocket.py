@@ -87,6 +87,7 @@ class Pocket:
     pause_z: float = None
     cover: float = None
     warnings: tuple = ()
+    turned: bool = False            # a hexagon turned 30 degrees: flats across local X (hexagon_turned)
 
     def mesh(self):
         """A circle is a round prism, no larger than the fit anywhere; a hexagon holds a disc on its six flats and vents
@@ -96,7 +97,7 @@ class Pocket:
         if self.shape == "circle":
             return geometry.cylinder_mesh(sx, sz)
         if self.shape == "hexagon":
-            return geometry.hexagon_mesh(sx, sz)
+            return geometry.hexagon_mesh(sx, sz, self.turned)
         return geometry.vented_box_mesh(sx, sy, sz, vent_radius(sx, sy), flush=self.shape == "slot")
 
     def outer(self):
@@ -123,18 +124,33 @@ def default_shape(insert):
 def fit(insert, shape, cxy):
     """(x, y) of the smallest pocket of `shape` that holds the insert with cxy clearance all round. A disc's circle,
     hexagon (across flats) and square are its diameter plus clearance; a block's circle is its diagonal, its hexagon
-    holds the block's long side along the corners (local X), its square takes the longer side."""
+    is the smaller of the two that hold it (_hexagon_flats), its square takes the longer side."""
     l, w = insert.l + 2 * cxy, insert.w + 2 * cxy        # a disc: both its diameter
     disc = insert.shape == "disc"
     if shape == "circle":
         d = l if disc else math.hypot(l, w)
         return d, d
-    if shape == "hexagon":     # flats at y = +-f/2 and at 60 degrees: a corner (l/2, w/2) needs f >= sqrt(3) l/2 + w/2
-        f = l if disc else max(w, (math.sqrt(3) * l + w) / 2)
+    if shape == "hexagon":
+        f = l if disc else min(_hexagon_flats(l, w))
         return f, f
     if shape == "square":
         return max(l, w), max(l, w)
     return l, w
+
+
+def _hexagon_flats(l, w):
+    """Across-flats a hexagon needs to hold an l x w rectangle centred, length along X: (corners on X, flats across X).
+    Corners on X: flats at y = +-f/2 and at 60 degrees, so f >= max(w, (sqrt(3) l + w) / 2); turned 30 degrees, flats
+    at x = +-f/2: f >= max(l, (l + sqrt(3) w) / 2). Between them they cover every turn (tests.test_pocket sweeps it)."""
+    return max(w, (math.sqrt(3) * l + w) / 2), max(l, (l + math.sqrt(3) * w) / 2)
+
+
+def hexagon_turned(insert, cxy):
+    """True when a block's hexagon is smaller turned (flats across X): any block but a long, thin one."""
+    if insert.shape == "disc":
+        return False
+    on_x, turned = _hexagon_flats(insert.l + 2 * cxy, insert.w + 2 * cxy)
+    return turned < on_x
 
 
 def _shape(req):
@@ -156,7 +172,7 @@ def _open(req, ctx, face):
     sx, sy = fit(req.insert, shape, ctx.xy_clearance)
     origin = tuple(p - depth * k for p, k in zip(req.point, n))
     return Pocket(req.insert, "open", face, shape, (sx, sy, depth + OVERSHOOT),
-                  geometry.frame(origin, n, req.spin))
+                  geometry.frame(origin, n, req.spin), turned=shape == "hexagon" and hexagon_turned(req.insert, ctx.xy_clearance))
 
 
 def _check_embedded(ctx, kind):
@@ -201,7 +217,8 @@ def _embedded_flat(req, ctx, face):
     shape = _shape(req)
     sx, sy = fit(ins, shape, ctx.xy_clearance)
     transform = geometry.frame((req.point[0], req.point[1], floor), (0, 0, 1), req.spin)
-    return Pocket(ins, "embedded", face, shape, (sx, sy, top - floor), transform, floor, top, cover=cover)
+    return Pocket(ins, "embedded", face, shape, (sx, sy, top - floor), transform, floor, top, cover=cover,
+                  turned=shape == "hexagon" and hexagon_turned(ins, ctx.xy_clearance))
 
 
 def _embedded_side(req, ctx):
@@ -268,9 +285,10 @@ def pauses(pockets, existing, copies=None):
 
 
 def _reach(p):
-    """Where the insert can be, about: the fit, not the hexagon's corners or a box's vents, which hold only air."""
+    """How far the pocket reaches from its centre: a circle's radius, else half the diagonal of its footprint (a
+    hexagon's corners, a box's vents), so a warning about nearness never comes short."""
     centre = geometry.apply(p.transform, (0, 0, 0))
-    return centre, max(p.size[0], p.size[1]) / 2
+    return centre, p.size[0] / 2 if p.shape == "circle" else math.hypot(*p.outer()) / 2
 
 
 def proximity_warnings(pockets):
@@ -298,7 +316,8 @@ def _rim(p):
         return [((sx / 2 - INSET) * math.cos(k * math.pi / 6), (sx / 2 - INSET) * math.sin(k * math.pi / 6)) for k in range(12)]
     if p.shape == "hexagon":
         radius = (geometry.hexagon_corners(sx) / 2 - INSET, sx / 2 - INSET)
-        return [(radius[k % 2] * math.cos(k * math.pi / 6), radius[k % 2] * math.sin(k * math.pi / 6)) for k in range(12)]
+        r = (lambda k: radius[(k + 1) % 2]) if p.turned else (lambda k: radius[k % 2])   # turned: corners on Y
+        return [(r(k) * math.cos(k * math.pi / 6), r(k) * math.sin(k * math.pi / 6)) for k in range(12)]
     hx, hy, r = sx / 2, sy / 2, vent_radius(sx, sy) - INSET
     out = [(hx - INSET, 0.0), (INSET - hx, 0.0), (0.0, hy - INSET), (0.0, INSET - hy)]
     for gx, gy in ((1, -1), (1, 1), (-1, 1), (-1, -1)):

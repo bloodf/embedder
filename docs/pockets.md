@@ -80,7 +80,7 @@ Each shape is the smallest of its kind that holds the insert with the XY clearan
 | Shape | Measured | Round insert (diameter d) | Block (l x w) | Vents |
 |---|---|---|---|---|
 | Circle | diameter | d + 2 x clearance | the block's diagonal, (l + 2c) by (w + 2c) | none |
-| Hexagon | across the flats | d + 2 x clearance: the six flats hold the disc | wide enough that the block's corners touch two slanted flats: the larger of w + 2c and (sqrt(3) (l + 2c) + w + 2c) / 2 | the six corners |
+| Hexagon | across the flats | d + 2 x clearance: the six flats hold the disc | the smallest hexagon that holds it: usually turned so two flats hold the length, max(l', (l' + sqrt(3) w') / 2) with l' = l + 2c, w' = w + 2c; a long, thin block lies along the corners instead, max(w', (sqrt(3) l' + w') / 2) | the six corners |
 | Square | side | d + 2 x clearance | the longer side plus clearance | a 1 mm round vent on each corner |
 | Rectangle | width x length | d + 2 x clearance each way (a square) | (l + 2c) x (w + 2c) | a 1 mm round vent on each corner |
 
@@ -89,7 +89,9 @@ let air and glue out. Pick the circle for a clean round hole; nothing vents it.
 
 The plan shows the size in the shape's own terms ("Ø6.40 mm", "6.40 mm across flats", "6.40 mm sides" or
 "10.40 x 5.40 mm") and the depth. **Rotation** turns every shape about the pocket's axis; a hexagon starts with two
-corners along X. On an upright side face an embedded insert stands on edge in its slot whatever the shape.
+corners along X (a block's hexagon usually two flats across X). On an upright side face an embedded insert stands
+on edge in its slot, so the picker is off there and says why; it comes back for an open pocket or a flat face.
+Deleting one of your presets also forgets the shape picked for it; Embedder keeps the 500 most recent picks.
 
 ## The pause
 

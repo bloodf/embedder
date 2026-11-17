@@ -118,6 +118,7 @@ export const zhCN: Record<MessageKey, string> = {
   'pocket.hexagon': '六边形 · 角部可排出空气和胶水',
   'form.pocketShape': '凹槽形状',
   'form.pocketShapeHelp': '此嵌件默认为{shape}，除非你另选。所选形状会按预设保存。',
+  'form.pocketShapeSlot': '在侧面上，嵌入式嵌件竖立在长槽中。形状适用于平面和开放式凹槽。',
   'cut.circle': '圆形',
   'cut.hexagon': '六边形',
   'cut.square': '正方形',

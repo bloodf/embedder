@@ -96,7 +96,9 @@ class Bridge(Base):
         self.assertEqual([u["name"] for u in saved["user"]], ["Big"])
         self.assertEqual(self.call("presets.list")["user"][0]["id"], saved["id"])
         self.assertEqual(self.error("presets.save", preset={"name": ""}), "bad_name")
+        self.call("settings.save", settings={"pocket_shapes": {saved["id"]: "circle", "magnet-disc-6x3": "square"}})
         self.assertEqual(self.call("presets.delete", id=saved["id"])["user"], [])
+        self.assertEqual(self.call("settings.get")["pocket_shapes"], {"magnet-disc-6x3": "square"}, "its shape went with it")
         self.assertEqual(self.error("presets.delete", id="user-x"), "unknown_preset")
 
     def test_page_html_has_boot_and_language(self):

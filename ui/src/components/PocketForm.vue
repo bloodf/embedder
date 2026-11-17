@@ -54,6 +54,8 @@ const SHAPE_ICON: Record<PocketShape, OuiIconData> = {
 };
 const insertShape = computed(() => s.insert.custom?.shape ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.shape ?? 'disc');
 const pocketShape = computed(() => s.pocketShape ?? defaultPocketShape(insertShape.value));
+// Embedded on an upright side face the insert stands on edge in its slot, whatever shape is picked.
+const inSlot = computed(() => s.mode === 'embedded' && !!s.hit && s.plan?.face === 'side');
 const pocketShapes = computed(() => POCKET_SHAPES.map(v => ({ value: v, label: t(`cut.${v}`), icon: SHAPE_ICON[v] })));
 
 function setCustom(on: boolean) {
@@ -129,11 +131,12 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
 
       <div class="oui-field">
         <label id="cut-l">{{ t('form.pocketShape') }}</label>
-        <SelectButton :model-value="pocketShape" :options="pocketShapes" option-label="label" option-value="value" :allow-empty="false" class="em-cuts"
+        <SelectButton :model-value="pocketShape" :options="pocketShapes" option-label="label" option-value="value" :allow-empty="false" class="em-cuts" :disabled="inSlot"
                       aria-labelledby="cut-l" aria-describedby="cut-help" data-test="pocket-shape" fluid @update:model-value="choosePocketShape($event)">
           <template #option="{ option }"><span class="em-cut" :data-test="`cut-${option.value}`"><OuiIcon :icon="option.icon" :size="16" />{{ option.label }}</span></template>
         </SelectButton>
-        <span id="cut-help" class="oui-meta">{{ t('form.pocketShapeHelp', { shape: t(`cut.${defaultPocketShape(insertShape)}`) }) }}</span>
+        <span v-if="inSlot" id="cut-help" class="oui-meta" data-test="pocket-shape-slot">{{ t('form.pocketShapeSlot') }}</span>
+        <span v-else id="cut-help" class="oui-meta">{{ t('form.pocketShapeHelp', { shape: t(`cut.${defaultPocketShape(insertShape)}`) }) }}</span>
       </div>
 
       <div class="oui-field">

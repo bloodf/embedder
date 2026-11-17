@@ -155,10 +155,14 @@ def hexagon_corners(flat):
     return flat / math.cos(math.pi / 6)
 
 
-def hexagon_mesh(flat, height):
+def hexagon_mesh(flat, height, turned=False):
     """Closed hexagonal prism, z from 0 to height, `flat` across the flats. Two corners lie on X, so two flats run
-    parallel to X at y = +-flat / 2: a disc of that diameter touches the six flats and the corners stay open."""
-    return cylinder_mesh(flat, height, 6)
+    parallel to X at y = +-flat / 2: a disc of that diameter touches the six flats and the corners stay open.
+    turned: a 30 degree turn, so two corners lie on Y and two flats cross X at x = +-flat / 2."""
+    verts, tris = cylinder_mesh(flat, height, 6)
+    if turned:
+        verts = tuple(apply(rotation_z(30), v) for v in verts)
+    return verts, tris
 
 
 def vented_box_mesh(sx, sy, sz, r, flush=False, n=VENT_SEGMENTS):

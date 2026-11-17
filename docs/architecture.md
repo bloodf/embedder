@@ -117,7 +117,7 @@ Plugin to page:
 | `cover_magnet` | 1.0 mm | 0 to 10; material sealed over an embedded magnet |
 | `cover_nfc` | 0.6 mm | 0 to 10; the same for an NFC tag |
 | `user_presets` | `[]` | at most 200 valid presets |
-| `pocket_shapes` | `{}` | preset id (1 to 40 characters) to the pocket shape picked for it; at most 500 |
+| `pocket_shapes` | `{}` | preset id (1 to 40 characters) to the pocket shape picked for it, newest last; the newest 500 are kept, and `presets.delete` drops the preset's entry |
 
 ### Loading and meshes
 
@@ -231,8 +231,9 @@ its kind that holds the insert plus clearance (see [pockets.md](pockets.md#pick-
 
 - Hexagon (a disc's default): a hexagonal prism. The width across the flats is the diameter plus the XY clearance
   on each side (what a round pocket would measure), so the six flats locate the disc; the six corners, at
-  `flat / cos 30°` across, stay open. Two corners lie on the pocket's local X, and the spin turns them. A block
-  lies with its length along X, its corners on two slanted flats.
+  `flat / cos 30°` across, stay open. Two corners lie on the pocket's local X, and the spin turns them. For a block
+  the hexagon is the smaller of two: turned 30° (`Pocket.turned`, two flats across X holding the length) or corners
+  on X (a long, thin block); between them they are the smallest at any turn.
 - Rectangle (a block's default) and square: a box of the fit, with a round vent (`VENT_DIAMETER`, 1.0 mm) centred
   on each corner and running the whole depth. A vent is never wider than 90% of the box's shorter side, so two
   vents do not merge on a very narrow box.
@@ -271,8 +272,8 @@ move) blocks both modes, because one part cuts every instance.
 ray-tested against the clicked part's mesh above the top, through the middle and under the floor; for a side
 slot they must be inside the solid just above its floor and just under its top. The rim is twelve points round a
 circle, the hexagon's six corners and the middle of its six flats, or the middle of the box's four edges and the furthest reach of each
-corner vent), `nfc_near_magnet` (NFC pocket within 10 mm of a magnet pocket, measured from the fit: corners and
-vents hold no insert), `existing_gcode_at_layer` (someone else's custom G-code already on
+corner vent), `nfc_near_magnet` (NFC pocket within 10 mm of a magnet pocket, measured from a circle's rim or the
+furthest corner of any other pocket, vents included), `existing_gcode_at_layer` (someone else's custom G-code already on
 the pause layer; no Embedder pause is added there).
 
 **Face classes.** A face within 5 degrees of horizontal is flat (top or bottom), within 5 degrees of

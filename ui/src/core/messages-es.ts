@@ -117,6 +117,7 @@ export const es: Record<MessageKey, string> = {
   'pocket.hexagon': 'Hexágono · las esquinas dejan salir el aire y el pegamento',
   'form.pocketShape': 'Forma del alojamiento',
   'form.pocketShapeHelp': '{shape} para este inserto, salvo que elija otra. La elección se guarda para su perfil.',
+  'form.pocketShapeSlot': 'En una cara lateral, un inserto embebido queda de canto en una ranura. La forma se aplica a caras planas y alojamientos abiertos.',
   'cut.circle': 'Círculo',
   'cut.hexagon': 'Hexágono',
   'cut.square': 'Cuadrado',

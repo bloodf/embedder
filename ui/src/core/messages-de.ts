@@ -117,6 +117,7 @@ export const de: Record<MessageKey, string> = {
   'pocket.hexagon': 'Sechseck · die Ecken lassen Luft und Kleber entweichen',
   'form.pocketShape': 'Taschenform',
   'form.pocketShapeHelp': '{shape} für dieses Einlegeteil, sofern Sie keine andere wählen. Die Wahl wird für das Profil gespeichert.',
+  'form.pocketShapeSlot': 'An einer Seitenfläche steht ein eingebettetes Einlegeteil hochkant in einem Langloch. Die Form gilt für flache Flächen und offene Taschen.',
   'cut.circle': 'Kreis',
   'cut.hexagon': 'Sechseck',
   'cut.square': 'Quadrat',

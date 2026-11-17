@@ -11,9 +11,10 @@ All notable changes to this project are documented here. The format follows
 - Pick the pocket's shape: **circle**, **hexagon**, **square** or **rectangle**, each with its icon, under **Pocket shape**
   in the form. A disc still starts in a hexagon and a block in a rectangle; a shape you pick is kept for that preset and
   comes back the next time you choose it. Each shape is the smallest that holds the insert with the XY clearance: a
-  circle is the diameter (a block's diagonal), a hexagon is measured across its flats, a square takes the longer
-  side. The plan shows the size in the shape's own terms, for example "6.40 mm across flats · 3.20 mm deep". The
-  shape turns with **Rotation**. A side-face slot stays a slot.
+  circle is the diameter (a block's diagonal), a hexagon is measured across its flats (a block's hexagon is the
+  smallest that holds it, usually with two flats along its length), a square takes the longer side. The plan shows the size in the shape's own terms, for example "6.40 mm across flats · 3.20 mm deep". The
+  shape turns with **Rotation**. Embedded on a side face the insert stands in its slot, so the picker is off there
+  and says why.
 
 ## [0.4.2] - 2026-11-17
 

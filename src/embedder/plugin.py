@@ -210,8 +210,10 @@ def _cmd_presets_save(page, args):
 
 def _cmd_presets_delete(page, args):
     store = get_store(page)
-    users = presets.delete(store.effective()["user_presets"], args.get("id"))
-    return {"user": store.update({"user_presets": users})["user_presets"]}
+    cfg = store.effective()
+    users = presets.delete(cfg["user_presets"], args.get("id"))
+    shapes = {k: v for k, v in cfg["pocket_shapes"].items() if k != args.get("id")}   # its picked shape goes with it
+    return {"user": store.update({"user_presets": users, "pocket_shapes": shapes})["user_presets"]}
 
 
 def _cmd_project_load(page, args, msg_id):
