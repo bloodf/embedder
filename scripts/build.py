@@ -1,7 +1,7 @@
 """Build the OrcaSlicer plugin as a pure-Python wheel: dist/embedder_any.whl.
 
 Layout inside the wheel: embedder/__init__.py (plugin.py), one module per helper, and _assets.py
-(the HTML pages and SVG icon as string constants). The sources keep plain imports (`import settings`) so
+(the HTML page as a string constant, the PNG tab icon as bytes). The sources keep plain imports (`import settings`) so
 they run and test in place; the build rewrites them to package-relative form in the wheel copies.
 Nothing is executed or compiled at load time; the wheel is plain importable source. Zip timestamps
 are fixed so equal sources give equal bytes.
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "embedder"
 MODULES = ("geometry", "presets", "settings", "pocket", "threemf", "session")  # dependency order
-ASSETS = {"APP_HTML": "app.html", "ICON_SVG": "icon.svg"}   # app.html: the compiled Vue page (ui/, npm run build)
+ASSETS = {"APP_HTML": "app.html", "ICON_PNG": "icon.png"}   # app.html: the compiled Vue page (ui/, npm run build); icon.png: the brand tile at 40x40 RGBA
 
 
 def page_html(name):
@@ -49,7 +49,8 @@ def wheel_files(project):
         raise SystemExit("plugin.py must contain exactly one VERSION placeholder")
     plugin = plugin.replace('VERSION = "0.0.0-dev"', "VERSION = %r" % version)
     sources = {"__init__": plugin, **{m: (SRC / (m + ".py")).read_text("utf-8") for m in MODULES}}
-    assets = "".join("%s = %r\n" % (const, page_html(name)) for const, name in ASSETS.items())
+    assets = "".join("%s = %r\n" % (const, (SRC / "ui" / name).read_bytes() if name.endswith(".png") else page_html(name))
+                     for const, name in ASSETS.items())
     # The notices also travel inside the plugin's own code: OrcaSlicer installs the package, not the dist-info.
     notices = {lic.stem: lic.read_text("utf-8") for lic in third_party_licences()}
     assets += "THIRD_PARTY_NOTICES = %r\n" % notices

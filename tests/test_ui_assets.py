@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import struct
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,7 @@ import build  # noqa: E402
 UI = ROOT / "src" / "embedder" / "ui"
 MAX_BUILT_BYTES = 420_000   # the wheel measures ~408 kB with three.js, OrbitControls, the panel and five languages (page ~1.32 MB raw, deflated)
 SHARED_ICONS = ROOT / "ui" / "shared" / "src" / "icons.ts"
+ICON_SHA256 = "584571402c06e72fb4bcc1da62ed6433cfd1b085a11a5a87d87071a290c408a6"   # src/embedder/ui/icon.png
 
 
 class UiAssets(unittest.TestCase):
@@ -51,7 +53,7 @@ class UiAssets(unittest.TestCase):
 
     def test_no_loose_icon_files_are_shipped(self):
         """Icons come compiled into the page from the shared set; the plugin folder keeps only the page and its mark."""
-        self.assertEqual(sorted(p.name for p in UI.iterdir()), ["app.html", "icon.svg"])
+        self.assertEqual(sorted(p.name for p in UI.iterdir()), ["app.html", "icon.png"])
         self.assertNotRegex((UI / "app.html").read_text("utf-8"), r"\b(?:icon|spot)/[a-z0-9-]+\b(?!\.)")
 
     def test_committed_page_is_the_recorded_vue_build(self):
@@ -97,7 +99,15 @@ class UiAssets(unittest.TestCase):
         self.assertTrue(tags)
         self.assertLessEqual(tags, {"path", "circle", "rect", "line", "polyline", "polygon", "ellipse"})
         self.assertNotRegex(source, r"(?i)<script|\bon\w+\s*=|javascript:")
-        self.assertNotRegex((UI / "icon.svg").read_text("utf-8"), r"(?i)<script|\bon\w+\s*=|javascript:")
+
+    def test_tab_icon_is_the_brand_tile(self):
+        """The tab icon is assets/orca-cloud/embedder-tile.png at 40x40 RGBA (20 px tab at 2x, surround transparent), and the wheel carries it."""
+        data = (UI / "icon.png").read_bytes()
+        self.assertEqual(data[:8], b"\x89PNG\r\n\x1a\n")
+        self.assertEqual(struct.unpack(">IIBB", data[16:26]), (40, 40, 8, 6))   # 8-bit RGBA
+        self.assertLess(len(data), 8_000)
+        self.assertEqual(hashlib.sha256(data).hexdigest(), ICON_SHA256)   # re-exported from the tile: update both together
+        self.assertIn("ICON_PNG = %r" % data, self.text)
 
     def test_built_size_reasonable(self):
         size = self.artifact.stat().st_size

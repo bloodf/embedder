@@ -68,7 +68,10 @@ class Bridge(Base):
         self.assertEqual([c.__name__ for c in orca.registered], ["EmbedderPage"])
         self.assertEqual(orca.permissions, [{"threading": True}])
         self.assertEqual(self.page.get_name(), "Embedder")
-        self.assertTrue(self.page.get_icon().endswith("embedder.svg"))
+        icon = self.page.get_icon()
+        self.assertTrue(icon.endswith("embedder-icon.png"), icon)   # not embedder.png: the host would load an old embedder.svg first
+        with open(icon, "rb") as f:
+            self.assertEqual(f.read(), plugin._asset("icon.png"))
 
     def test_hello_settings_and_unknown(self):
         r = self.call("hello")
