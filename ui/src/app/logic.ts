@@ -1,9 +1,22 @@
 // Pure rules of the Embed panel (no Vue, no bridge), unit-tested in tests/unit/logic.test.ts.
-import type { Custom, Kind, Mode, ObjectInfo, Plan, PlanArgs, Preset, Staged } from './types.ts';
+import type { Custom, Kind, Mode, ObjectInfo, Plan, PlanArgs, PocketShape, Preset, Shape, Staged } from './types.ts';
 import type { Hit } from '../core/pick.ts';
 
 export interface InsertChoice { preset: string | null; custom: Custom | null }
-export interface Options { mode: Mode; spin: number | null; cover: number | null; center?: boolean }
+export interface Options { mode: Mode; spin: number | null; cover: number | null; center?: boolean; pocketShape?: PocketShape | null }
+
+export const POCKET_SHAPES: readonly PocketShape[] = ['circle', 'hexagon', 'square', 'rectangle'];
+
+/** The pocket an insert gets without a pick, as pocket.default_shape: a disc a hexagon, a block a rectangle. */
+export function defaultPocketShape(shape: Shape): PocketShape {
+  return shape === 'disc' ? 'hexagon' : 'rectangle';
+}
+
+/** The shape picked for a preset before (Settings.pocket_shapes), or null for the insert's default. */
+export function rememberedShape(saved: Record<string, PocketShape> | undefined, preset: string | null): PocketShape | null {
+  const v = preset ? saved?.[preset] : undefined;
+  return v && POCKET_SHAPES.includes(v) ? v : null;
+}
 
 export function customDims(c: Custom): Record<string, unknown> {
   return c.shape === 'disc' ? { kind: c.kind, shape: c.shape, d: c.d, t: c.t } : { kind: c.kind, shape: c.shape, l: c.l, w: c.w, t: c.t };
@@ -14,7 +27,8 @@ export function planArgs(object: number, hit: Hit, insert: InsertChoice, o: Opti
   const base: PlanArgs = { object, part: hit.part, tri: hit.tri, point: hit.point, mode: o.mode };
   const which = insert.custom ? { custom: customDims(insert.custom) } : insert.preset ? { preset: insert.preset } : null;
   if (!which) return null;
-  return { ...base, ...which, ...(o.spin ? { spin: o.spin } : {}), ...(o.cover != null ? { cover: o.cover } : {}), ...(o.center ? { center: true } : {}) };
+  return { ...base, ...which, ...(o.spin ? { spin: o.spin } : {}), ...(o.cover != null ? { cover: o.cover } : {}), ...(o.center ? { center: true } : {}),
+    ...(o.pocketShape ? { pocket_shape: o.pocketShape } : {}) };
 }
 
 /** Why Embedded is not offered: the object's (or project's) block first, then the last plan's. */
@@ -70,7 +84,7 @@ export const hitOf = (a: PlanArgs): Hit => ({ part: a.part, tri: a.tri, point: a
  *  preset list stays while a custom size is shown. */
 export function formOf(a: PlanArgs, preset: string | null): Required<Options> & { insert: InsertChoice } {
   const insert: InsertChoice = a.custom ? { preset, custom: { d: 6, l: 10, w: 5, ...a.custom } as Custom } : { preset: a.preset ?? null, custom: null };
-  return { insert, mode: a.mode, spin: a.spin ?? null, cover: a.cover ?? null, center: !!a.center };
+  return { insert, mode: a.mode, spin: a.spin ?? null, cover: a.cover ?? null, center: !!a.center, pocketShape: a.pocket_shape ?? null };
 }
 
 /** The list with one pocket planned anew, in its place. */

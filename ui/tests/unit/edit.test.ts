@@ -9,12 +9,13 @@ test('the form of a staged pocket plans the very same pocket again', () => {
     { object: 0, part: 1, tri: 7, point: [1, 2, 3], mode: 'embedded', preset: 'magnet-disc-6x3' },
     { object: 2, part: 0, tri: 4, point: [4, 5, 6], mode: 'open', custom: { kind: 'nfc', shape: 'block', l: 30, w: 20, t: 1 }, spin: 45, cover: 0, center: true },
     { object: 1, part: 0, tri: 2, point: [7, 8, 9], mode: 'embedded', custom: { kind: 'magnet', shape: 'disc', d: 8, t: 2 }, cover: 1.5 },
+    { object: 0, part: 0, tri: 3, point: [1, 1, 1], mode: 'open', preset: 'magnet-block-10x5x2', spin: 90, pocket_shape: 'square' },
   ];
   for (const args of all) {
     const form = formOf(args, 'kept-preset');
     assert.equal(JSON.stringify(planArgs(args.object, hitOf(args), form.insert, form)), JSON.stringify(args), 'key for key, in the same order');
   }
-  assert.deepEqual(formOf(all[0], null), { insert: { preset: 'magnet-disc-6x3', custom: null }, mode: 'embedded', spin: null, cover: null, center: false });
+  assert.deepEqual(formOf(all[0], null), { insert: { preset: 'magnet-disc-6x3', custom: null }, mode: 'embedded', spin: null, cover: null, center: false, pocketShape: null });
   assert.equal(formOf(all[1], 'kept-preset').insert.preset, 'kept-preset', 'a custom size keeps the preset list where it was');
   assert.deepEqual(formOf(all[2], null).insert.custom, { kind: 'magnet', shape: 'disc', d: 8, l: 10, w: 5, t: 2 }, 'the sizes a disc does not use get the form\'s defaults');
   assert.deepEqual(hitOf(all[0]), { part: 1, tri: 7, point: [1, 2, 3] });

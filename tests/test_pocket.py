@@ -9,6 +9,7 @@ import fixtures  # noqa: E402
 import geometry as g  # noqa: E402
 import pocket  # noqa: E402
 import presets  # noqa: E402
+from test_geometry import _closed, _degenerate, _volume  # noqa: E402
 
 MAG = presets.find("magnet-disc-6x3")
 BLOCK = presets.find("magnet-block-10x5x2")
@@ -18,8 +19,8 @@ CTX = pocket.Context(grid=GRID, xy_clearance=0.2, z_clearance=0.2)
 MODES = pocket.MODES
 
 
-def req(insert=MAG, mode="embedded", point=(10, 10, 20), normal=(0, 0, 1), spin=0.0, cover=1.0):
-    return pocket.Request(insert, mode, point, normal, spin, cover)
+def req(insert=MAG, mode="embedded", point=(10, 10, 20), normal=(0, 0, 1), spin=0.0, cover=1.0, shape=None):
+    return pocket.Request(insert, mode, point, normal, spin, cover, shape)
 
 
 class Grid(unittest.TestCase):
@@ -76,7 +77,7 @@ class Embedded(unittest.TestCase):
 
     def test_block_on_flat_face_spins(self):
         p = pocket.plan(req(insert=BLOCK, spin=90), CTX)
-        self.assertEqual(p.shape, "box")
+        self.assertEqual(p.shape, "rectangle")
         self.assertAlmostEqual(p.size[0], 10.4)
         self.assertAlmostEqual(p.size[1], 5.4)
         self.assertTrue(_close(g.apply_dir(p.transform, (1, 0, 0)), (0, 1, 0)))
@@ -165,7 +166,7 @@ class Open(unittest.TestCase):
 
     def test_open_block_on_side(self):
         p = pocket.plan(req(insert=BLOCK, mode="open", point=(0, 5, 5), normal=(-1, 0, 0)), CTX)
-        self.assertEqual(p.shape, "box")
+        self.assertEqual(p.shape, "rectangle")
         self.assertAlmostEqual(p.size[2], 2.2 + pocket.OVERSHOOT)
 
 
@@ -193,10 +194,10 @@ class Mesh(unittest.TestCase):
         world = p.world_mesh()[0]
         self.assertAlmostEqual(max(q[1] for q in world) - 10, 3.2 / math.cos(math.radians(30)))   # a corner now points along Y
 
-    def test_a_block_gets_a_box_of_the_same_size_with_a_vent_on_each_corner(self):
+    def test_a_block_gets_a_rectangle_of_the_same_size_with_a_vent_on_each_corner(self):
         for mode in MODES:
             p = pocket.plan(req(insert=BLOCK, mode=mode), CTX)
-            self.assertEqual((p.shape, p.size[:2]), ("box", (10.4, 5.4)), mode)
+            self.assertEqual((p.shape, p.size[:2]), ("rectangle", (10.4, 5.4)), mode)
             self.assertEqual(p.mesh(), g.vented_box_mesh(10.4, 5.4, p.size[2], pocket.VENT_DIAMETER / 2))
             self.assertTrue(_close(p.outer(), (10.4 + pocket.VENT_DIAMETER, 5.4 + pocket.VENT_DIAMETER)), mode)
         self.assertEqual(pocket.VENT_DIAMETER, 1.0)
@@ -218,6 +219,106 @@ class Mesh(unittest.TestCase):
             self.assertAlmostEqual(min(q[0] for q in world), 19.0 - p.size[1] - pocket.VENT_DIAMETER / 2)
             self.assertAlmostEqual(p.cover, 1.0)
             self.assertEqual(p.warnings, ())
+
+
+class Shapes(unittest.TestCase):
+    """The pocket shape the user picks: circle, hexagon, square or rectangle, each a closed solid that holds the insert."""
+    FIT = {   # (insert, shape) -> (x, y) of the fit with 0.2 mm clearance
+        ("disc", "circle"): (6.4, 6.4), ("disc", "hexagon"): (6.4, 6.4), ("disc", "square"): (6.4, 6.4),
+        ("disc", "rectangle"): (6.4, 6.4),
+        ("block", "circle"): (math.hypot(10.4, 5.4),) * 2,
+        ("block", "hexagon"): ((math.sqrt(3) * 10.4 + 5.4) / 2,) * 2,   # the block's corners touch two slanted flats
+        ("block", "square"): (10.4, 10.4), ("block", "rectangle"): (10.4, 5.4),
+    }
+
+    def test_the_default_comes_from_the_insert(self):
+        self.assertEqual([pocket.default_shape(presets.find(i)) for i in ("magnet-disc-6x3", "nfc-sticker-25", "magnet-block-10x5x2", "nfc-card")],
+                         ["hexagon", "hexagon", "rectangle", "rectangle"])
+        for insert in (MAG, BLOCK):
+            for mode in MODES:
+                self.assertEqual(pocket.plan(req(insert=insert, mode=mode), CTX).shape, pocket.default_shape(insert))
+
+    def test_every_shape_is_a_closed_solid_of_its_fit_that_holds_the_insert(self):
+        for insert in (MAG, BLOCK):
+            for shape in pocket.SHAPES:
+                for mode in MODES:
+                    p = pocket.plan(req(insert=insert, mode=mode, shape=shape), CTX)
+                    what = (insert.label, shape, mode)
+                    self.assertEqual(p.shape, shape, what)
+                    self.assertTrue(_close(p.size[:2], self.FIT[(insert.shape, shape)]), what)
+                    v, t = p.mesh()
+                    self.assertTrue(_closed(t), what)
+                    self.assertFalse(_degenerate(v, t), what)
+                    self.assertGreater(_volume(v, t), 0, what)                     # outward winding
+                    self.assertEqual({q[2] for q in v}, {0.0, p.size[2]}, what)
+                    self.assertTrue(all(_in_footprint(v, t, q) for q in _outline(insert, 0.2 - 1e-6)), what)
+
+    def test_each_fit_is_tight(self):
+        """The insert plus clearance touches the pocket: a hair more and it no longer fits. A circle is a 64-gon around
+        the fit, so a block's corners, off its mid-sides, get up to 0.12 % of the radius more."""
+        for insert in (MAG, BLOCK):
+            for shape in pocket.SHAPES:
+                v, t = pocket.plan(req(insert=insert, mode="open", shape=shape), CTX).mesh()
+                hair = 0.01 if shape == "circle" else 1e-3
+                self.assertFalse(all(_in_footprint(v, t, q) for q in _outline(insert, 0.2 + hair)), (insert.label, shape))
+
+    def test_dimensions(self):
+        circle = pocket.plan(req(shape="circle"), CTX)
+        v = circle.mesh()[0]
+        self.assertAlmostEqual(min(math.hypot(q[0], q[1]) * math.cos(math.pi / g.SEGMENTS) for q in v if q[:2] != (0.0, 0.0)), 3.2)
+        self.assertTrue(_close(circle.outer(), (6.4 / math.cos(math.pi / g.SEGMENTS),) * 2, 1e-3))
+        square = pocket.plan(req(insert=BLOCK, shape="square"), CTX)
+        self.assertEqual(square.mesh(), g.vented_box_mesh(10.4, 10.4, square.size[2], pocket.VENT_DIAMETER / 2))
+        hexagon = pocket.plan(req(insert=BLOCK, shape="hexagon"), CTX)
+        self.assertEqual(hexagon.mesh(), g.hexagon_mesh(hexagon.size[0], hexagon.size[2]))
+
+    def test_a_shape_turns_with_the_spin(self):
+        p = pocket.plan(req(insert=BLOCK, shape="rectangle", spin=90), CTX)
+        world = p.world_mesh()[0]
+        spans = [max(q[a] for q in world) - min(q[a] for q in world) for a in (0, 1)]
+        self.assertTrue(_close(spans, (6.4, 11.4)))                                  # the long side now runs along Y
+
+    def test_a_side_slot_keeps_its_shape_and_an_unknown_shape_is_refused(self):
+        side = req(point=(20, 10, 10), normal=(1, 0, 0), shape="circle")
+        self.assertEqual(pocket.plan(side, CTX).shape, "slot")
+        for bad in ("triangle", "", 3):
+            for r in (req(shape=bad), side._replace(shape=bad), req(mode="open", shape=bad)):
+                with self.assertRaises(pocket.Blocked) as cm:
+                    pocket.plan(r, CTX)
+                self.assertEqual(cm.exception.code, "bad_shape")
+
+    def test_an_embedded_circle_is_checked_against_the_part(self):
+        verts, tris = fixtures.box(20, 20, 20)
+        pos, idx = [c for q in verts for c in q], [i for tri in tris for i in tri]
+        inside = pocket.plan(req(point=(10, 10, 20), shape="circle"), CTX)
+        self.assertFalse(pocket.breaks_surface(inside, pos, idx))
+        edge = pocket.plan(req(point=(17, 10, 20), shape="circle"), CTX)              # 3.2 mm round reaches x = 20.2
+        self.assertTrue(pocket.breaks_surface(edge, pos, idx))
+
+
+def _outline(insert, c):
+    """Points of the insert's outline grown by c on every side, in the pocket's frame."""
+    if insert.shape == "disc":
+        r = insert.d / 2 + c
+        return [(r * math.cos(k * math.pi / 64), r * math.sin(k * math.pi / 64)) for k in range(128)]   # 64-gon: corners, mid-sides
+    hx, hy = insert.l / 2 + c, insert.w / 2 + c
+    return [(sx * hx, sy * hy) for sx in (-1, 1) for sy in (-1, 1)] + [(hx, 0), (-hx, 0), (0, hy), (0, -hy)]
+
+
+def _in_footprint(v, t, q, eps=1e-9):
+    """True when (x, y) lies on a triangle of the mesh's floor (z = 0)."""
+    for a, b, c in t:
+        pa, pb, pc = v[a], v[b], v[c]
+        if pa[2] or pb[2] or pc[2]:
+            continue
+        d = (pb[0] - pa[0]) * (pc[1] - pa[1]) - (pc[0] - pa[0]) * (pb[1] - pa[1])
+        if abs(d) < 1e-12:
+            continue
+        u = ((pb[0] - q[0]) * (pc[1] - q[1]) - (pc[0] - q[0]) * (pb[1] - q[1])) / d
+        w = ((pc[0] - q[0]) * (pa[1] - q[1]) - (pa[0] - q[0]) * (pc[1] - q[1])) / d
+        if u >= -eps and w >= -eps and 1 - u - w >= -eps:
+            return True
+    return False
 
 
 class Pauses(unittest.TestCase):

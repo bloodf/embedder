@@ -166,10 +166,23 @@ class Plan(Base):
     def test_a_block_and_a_slot_report_their_vents(self):
         r = self.load()
         box = self.plan(r["job"], preset="magnet-block-10x5x2")
-        self.assertEqual((box["shape"], box["size"][:2], box["outer"]), ("box", [10.4, 5.4], [11.4, 6.4]))
+        self.assertEqual((box["shape"], box["size"][:2], box["outer"]), ("rectangle", [10.4, 5.4], [11.4, 6.4]))
         slot = self.plan(r["job"], tri=SIDE_TRI, point=[120, 110, 10])
         self.assertEqual((slot["shape"], slot["size"][:2], slot["outer"]), ("slot", [6.4, 3.4], [7.4, 3.9]))
         self.assertEqual((slot["cover"], slot["warnings"]), (1.0, []))
+
+    def test_the_picked_pocket_shape_is_planned_and_an_unknown_one_blocked(self):
+        r = self.load()
+        circle = self.plan(r["job"], pocket_shape="circle")
+        self.assertEqual((circle["shape"], circle["size"]), ("circle", [6.4, 6.4, 3.2]))
+        self.assertEqual(len(circle["preview"]["indices"]), 4 * 64 * 3)
+        square = self.plan(r["job"], preset="magnet-block-10x5x2", pocket_shape="square", mode="open")
+        self.assertEqual((square["shape"], square["size"][:2]), ("square", [10.4, 10.4]))
+        self.assertEqual(self.plan(r["job"], pocket_shape="oval")["blocked"]["code"], "bad_shape")
+        with self.assertRaises(session.SessionError) as cm:
+            self.s.apply({"job": r["job"], "pockets": [{"object": 0, "part": 0, "tri": TOP_TRI, "point": [110, 110, 20],
+                                                        "preset": "magnet-disc-6x3", "mode": "open", "pocket_shape": "oval"}]})
+        self.assertEqual((cm.exception.code, cm.exception.detail), ("pocket_blocked", "pocket 1: bad_shape"))
 
     def test_open_and_custom(self):
         r = self.load()

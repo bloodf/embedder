@@ -184,7 +184,7 @@ export function removeInHand(): void {
 /** The pocket.plan arguments of the pocket in hand as the form stands; null with nothing in hand. */
 function argsInHand(): PlanArgs | null {
   if (s.object == null || !s.hit) return null;
-  return planArgs(s.object, s.hit, s.insert, { mode: s.mode, spin: s.spin, cover: s.cover, center: s.center });
+  return planArgs(s.object, s.hit, s.insert, { mode: s.mode, spin: s.spin, cover: s.cover, center: s.center, pocketShape: s.pocketShape });
 }
 
 /** Plan the pocket in hand again: after a click, a move, or a change of insert, mode, rotation or cover. A drag or a

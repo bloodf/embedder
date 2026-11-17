@@ -117,6 +117,7 @@ Plugin to page:
 | `cover_magnet` | 1.0 mm | 0 to 10; material sealed over an embedded magnet |
 | `cover_nfc` | 0.6 mm | 0 to 10; the same for an NFC tag |
 | `user_presets` | `[]` | at most 200 valid presets |
+| `pocket_shapes` | `{}` | preset id (1 to 40 characters) to the pocket shape picked for it; at most 500 |
 
 ### Loading and meshes
 
@@ -139,7 +140,9 @@ bounding boxes of its parts.
 
 `pocket.plan` takes `job`, `object` (index into the job's objects), `part`, `tri` (the clicked triangle),
 `point` (plate frame), `preset` (id) or `custom` (`{kind, shape, d, t}` or `{kind, shape, l, w, t}`),
-`mode` (`open` or `embedded`), and optionally `cover`, `spin` (degrees about the pocket axis), `center`
+`mode` (`open` or `embedded`), and optionally `pocket_shape` (`circle`, `hexagon`, `square` or `rectangle`; left out:
+the insert's default, a hexagon for a disc and a rectangle for a block; anything else plans as blocked `bad_shape`),
+`cover`, `spin` (degrees about the pocket axis), `center`
 (`true`: move the point to the area-weighted middle of the flat face around `tri`, the coplanar triangles
 joined to it through shared edges; the clicked point stays when that middle is off the face) and `others`
 (the other pockets already placed, for the NFC-near-magnet check).
@@ -223,12 +226,18 @@ clean.
 **Shapes and vents.** Every pocket leaves a way out for trapped air and spare glue; the fit of the insert is
 the same as without it.
 
-- Disc: a hexagonal prism. The width across the flats is the diameter plus the XY clearance on each side
-  (what a round pocket would measure), so the six flats locate the disc; the six corners, at
-  `flat / cos 30°` across, stay open. Two corners lie on the pocket's local X, and the spin turns them.
-- Block: a box of the insert size plus clearance, with a round vent (`VENT_DIAMETER`, 1.0 mm) centred on each
-  corner and running the whole depth. A vent is never wider than 90% of the box's shorter side, so two
+The shape is the request's `pocket_shape` or `pocket.default_shape(insert)`; `pocket.fit` sizes it, the smallest of
+its kind that holds the insert plus clearance (see [pockets.md](pockets.md#pick-the-pocket-shape)).
+
+- Hexagon (a disc's default): a hexagonal prism. The width across the flats is the diameter plus the XY clearance
+  on each side (what a round pocket would measure), so the six flats locate the disc; the six corners, at
+  `flat / cos 30°` across, stay open. Two corners lie on the pocket's local X, and the spin turns them. A block
+  lies with its length along X, its corners on two slanted flats.
+- Rectangle (a block's default) and square: a box of the fit, with a round vent (`VENT_DIAMETER`, 1.0 mm) centred
+  on each corner and running the whole depth. A vent is never wider than 90% of the box's shorter side, so two
   vents do not merge on a very narrow box.
+- Circle: a 64-sided prism around the fit (`cylinder_mesh`: flat to flat equals the diameter, never undersized).
+  No vents.
 - Side slot (any insert on edge): a box with the same vents, except that the two corners on the wall side
   vent along the wall only. The face towards the wall stays flat, so the wall keeps the cover that was asked.
 
@@ -260,8 +269,8 @@ move) blocks both modes, because one part cuts every instance.
 **Warnings:** `thin_cover` (cover under two layers on a top or bottom face, under 0.8 mm for a side wall),
 `breaks_surface` (an embedded cavity leaves the part: probe columns through the centre and the rim are
 ray-tested against the clicked part's mesh above the top, through the middle and under the floor; for a side
-slot they must be inside the solid just above its floor and just under its top. The rim is the hexagon's six
-corners and the middle of its six flats, or the middle of the box's four edges and the furthest reach of each
+slot they must be inside the solid just above its floor and just under its top. The rim is twelve points round a
+circle, the hexagon's six corners and the middle of its six flats, or the middle of the box's four edges and the furthest reach of each
 corner vent), `nfc_near_magnet` (NFC pocket within 10 mm of a magnet pocket, measured from the fit: corners and
 vents hold no insert), `existing_gcode_at_layer` (someone else's custom G-code already on
 the pause layer; no Embedder pause is added there).

@@ -80,6 +80,7 @@ O Embedder é um projeto independente, que não é feito nem mantido pela equipe
 | | Bolsos embutidos | Uma cavidade selada sob uma cobertura (1,0 mm para ímãs e 0,6 mm para NFC, por padrão) em faces planas e em faces laterais verticais. A impressão pausa uma camada antes de a cavidade fechar. |
 | | Bolsos abertos | Um bolso aberto em qualquer face, inclusive as inclinadas, para encaixar o inserto depois de imprimir. Sem pausa. |
 | | Formatos com respiro | Um disco fica num hexágono, e um bloco numa caixa com um respiro redondo de 1 mm em cada canto. O ar e a cola que sobra saem, e o inserto desce até o fundo. |
+| | Escolha o formato | Círculo, hexágono, quadrado ou retângulo, cada um o menor que segura o inserto. A escolha fica guardada para a predefinição. |
 | | Fendas em faces laterais | Atrás de uma parede vertical, o inserto fica de pé numa fenda vertical e entra por cima. |
 | | Centralizar na face | Leva o bolso ao meio da face plana clicada, que é o que uma tampa, uma base ou um azulejo pedem. |
 | | Seus tamanhos | Qualquer disco ou bloco, salvo com um nome e mantido entre as sessões. |
@@ -159,7 +160,7 @@ Confira três coisas. A sequência de impressão precisa ser "Por camada". O per
 <details>
 <summary>Por que o bolso é um hexágono?</summary>
 
-O hexágono tem, entre os lados planos, a mesma largura que um bolso redondo teria. Os seis lados seguram o disco, e os seis cantos ficam abertos para o ar e a cola que sobra. Um bloco ganha uma caixa com um respiro redondo de 1 mm em cada canto pelo mesmo motivo. A aba mostra os dois tamanhos: o do encaixe e a largura do bolso com os cantos ou os respiros. Um bolso adicionado por uma versão anterior à 0.3.0 mantém o formato até você removê-lo e adicioná-lo de novo.
+O hexágono tem, entre os lados planos, a mesma largura que um bolso redondo teria. Os seis lados seguram o disco, e os seis cantos ficam abertos para o ar e a cola que sobra. Um bloco ganha uma caixa com um respiro redondo de 1 mm em cada canto pelo mesmo motivo. A aba mostra os dois tamanhos: o do encaixe e a largura do bolso com os cantos ou os respiros. Um bolso adicionado por uma versão anterior à 0.3.0 mantém o formato até você removê-lo e adicioná-lo de novo. Prefere um furo redondo, um quadrado ou um retângulo? Escolha em **Formato do bolso**.
 </details>
 
 <details>

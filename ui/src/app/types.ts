@@ -2,6 +2,8 @@
 export type Kind = 'magnet' | 'nfc';
 export type Shape = 'disc' | 'block';
 export type Mode = 'open' | 'embedded';
+/** The pocket's outline, picked by the user; without a pick the insert's own (pocket.default_shape). */
+export type PocketShape = 'circle' | 'hexagon' | 'square' | 'rectangle';
 
 export interface Preset {
   id: string;
@@ -22,6 +24,7 @@ export interface Settings {
   cover_magnet: number;
   cover_nfc: number;
   user_presets: Preset[];
+  pocket_shapes: Record<string, PocketShape>;   // preset id -> the shape picked for it
 }
 export interface Hello { version: string; settings: Settings }
 
@@ -78,12 +81,13 @@ export interface PlanArgs {
   spin?: number;
   cover?: number;
   center?: boolean;
+  pocket_shape?: PocketShape;
 }
 
 export interface Plan {
   mode: Mode;
   face?: string;
-  shape?: string;           // hexagon | box | slot
+  shape?: string;           // circle | hexagon | square | rectangle | slot
   size?: number[];          // the fit: what holds the insert
   outer?: number[];         // (x, y) with the corners or vents
   transform?: number[];

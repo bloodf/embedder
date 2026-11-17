@@ -6,12 +6,12 @@ import SelectButton from 'primevue/selectbutton';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import { OuiIcon, OuiPanel } from '../../shared/src/components';
-import { check, insert, magnet, plus, rfid, save, user } from '../../shared/src/icons';
+import { check, insert, magnet, plus, rfid, save, user, type OuiIconData } from '../../shared/src/icons';
 import PlanCard from './PlanCard.vue';
-import { s, savePreset } from '../app/store';
+import { choosePocketShape, choosePreset, s, savePreset } from '../app/store';
 import { addStaged, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
-import { customDims, embeddedBlock, groupPresets } from '../app/logic';
-import type { Custom, Preset } from '../app/types';
+import { customDims, defaultPocketShape, embeddedBlock, groupPresets, POCKET_SHAPES } from '../app/logic';
+import type { Custom, PocketShape, Preset } from '../app/types';
 import { prompt } from '../core/dialog';
 import { locale, t, tMaybe, fmt } from '../core/i18n';
 import { vDecimal } from '../core/decimal';
@@ -45,9 +45,20 @@ const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { va
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
 const canAdd = computed(addable);
 
+// The pocket's outline, drawn on the icon grid as the pocket lies with no rotation: the hexagon's corners on X.
+const SHAPE_ICON: Record<PocketShape, OuiIconData> = {
+  circle: [['circle', { cx: 12, cy: 12, r: 9 }]],
+  hexagon: [['path', { d: 'M2.5 12 7.25 3.8h9.5L21.5 12l-4.75 8.2h-9.5Z' }]],
+  square: [['rect', { x: 4, y: 4, width: 16, height: 16, rx: 1.5 }]],
+  rectangle: [['rect', { x: 2, y: 6.5, width: 20, height: 11, rx: 1.5 }]],
+};
+const insertShape = computed(() => s.insert.custom?.shape ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.shape ?? 'disc');
+const pocketShape = computed(() => s.pocketShape ?? defaultPocketShape(insertShape.value));
+const pocketShapes = computed(() => POCKET_SHAPES.map(v => ({ value: v, label: t(`cut.${v}`), icon: SHAPE_ICON[v] })));
+
 function setCustom(on: boolean) {
   const fresh: Custom = { kind: 'magnet', shape: 'disc', d: 6, l: 10, w: 5, t: 3 };
-  s.insert = on ? { preset: s.insert.preset, custom: fresh } : { preset: s.insert.preset, custom: null };
+  if (on) s.insert = { preset: s.insert.preset, custom: fresh }; else choosePreset(s.insert.preset);
 }
 function setDim(key: keyof Custom, value: unknown) {
   if (s.insert.custom) s.insert = { ...s.insert, custom: { ...s.insert.custom, [key]: value } as Custom };
@@ -58,10 +69,13 @@ async function saveAsPreset() {
   const name = await prompt({ title: t('preset.saveTitle'), text: t('preset.saveText'), yes: t('common.save'), input: { label: t('preset.name'), value: '' } });
   if (!name?.trim()) return;
   const id = await savePreset({ name: name.trim(), ...customDims(custom) });
-  if (id) s.insert = { preset: id, custom: null };
+  if (!id) return;
+  const picked = s.pocketShape;
+  choosePreset(id);
+  if (picked) void choosePocketShape(picked);   // the new preset keeps the shape it was made with
 }
 
-watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan(); });
+watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => { void replan(); });
 </script>
 
 <template>
@@ -78,7 +92,7 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
         <label id="ins-l">{{ t('form.insert') }}</label>
         <Select v-if="!s.insert.custom" :model-value="s.insert.preset" :options="groups" option-group-label="label" option-group-children="items"
                 option-label="label" option-value="id" aria-labelledby="ins-l" data-test="preset" fluid scroll-height="min(320px, 50vh)"
-                @update:model-value="s.insert = { preset: $event, custom: null }">
+                @update:model-value="choosePreset($event)">
           <template #value="{ value, placeholder }">
             <span v-if="chosen && value" class="em-opt"><span class="em-kind" :data-kind="chosen.kind" />{{ chosen.label }}</span>
             <template v-else>{{ placeholder }}&nbsp;</template>
@@ -111,6 +125,15 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
             <InputNumber v-decimal :locale="locale" input-id="f-t" :model-value="s.insert.custom.t" :min="0.1" :max="300" :max-fraction-digits="2" suffix=" mm" fluid @update:model-value="setDim('t', $event)" /></div>
         </div>
         <Button :label="t('preset.saveAs')" severity="secondary" size="small" data-test="save-preset" @click="saveAsPreset"><template #icon><OuiIcon :icon="save" :size="14" /></template></Button>
+      </div>
+
+      <div class="oui-field">
+        <label id="cut-l">{{ t('form.pocketShape') }}</label>
+        <SelectButton :model-value="pocketShape" :options="pocketShapes" option-label="label" option-value="value" :allow-empty="false" class="em-cuts"
+                      aria-labelledby="cut-l" aria-describedby="cut-help" data-test="pocket-shape" fluid @update:model-value="choosePocketShape($event)">
+          <template #option="{ option }"><span class="em-cut" :data-test="`cut-${option.value}`"><OuiIcon :icon="option.icon" :size="16" />{{ option.label }}</span></template>
+        </SelectButton>
+        <span id="cut-help" class="oui-meta">{{ t('form.pocketShapeHelp', { shape: t(`cut.${defaultPocketShape(insertShape)}`) }) }}</span>
       </div>
 
       <div class="oui-field">
@@ -156,5 +179,10 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center], () => { void replan()
 .em-custom { display: grid; gap: var(--oui-s3); padding: var(--oui-s3); justify-items: start; }
 .em-custom > .em-two { width: 100%; }
 .em-warn { color: var(--oui-warning); }
+/* Two by two, four in a row where the form has room; each button keeps its icon and its whole name. */
+.oui-field:has(> .em-cuts) { container-type: inline-size; }
+.em-cuts.p-selectbutton { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@container (min-width: 460px) { .em-cuts.p-selectbutton { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.em-cut { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .em-form .oui-panel-foot { margin-top: auto; }
 </style>

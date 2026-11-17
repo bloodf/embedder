@@ -17,6 +17,7 @@ INSET = 0.05             # mm the containment probes sit inside the cavity's fac
 VENT_DIAMETER = 1.0      # mm; the round vent on each corner of a box pocket, for trapped air and spare glue
 VENT_SHARE = 0.45        # ...and never more than this share of the box's shorter side, so two vents stay apart
 MODES = ("open", "embedded")
+SHAPES = ("circle", "hexagon", "square", "rectangle")   # the pocket shapes a user may pick; a side slot is its own
 PAUSE_PREFIX = "Embedder:"
 
 
@@ -70,6 +71,7 @@ class Request(NamedTuple):
     normal: tuple                   # outward, plate frame
     spin: float = 0.0               # degrees about the pocket axis (flat faces and open pockets)
     cover: float = 1.0              # mm of material over an embedded insert
+    shape: str = None               # one of SHAPES, or None for the insert's default (default_shape)
 
 
 @dataclass(frozen=True)
@@ -77,8 +79,8 @@ class Pocket:
     insert: object
     mode: str
     face: str                       # top | bottom | side | tilted
-    shape: str                      # hexagon (a disc lying flat) | box (a block) | slot (any insert on edge behind a wall)
-    size: tuple                     # the fit: (across flats, across flats, height) or (x, y, height) of the local mesh
+    shape: str                      # one of SHAPES, or slot (any insert on edge behind a wall)
+    size: tuple                     # the fit (x, y, height): a circle's diameter or a hexagon's across-flats twice
     transform: tuple                # local mesh -> plate frame
     floor: float = None             # embedded only: cavity bottom and top, on the layer grid
     top: float = None
@@ -87,9 +89,12 @@ class Pocket:
     warnings: tuple = ()
 
     def mesh(self):
-        """A hexagon holds a disc on its six flats and vents at its six corners; a box vents through a round relief on
-        each corner. A slot is a box whose face towards the wall (local -Y) stays flat, so the wall keeps its cover."""
+        """A circle is a round prism, no larger than the fit anywhere; a hexagon holds a disc on its six flats and vents
+        at its six corners; a square or rectangle vents through a round relief on each corner. A slot is a box whose
+        face towards the wall (local -Y) stays flat, so the wall keeps its cover."""
         sx, sy, sz = self.size
+        if self.shape == "circle":
+            return geometry.cylinder_mesh(sx, sz)
         if self.shape == "hexagon":
             return geometry.hexagon_mesh(sx, sz)
         return geometry.vented_box_mesh(sx, sy, sz, vent_radius(sx, sy), flush=self.shape == "slot")
@@ -110,12 +115,34 @@ def _face(normal, kind):
     return kind
 
 
-def _footprint(insert, cxy):
-    return insert.l + 2 * cxy, insert.w + 2 * cxy
+def default_shape(insert):
+    """The pocket an insert gets unless the user picks another: a disc a hexagon (it vents), a block a rectangle."""
+    return "hexagon" if insert.shape == "disc" else "rectangle"
 
 
-def _shape(insert):
-    return "hexagon" if insert.shape == "disc" else "box"
+def fit(insert, shape, cxy):
+    """(x, y) of the smallest pocket of `shape` that holds the insert with cxy clearance all round. A disc's circle,
+    hexagon (across flats) and square are its diameter plus clearance; a block's circle is its diagonal, its hexagon
+    holds the block's long side along the corners (local X), its square takes the longer side."""
+    l, w = insert.l + 2 * cxy, insert.w + 2 * cxy        # a disc: both its diameter
+    disc = insert.shape == "disc"
+    if shape == "circle":
+        d = l if disc else math.hypot(l, w)
+        return d, d
+    if shape == "hexagon":     # flats at y = +-f/2 and at 60 degrees: a corner (l/2, w/2) needs f >= sqrt(3) l/2 + w/2
+        f = l if disc else max(w, (math.sqrt(3) * l + w) / 2)
+        return f, f
+    if shape == "square":
+        return max(l, w), max(l, w)
+    return l, w
+
+
+def _shape(req):
+    if req.shape is None:
+        return default_shape(req.insert)
+    if req.shape not in SHAPES:
+        raise Blocked("bad_shape", str(req.shape))
+    return req.shape
 
 
 def vent_radius(sx, sy):
@@ -125,9 +152,10 @@ def vent_radius(sx, sy):
 def _open(req, ctx, face):
     n = geometry.normalize(req.normal)
     depth = req.insert.t + ctx.z_clearance
-    sx, sy = _footprint(req.insert, ctx.xy_clearance)
+    shape = _shape(req)
+    sx, sy = fit(req.insert, shape, ctx.xy_clearance)
     origin = tuple(p - depth * k for p, k in zip(req.point, n))
-    return Pocket(req.insert, "open", face, _shape(req.insert), (sx, sy, depth + OVERSHOOT),
+    return Pocket(req.insert, "open", face, shape, (sx, sy, depth + OVERSHOOT),
                   geometry.frame(origin, n, req.spin))
 
 
@@ -170,13 +198,16 @@ def _embedded_flat(req, ctx, face):
     z = req.point[2]
     floor, top = _flat_cavity(face, z, req.cover, height, grid)
     cover = round(z - top if face == "top" else floor - z, 6)
-    sx, sy = _footprint(ins, ctx.xy_clearance)
+    shape = _shape(req)
+    sx, sy = fit(ins, shape, ctx.xy_clearance)
     transform = geometry.frame((req.point[0], req.point[1], floor), (0, 0, 1), req.spin)
-    return Pocket(ins, "embedded", face, _shape(ins), (sx, sy, top - floor), transform, floor, top, cover=cover)
+    return Pocket(ins, "embedded", face, shape, (sx, sy, top - floor), transform, floor, top, cover=cover)
 
 
 def _embedded_side(req, ctx):
-    """The insert stands on edge behind the wall: a vertical slot, dropped in from above. Local -Y faces the wall."""
+    """The insert stands on edge behind the wall: a vertical slot, dropped in from above, whatever shape was picked
+    (a cavity seen from above, it has no other outline to give). Local -Y faces the wall."""
+    _shape(req)
     ins, grid, c = req.insert, ctx.grid, ctx.xy_clearance
     nh = geometry.normalize((req.normal[0], req.normal[1], 0.0))
     width, depth = ins.l + 2 * c, ins.t + 2 * c
@@ -237,7 +268,7 @@ def pauses(pockets, existing, copies=None):
 
 
 def _reach(p):
-    """Where the insert can be: the fit, not the hexagon's corners or a box's vents, which hold only air."""
+    """Where the insert can be, about: the fit, not the hexagon's corners or a box's vents, which hold only air."""
     centre = geometry.apply(p.transform, (0, 0, 0))
     return centre, max(p.size[0], p.size[1]) / 2
 
@@ -259,9 +290,12 @@ def proximity_warnings(pockets):
 # ---------------------------------------------------------------- containment
 
 def _rim(p):
-    """Local (x, y) points INSET inside the cavity's outline, at its extremes: a hexagon's corners and the middle of its
-    flats; a box's edge middles and, on each corner, where the vent reaches furthest along X, along Y and between."""
+    """Local (x, y) points INSET inside the cavity's outline, at its extremes: twelve around a circle; a hexagon's
+    corners and the middle of its flats; a box's edge middles and, on each corner, where the vent reaches furthest
+    along X, along Y and between."""
     sx, sy, _ = p.size
+    if p.shape == "circle":
+        return [((sx / 2 - INSET) * math.cos(k * math.pi / 6), (sx / 2 - INSET) * math.sin(k * math.pi / 6)) for k in range(12)]
     if p.shape == "hexagon":
         radius = (geometry.hexagon_corners(sx) / 2 - INSET, sx / 2 - INSET)
         return [(radius[k % 2] * math.cos(k * math.pi / 6), radius[k % 2] * math.sin(k * math.pi / 6)) for k in range(12)]

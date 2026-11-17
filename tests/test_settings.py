@@ -71,6 +71,18 @@ class StoreTests(unittest.TestCase):
         self.assertEqual([p["id"] for p in out["user_presets"]], ["user-1"])
         self.assertEqual(st.update({"user_presets": "x"})["user_presets"], out["user_presets"])
 
+    def test_pocket_shapes_are_kept_per_preset_and_validated(self):
+        st = settings.Store()
+        self.assertEqual(st.effective()["pocket_shapes"], {})
+        st.effective()["pocket_shapes"]["x"] = "circle"                      # a copy, not the defaults
+        self.assertEqual(settings.DEFAULTS["pocket_shapes"], {})
+        out = st.update({"pocket_shapes": {"magnet-disc-6x3": "circle", "user-1": "square", "nfc-card": "oval",
+                                           "": "circle", "x" * 41: "circle"}})
+        self.assertEqual(out["pocket_shapes"], {"magnet-disc-6x3": "circle", "user-1": "square"})
+        self.assertEqual(st.update({"pocket_shapes": ["circle"]})["pocket_shapes"], out["pocket_shapes"])
+        many = {"user-%d" % i: "hexagon" for i in range(settings.MAX_POCKET_SHAPES + 5)}
+        self.assertEqual(len(st.update({"pocket_shapes": many})["pocket_shapes"]), settings.MAX_POCKET_SHAPES)
+
 
 if __name__ == "__main__":
     unittest.main()
