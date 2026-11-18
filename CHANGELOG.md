@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-17
+
 ### Added
 
 - Pick the pocket's shape: **circle**, **hexagon**, **square** or **rectangle**, each with its icon, under **Pocket shape**
@@ -14,7 +16,7 @@ All notable changes to this project are documented here. The format follows
   circle is the diameter (a block's diagonal), a hexagon is measured across its flats (a block's hexagon is the
   smallest that holds it, usually with two flats along its length), a square takes the longer side. The plan shows the size in the shape's own terms, for example "6.40 mm across flats · 3.20 mm deep". The
   shape turns with **Rotation**. Embedded on a side face the insert stands in its slot, so the picker is off there
-  and says why.
+  and says why. Requested by @bloodf.
 
 ## [0.4.2] - 2026-11-17
 
