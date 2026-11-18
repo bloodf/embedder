@@ -236,6 +236,7 @@ export const es: Record<MessageKey, string> = {
   'settings.unsaved': 'Cambios sin guardar',
   'settings.discard': 'Descartar',
   'settings.nav': 'Secciones de los ajustes',
+  'settings.hasError': 'tiene un valor que corregir',
   'settings.saved': 'Ajustes guardados.',
   'settings.presets': 'Mis perfiles',
   'settings.presetsEmpty': 'Aún no hay perfiles. Use un tamaño personalizado en la pestaña Incrustar y pulse Guardar como perfil.',

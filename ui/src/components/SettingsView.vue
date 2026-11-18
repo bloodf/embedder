@@ -3,7 +3,8 @@ import { computed, reactive, ref, watch } from 'vue';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
 import InputNumber from 'primevue/inputnumber';
-import { OuiEmpty, OuiFormRow, OuiFormSection, OuiIcon, OuiSettings, OuiStatus } from '../../shared/src/components';
+import { OuiEmpty, OuiFormRow, OuiFormSection, OuiIcon, OuiStatus } from '../../shared/src/components';
+import SettingsPages from './SettingsPages.vue';
 import { files, info, insert, languages, rfid, ruler, save as saveIcon, tag, trash } from '../../shared/src/icons';
 import { s, saveSettings, deletePreset, tracker } from '../app/store';
 import { replanStaged } from '../app/project';
@@ -24,7 +25,7 @@ const dirty = computed(() => changed.value.length > 0);
 const valid = computed(() => knobs.every(k => form[k.key] != null));
 
 const sections = computed(() => [
-  { id: 'set-fit', label: t('settings.title'), icon: ruler },
+  { id: 'set-fit', label: t('settings.title'), icon: ruler, state: valid.value ? undefined : 'error' as const },
   { id: 'set-presets', label: t('settings.presets'), icon: tag },
   { id: 'set-copies', label: t('copies.title'), icon: files },
   { id: 'set-language', label: t('lang.title'), icon: languages },
@@ -67,7 +68,7 @@ async function remove(p: Preset) {
 </script>
 
 <template>
-  <OuiSettings class="em-settings" :sections="sections" :nav-label="t('settings.nav')">
+  <SettingsPages class="em-settings" :sections="sections" :nav-label="t('settings.nav')" :back-label="t('common.goBack')" :error-label="t('settings.hasError')">
     <div class="oui-stack">
       <OuiFormSection id="set-fit" :icon="ruler" :title="t('settings.title')" :description="t('settings.help')">
         <form id="em-settings-form" class="em-setform" data-test="settings-form" @submit.prevent="save">
@@ -119,7 +120,7 @@ async function remove(p: Preset) {
       <Button :label="t('common.save')" type="submit" form="em-settings-form" :disabled="!s.settings || !dirty || !valid" :loading="tracker.isBusy('settings')" data-test="settings-save">
         <template #icon><OuiIcon :icon="saveIcon" :size="14" /></template></Button>
     </template>
-  </OuiSettings>
+  </SettingsPages>
 </template>
 
 <style>

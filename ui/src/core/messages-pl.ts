@@ -242,6 +242,7 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'settings.unsaved': 'Niezapisane zmiany',
   'settings.discard': 'Odrzuć',
   'settings.nav': 'Sekcje ustawień',
+  'settings.hasError': 'zawiera wartość do poprawienia',
   'settings.saved': 'Zapisano ustawienia.',
   'settings.presets': 'Moje profile',
   'settings.presetsEmpty': 'Brak profili. Użyj własnego rozmiaru na karcie Osadzanie i naciśnij Zapisz jako profil.',

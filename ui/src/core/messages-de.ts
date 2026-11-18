@@ -236,6 +236,7 @@ export const de: Record<MessageKey, string> = {
   'settings.unsaved': 'Ungespeicherte Änderungen',
   'settings.discard': 'Verwerfen',
   'settings.nav': 'Bereiche der Einstellungen',
+  'settings.hasError': 'enthält einen Wert zum Korrigieren',
   'settings.saved': 'Einstellungen gespeichert.',
   'settings.presets': 'Meine Profile',
   'settings.presetsEmpty': 'Noch keine Profile. Verwenden Sie im Tab Einbetten eine eigene Größe und klicken Sie auf Als Profil speichern.',

@@ -818,6 +818,58 @@ test('unsaved settings are named in the save bar and can be discarded', `
   eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
 `);
 
+test('settings pages: wide, the list beside one page; a pick moves focus to its heading and is kept for next time', `
+  await ready();
+  await tab('settings');
+  const link = id => q('.oui-settings-link[data-section="' + id + '"]');
+  const shown = () => qa('.oui-settings-body .oui-formsection').filter(e => !e.hidden).map(e => e.id);
+  assert(q('.oui-settings-nav').getClientRects().length && q('.oui-settings-body').getClientRects().length, 'list and page side by side');
+  assert(!byTest('settings-back').getClientRects().length, 'no Back when wide');
+  eq(shown(), ['set-fit'], 'first page');
+  await click(link('set-language'));
+  eq(shown(), ['set-language'], 'one page at a time');
+  eq(document.activeElement, q('#set-language .oui-panel-title'), 'focus on the page heading');
+  eq(text(document.activeElement), 'Language', 'heading is the page name');
+  eq(Object.entries(localStorage).filter(([k]) => k.startsWith('oui-settings:')).map(([, v]) => v), ['set-language'], 'last page remembered');
+  location.hash = '#set-about';
+  await settle();
+  eq(shown(), ['set-about'], 'an address link opens its page');
+  eq(document.activeElement, q('#set-about .oui-panel-title'), 'and focuses its heading');
+`);
+
+test('settings pages: narrow, the list then one page with Back', `
+  await ready();
+  await tab('settings');
+  const link = id => q('.oui-settings-link[data-section="' + id + '"]');
+  const visible = el => !!el && el.getClientRects().length > 0;
+  assert(visible(link('set-about')) && !visible(q('.oui-settings-body')), 'the list alone');
+  eq(qa('.oui-settings-link').map(e => e.getBoundingClientRect().left).every((x, _, a) => x === a[0]), true, 'a vertical list');
+  await click(link('set-about'));
+  assert(!visible(q('.oui-settings-nav')) && visible(q('#set-about')) && visible(byTest('settings-back')), 'the page alone, with Back');
+  eq(document.activeElement, q('#set-about .oui-panel-title'), 'focus on the page heading');
+  assert(visible(q('.oui-settings-foot')), 'the save bar stays');
+  await click(byTest('settings-back'));
+  assert(visible(link('set-about')) && !visible(q('.oui-settings-body')), 'back to the list');
+  eq(document.activeElement, link('set-about'), 'focus back on that page in the list');
+  assert(document.documentElement.scrollWidth <= innerWidth, 'nothing overflows');
+`, { width: 480 });
+
+test('settings pages: a page with a missing value is flagged in the list', `
+  await ready();
+  await tab('settings');
+  const fit = q('.oui-settings-link[data-section="set-fit"]');
+  await type(q('#set-cover_nfc'), '');
+  q('#set-cover_nfc').blur();
+  await settle();
+  await click(q('.oui-settings-link[data-section="set-about"]'));
+  eq(fit.dataset.state, 'error', 'flag on Fit and covers');
+  eq(fit.getAttribute('aria-label'), 'Fit and covers, has a value to fix', 'said in words');
+  assert(byTest('settings-save').disabled, 'save stays off, as before');
+  await click(byTest('settings-discard'));
+  eq(fit.dataset.state, undefined, 'flag gone');
+  eq(fit.getAttribute('aria-label'), null, 'name back to the label');
+`);
+
 test('the language choice is sent to the plugin and the page follows it', `
   await ready();
   await tab('settings');
