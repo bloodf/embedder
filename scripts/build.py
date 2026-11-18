@@ -18,7 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "embedder"
-MODULES = ("geometry", "presets", "settings", "pocket", "threemf", "session")  # dependency order
+MODULES = ("geometry", "presets", "pocket", "settings", "threemf", "session")  # dependency order
 ASSETS = {"APP_HTML": "app.html", "ICON_PNG": "icon.png"}   # app.html: the compiled Vue page (ui/, npm run build); icon.png: the brand tile at 40x40 RGBA
 
 

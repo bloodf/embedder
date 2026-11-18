@@ -7,8 +7,17 @@ import { s } from '../app/store';
 import { t, tMaybe, fmt, insertLabel } from '../core/i18n';
 
 const mm = (v: number | null | undefined) => (v == null ? '—' : fmt.number(v, 2));
-const size = computed(() => (s.plan?.size ?? []).map(v => fmt.number(v, 2)).join(' × '));
-const outer = computed(() => (s.plan?.outer ?? []).map(v => fmt.number(v, 2)).join(' × '));
+// Vents only widen a hexagon, square, rectangle or slot; a circle is its fit.
+const outer = computed(() => (s.plan?.shape === 'circle' ? '' : (s.plan?.outer ?? []).map(v => fmt.number(v, 2)).join(' × ')));
+/** The fit in the shape's own terms: a circle's diameter, a hexagon across its flats, a square's side, x × y. */
+const fit = computed(() => {
+  const [x, y, h] = (s.plan?.size ?? []).map(v => fmt.number(v, 2));
+  if (h == null) return '';
+  const shape = s.plan?.shape;
+  const across = shape === 'circle' ? t('fit.circle', { d: x }) : shape === 'hexagon' ? t('fit.hexagon', { d: x })
+    : shape === 'square' ? t('fit.square', { d: x }) : t('fit.rectangle', { x, y });
+  return t('fit.deep', { fit: across, h });
+});
 const planned = computed(() => !!s.hit && !!s.plan && !s.plan.blocked);
 /** Where the pocket is on the plate, as planned (the face's middle under Centre on the face), and how far it is
  *  turned. This block is a live region, so a move with the arrow keys or a drop is announced through this line; it
@@ -32,7 +41,7 @@ const at = computed(() => {
         <dt>{{ t('plan.insert') }}</dt><dd data-test="plan-label">{{ insertLabel(s.plan.label) }}</dd>
         <dt>{{ t('plan.face') }}</dt><dd>{{ tMaybe(`face.${s.plan.face}`, s.plan.face ?? '') }} · {{ t(`mode.${s.plan.mode}`) }}</dd>
         <dt>{{ t('plan.at') }}</dt><dd data-test="plan-at">{{ at }}</dd>
-        <dt>{{ t('plan.size') }}</dt><dd>{{ size }} mm</dd>
+        <dt>{{ t('plan.size') }}</dt><dd data-test="plan-size">{{ fit }}</dd>
         <template v-if="s.plan.shape"><dt>{{ t('plan.shape') }}</dt><dd data-test="plan-shape">{{ tMaybe(`pocket.${s.plan.shape}`, s.plan.shape) }}</dd></template>
         <template v-if="outer"><dt>{{ t('plan.outer') }}</dt><dd data-test="plan-outer">{{ outer }} mm</dd></template>
         <template v-if="s.plan.mode === 'embedded'">

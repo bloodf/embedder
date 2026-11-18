@@ -354,21 +354,104 @@ test('placing sends a plan request; the preview is listed and staged with its pa
   eq(again.args.others.length, 1, 'staged pockets go along for the proximity check');
 `);
 
-test('the plan names the pocket shape and how wide it is with its vents', `
+test('the plan names the pocket shape, its fit in the shape\'s own terms and how wide it is with its vents', `
   await loaded();
   await place(PLAN);
   const facts = () => Object.fromEntries(qa('[data-test=plan] dt').map(dt => [text(dt), text(dt.nextElementSibling)]));
-  eq(facts()['Pocket size'], '6.40 × 6.40 × 3.20 mm', 'the fit: flat to flat');
+  eq(facts()['Pocket size'], '6.40 mm across flats · 3.20 mm deep', 'a hexagon by its flats');
   eq(text(byTest('plan-shape')), 'Hexagon · corners vent air and glue', 'a disc sits in a hexagon');
   eq(facts()['With vents'], '7.39 × 6.40 mm', 'corner to corner, flat to flat');
   eq(text(byTest('plan-outer')), '7.39 × 6.40 mm', 'the same cell by its hook');
-  await place({...PLAN, shape: 'box', size: [10.4, 5.4, 2.2], outer: [11.4, 6.4], label: '10x5x2 magnet'});
-  eq([text(byTest('plan-shape')), text(byTest('plan-outer'))], ['Box · corner vents for air and glue', '11.40 × 6.40 mm'], 'a block gets corner vents');
+  await place({...PLAN, shape: 'rectangle', size: [10.4, 5.4, 2.2], outer: [11.4, 6.4], label: '10x5x2 magnet'});
+  eq([text(byTest('plan-shape')), text(byTest('plan-size')), text(byTest('plan-outer'))],
+    ['Rectangle · corner vents for air and glue', '10.40 × 5.40 mm · 2.20 mm deep', '11.40 × 6.40 mm'], 'a block gets corner vents');
+  await place({...PLAN, shape: 'square', size: [6.4, 6.4, 3.2], outer: [7.4, 7.4]});
+  eq([text(byTest('plan-shape')), text(byTest('plan-size'))], ['Square · corner vents for air and glue', '6.40 mm sides · 3.20 mm deep'], 'a square by its side');
+  await place({...PLAN, shape: 'circle', size: [6.4, 6.4, 3.2], outer: [6.41, 6.41]});
+  eq([text(byTest('plan-shape')), text(byTest('plan-size'))], ['Circle · no vents', 'Ø6.40 mm · 3.20 mm deep'], 'a circle by its diameter');
+  assert(!byTest('plan-outer'), 'a circle has no vents to add');
   await place({...PLAN, face: 'side', shape: 'slot', size: [6.4, 3.4, 6.2], outer: [7.4, 3.9]});
   eq([text(byTest('plan-shape')), text(byTest('plan-outer'))], ['Slot · corner vents for air and glue', '7.40 × 3.90 mm'], 'an insert on edge too');
   const {shape, outer, ...plain} = PLAN;
   await place(plain);
   assert(byTest('plan-pause') && !byTest('plan-shape') && !byTest('plan-outer'), 'a plan without them shows the rest');
+`);
+
+test('the pocket shape starts at the insert\'s own, a pick is planned and kept per preset', `
+  const saved = {...SETTINGS, pocket_shapes: {'nfc-sticker-25': 'circle'}};
+  await until(() => last('cmd', 'hello'), 'hello sent');
+  await reply(last('cmd', 'hello'), {version: '0.1.0', settings: saved});
+  await until(() => last('cmd', 'presets.list'), 'presets asked');
+  await reply(last('cmd', 'presets.list'), PRESETS);
+  await click(byTest('load'));
+  await until(() => last('cmd', 'project.load'), 'load sent');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  await serveChunks(5);
+  const picked = () => qa('[data-test=pocket-shape] button').filter(b => b.getAttribute('aria-pressed') === 'true').map(text);
+  eq(qa('[data-test=pocket-shape] button').map(text), ['Circle', 'Hexagon', 'Square', 'Rectangle'], 'four shapes, each named');
+  eq(qa('[data-test=pocket-shape] button svg').length, 4, 'and each drawn');
+  eq(picked(), ['Hexagon'], 'a disc starts in a hexagon');
+  eq(text(q('#cut-help')), 'Hexagon for this insert unless you pick another. A pick is kept for its preset.', 'the default said');
+  eq(q('[data-test=pocket-shape]').getAttribute('aria-labelledby'), 'cut-l', 'labelled');
+  const first = await place(PLAN);
+  assert(!('pocket_shape' in first.args), 'the default is not sent');
+  const before = cmds('pocket.plan').length;
+  const square = qa('[data-test=pocket-shape] button').find(b => text(b) === 'Square');
+  square.focus();
+  assert(document.activeElement === square, 'a shape takes the keyboard focus');
+  await click(square);
+  await until(() => cmds('pocket.plan').length > before, 'the new shape is planned');
+  eq(last('cmd', 'pocket.plan').args.pocket_shape, 'square', 'sent as pocket_shape');
+  await reply(last('cmd', 'pocket.plan'), {...PLAN, shape: 'square'});
+  await until(() => last('cmd', 'settings.save'), 'kept for the preset');
+  eq(last('cmd', 'settings.save').args.settings.pocket_shapes, {'nfc-sticker-25': 'circle', 'magnet-disc-6x3': 'square'}, 'added to the ones kept');
+  await reply(last('cmd', 'settings.save'), {...saved, pocket_shapes: {'nfc-sticker-25': 'circle', 'magnet-disc-6x3': 'square'}});
+  eq(picked(), ['Square'], 'shown as picked');
+  eq(toasts().length, 0, 'kept quietly');
+  const n = cmds('settings.save').length;
+  const button = name => qa('[data-test=pocket-shape] button').find(b => text(b) === name);
+  await click(button('Circle'));
+  await click(button('Rectangle'));
+  await until(() => cmds('settings.save').length === n + 1, 'the first quick pick is saved');
+  eq(last('cmd', 'settings.save').args.settings.pocket_shapes['magnet-disc-6x3'], 'circle', 'first the first');
+  await reply(last('cmd', 'settings.save'), {...saved, pocket_shapes: {'nfc-sticker-25': 'circle', 'magnet-disc-6x3': 'circle'}});
+  await until(() => cmds('settings.save').length === n + 2, 'the second quick pick is not lost');
+  eq(last('cmd', 'settings.save').args.settings.pocket_shapes, {'nfc-sticker-25': 'circle', 'magnet-disc-6x3': 'rectangle'}, 'then the newest');
+  await reply(last('cmd', 'settings.save'), {...saved, pocket_shapes: {'nfc-sticker-25': 'circle', 'magnet-disc-6x3': 'rectangle'}});
+  await sleep(100);
+  eq(cmds('settings.save').length, n + 2, 'and nothing more');
+  eq(picked(), ['Rectangle'], 'the newest shown');
+`);
+
+test('embedded on a side face the shape picker is off and says why; Open turns it back on', `
+  await loaded();
+  await place({...PLAN, face: 'side', shape: 'slot', size: [6.4, 3.4, 6.2], outer: [7.4, 3.9]});
+  assert(qa('[data-test=pocket-shape] button').every(b => b.disabled), 'every shape off');
+  eq(text(byTest('pocket-shape-slot')), 'On a side face an embedded insert stands on edge in a slot. The shape applies to flat faces and open pockets.', 'why');
+  eq(q('[data-test=pocket-shape]').getAttribute('aria-describedby'), 'cut-help', 'the note describes the picker');
+  const before = cmds('pocket.plan').length;
+  await click(qa('[data-test=mode] button').find(b => text(b) === 'Open'));
+  await until(() => cmds('pocket.plan').length > before, 'Open is planned');
+  await reply(last('cmd', 'pocket.plan'), {...PLAN, mode: 'open', face: 'side'});
+  assert(qa('[data-test=pocket-shape] button').every(b => !b.disabled) && !byTest('pocket-shape-slot'), 'an open pocket takes any shape');
+  eq(cmds('settings.save').length, 0, 'nothing stored');
+`);
+
+test('a preset chosen before the settings came takes its kept shape once hello answers', `
+  await until(() => last('cmd', 'hello'), 'hello sent');
+  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
+  await until(() => last('cmd', 'presets.list'), 'presets asked');
+  await reply(last('cmd', 'presets.list'), PRESETS);
+  await until(() => byTest('hello-retry'), 'a way to try again');
+  const n = cmds('hello').length;
+  await click(byTest('hello-retry'));
+  await until(() => cmds('hello').length > n, 'hello again');
+  await reply(last('cmd', 'hello'), {version: '0.1.0', settings: {...SETTINGS, pocket_shapes: {'magnet-disc-6x3': 'circle'}}});
+  await click(byTest('load'));
+  await until(() => last('cmd', 'project.load'), 'load sent');
+  await reply(last('cmd', 'project.load'), PROJECT);
+  await serveChunks(5);
+  eq(qa('[data-test=pocket-shape] button').filter(b => b.getAttribute('aria-pressed') === 'true').map(text), ['Circle'], 'the kept shape');
 `);
 
 test('a blocked embedded plan says why and offers Open', `

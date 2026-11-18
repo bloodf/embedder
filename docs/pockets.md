@@ -47,11 +47,11 @@ Below the list of pockets, Embedder shows the inserts to have ready before you p
 | | Embedded | Open |
 |---|---|---|
 | Where | flat faces (top or bottom) and upright side faces | any face, including tilted ones |
-| Shape | a vertical cavity, closed by the print itself | a hexagon or a vented box cut into the surface |
+| Shape | a vertical cavity, closed by the print itself | the picked shape, cut into the surface |
 | Pause | yes, one layer before the cavity closes | none |
 | Fit | the insert is dropped in during the pause and sealed in | pressed in after printing |
 
-- **Embedded on a flat face:** a disc gets a hexagon, a block gets a box with corner vents. The pocket
+- **Embedded on a flat face:** the picked shape (by default a hexagon for a disc, a rectangle for a block). The pocket
   sits under a cover of material (1.0 mm for magnets, 0.6 mm for NFC by default).
 - **Embedded on a side face:** the insert stands on edge behind the wall, in a vertical slot
   (diameter by thickness by diameter for a disc), and is dropped in from above.
@@ -68,6 +68,30 @@ Every pocket lets air and spare glue out, so the insert goes all the way down:
 
 The tab shows both sizes: the fit, and how wide the pocket is with its corners or vents. A pocket added by
 an older version keeps its shape until you remove it and add it again.
+
+## Pick the pocket shape
+
+**Pocket shape** in the form offers a circle, a hexagon, a square and a rectangle. The insert sets the default (a
+disc gets a hexagon, a block a rectangle, as above); pick another and Embedder keeps it for that preset, so it comes
+back the next time you choose the preset. A custom size uses the shape you pick for as long as it is in the form.
+
+Each shape is the smallest of its kind that holds the insert with the XY clearance (0.2 mm by default) on every side:
+
+| Shape | Measured | Round insert (diameter d) | Block (l x w) | Vents |
+|---|---|---|---|---|
+| Circle | diameter | d + 2 x clearance | the block's diagonal, (l + 2c) by (w + 2c) | none |
+| Hexagon | across the flats | d + 2 x clearance: the six flats hold the disc | the smallest hexagon that holds it: usually turned so two flats hold the length, max(l', (l' + sqrt(3) w') / 2) with l' = l + 2c, w' = w + 2c; a long, thin block lies along the corners instead, max(w', (sqrt(3) l' + w') / 2) | the six corners |
+| Square | side | d + 2 x clearance | the longer side plus clearance | a 1 mm round vent on each corner |
+| Rectangle | width x length | d + 2 x clearance each way (a square) | (l + 2c) x (w + 2c) | a 1 mm round vent on each corner |
+
+A hexagon is the default for a round insert because it fits it exactly as a round pocket would, and its corners
+let air and glue out. Pick the circle for a clean round hole; nothing vents it.
+
+The plan shows the size in the shape's own terms ("Ø6.40 mm", "6.40 mm across flats", "6.40 mm sides" or
+"10.40 x 5.40 mm") and the depth. **Rotation** turns every shape about the pocket's axis; a hexagon starts with two
+corners along X (a block's hexagon usually two flats across X). On an upright side face an embedded insert stands
+on edge in its slot, so the picker is off there and says why; it comes back for an open pocket or a flat face.
+Deleting one of your presets also forgets the shape picked for it; Embedder keeps the 500 most recent picks.
 
 ## The pause
 

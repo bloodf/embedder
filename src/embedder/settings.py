@@ -5,6 +5,7 @@ import math
 import os
 import threading
 
+import pocket
 import presets
 
 UI_LANGUAGES = ("auto", "en", "pt-BR", "es", "de", "zh-CN", "pl")   # "auto": OrcaSlicer's language, then the system's
@@ -15,7 +16,9 @@ DEFAULTS = {
     "cover_magnet": 1.0,     # mm of material sealed over an embedded magnet
     "cover_nfc": 0.6,        # mm of material sealed over an embedded NFC tag
     "user_presets": [],      # the user's own insert presets, validated by presets.clean_user_presets
+    "pocket_shapes": {},     # preset id -> the pocket shape the user picked for it (pocket.SHAPES), oldest first
 }
+MAX_POCKET_SHAPES = 500
 RANGES = {"xy_clearance": (0.0, 1.0), "z_clearance": (0.0, 1.0), "cover_magnet": (0.0, 10.0), "cover_nfc": (0.0, 10.0)}
 
 
@@ -25,6 +28,11 @@ def _clean(key, value):
         return value if value in UI_LANGUAGES else None
     if key == "user_presets":
         return presets.clean_user_presets(value)
+    if key == "pocket_shapes":
+        if not isinstance(value, dict):
+            return None
+        good = [(k, v) for k, v in value.items() if isinstance(k, str) and 0 < len(k) <= 40 and v in pocket.SHAPES]
+        return dict(good[-MAX_POCKET_SHAPES:])     # the newest: the page adds a pick last
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
         return None
     low, high = RANGES[key]
@@ -54,7 +62,7 @@ class Store:
         return data if isinstance(data, dict) else {}
 
     def _write(self, data):
-        text = json.dumps(data, indent=1, sort_keys=True)
+        text = json.dumps(data, indent=1)   # in order: pocket_shapes keeps its newest last
         if self.path:
             tmp = self.path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
@@ -66,7 +74,7 @@ class Store:
 
     def effective(self):
         with self.lock:
-            out = {**DEFAULTS, "user_presets": []}
+            out = {**DEFAULTS, "user_presets": [], "pocket_shapes": {}}
             for key in DEFAULTS:
                 if key in self.data:
                     clean = _clean(key, self.data[key])

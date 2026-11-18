@@ -279,7 +279,7 @@ class Session:
         if args.get("cover") is not None:
             cover = _number(args, "cover", low=0, high=10)
         spin = _number(args, "spin", 0)
-        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover)
+        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover, args.get("pocket_shape"))
 
     def _context(self, job, entry):
         block = self._object_block(job, entry)

@@ -122,6 +122,11 @@ class Meshes(unittest.TestCase):
         self.assertEqual(sorted(round(y, 9) for _, y, _ in ring), [-3.2, -3.2, 0.0, 0.0, 3.2, 3.2])
         self.assertAlmostEqual(_volume(v, t), 2 * math.sqrt(3) * 3.2 ** 2 * 3.2)   # 2 sqrt(3) apothem^2 * height
         self.assertEqual(g.hexagon_mesh(6.4, 3.2), (v, t))             # deterministic
+        tv, tt = g.hexagon_mesh(6.4, 3.2, turned=True)                 # a 30 degree turn: flats across X
+        self.assertEqual(tt, t)
+        self.assertAlmostEqual(max(x for x, _, _ in tv) - min(x for x, _, _ in tv), 6.4)
+        self.assertAlmostEqual(max(y for _, y, _ in tv), g.hexagon_corners(6.4) / 2)
+        self.assertAlmostEqual(_volume(tv, tt), _volume(v, t))
 
     def test_vented_box_is_one_closed_solid_with_a_round_vent_on_each_corner(self):
         n = g.VENT_SEGMENTS

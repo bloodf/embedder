@@ -71,6 +71,25 @@ class StoreTests(unittest.TestCase):
         self.assertEqual([p["id"] for p in out["user_presets"]], ["user-1"])
         self.assertEqual(st.update({"user_presets": "x"})["user_presets"], out["user_presets"])
 
+    def test_pocket_shapes_are_kept_per_preset_and_validated(self):
+        st = settings.Store()
+        self.assertEqual(st.effective()["pocket_shapes"], {})
+        st.effective()["pocket_shapes"]["x"] = "circle"                      # a copy, not the defaults
+        self.assertEqual(settings.DEFAULTS["pocket_shapes"], {})
+        out = st.update({"pocket_shapes": {"magnet-disc-6x3": "circle", "user-1": "square", "nfc-card": "oval",
+                                           "": "circle", "x" * 41: "circle"}})
+        self.assertEqual(out["pocket_shapes"], {"magnet-disc-6x3": "circle", "user-1": "square"})
+        self.assertEqual(st.update({"pocket_shapes": ["circle"]})["pocket_shapes"], out["pocket_shapes"])
+        many = {"user-%d" % i: "hexagon" for i in range(settings.MAX_POCKET_SHAPES + 5)}
+        kept = st.update({"pocket_shapes": many})["pocket_shapes"]
+        self.assertEqual(list(kept), list(many)[-settings.MAX_POCKET_SHAPES:], "the newest, last, are kept")
+
+    def test_pocket_shapes_keep_their_order_in_the_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "settings.json")
+            settings.Store(path).update({"pocket_shapes": {"user-b": "circle", "user-a": "square"}})
+            self.assertEqual(list(settings.Store(path).effective()["pocket_shapes"]), ["user-b", "user-a"])
+
 
 if __name__ == "__main__":
     unittest.main()

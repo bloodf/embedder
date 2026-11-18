@@ -6,8 +6,8 @@ import { t, tMaybe, fmt, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';
 import type { Hit } from '../core/pick';
-import { splitLead, type InsertChoice } from './logic';
-import type { ApplyResult, Hello, Mode, Plan, PlanArgs, Preset, Project, Settings, Staged } from './types';
+import { rememberedShape, splitLead, type InsertChoice } from './logic';
+import type { ApplyResult, Hello, Mode, Plan, PlanArgs, PocketShape, Preset, Project, Settings, Staged } from './types';
 
 export const DEFAULT_PRESET = 'magnet-disc-6x3';
 
@@ -33,6 +33,7 @@ export const s = reactive({
   spin: null as number | null,
   cover: null as number | null,
   center: false,
+  pocketShape: null as PocketShape | null,   // null: the insert's own (defaultPocketShape)
   // the pocket in hand (where it is, its plan), the staged pockets and the applied copy. `selected`: the staged pocket
   // that is in hand (its key), or null while a new one is being placed. `dragging`: the pointer is sliding it.
   hit: null as Hit | null,
@@ -90,6 +91,8 @@ export async function hello(): Promise<void> {
     s.version = r.version;
     s.settings = r.settings;
     s.error = '';
+    // A preset chosen before the settings came (presets listed after a failed hello): its kept shape now applies.
+    if (s.pocketShape == null && !s.insert.custom && s.selected == null) s.pocketShape = rememberedShape(r.settings.pocket_shapes, s.insert.preset);
   } catch (e) {
     s.error = errorText(e);
     s.helloFails = Math.max(s.helloFails + 1, Date.now());
@@ -103,7 +106,7 @@ export async function loadPresets(): Promise<void> {
   s.user = r.result.user;
   if (!s.insert.preset && !s.insert.custom) {
     const pick = s.builtin.find(p => p.id === DEFAULT_PRESET) ?? s.builtin[0];
-    s.insert = { preset: pick?.id ?? null, custom: null };
+    choosePreset(pick?.id ?? null);
   }
 }
 
@@ -124,7 +127,45 @@ export async function deletePreset(id: string): Promise<void> {
   const r = await tracker.run<{ user: Preset[] }>({ key: 'preset-del-' + id, label: t('act.presetDelete'), cmd: 'presets.delete', args: { id } });
   if (!r.ok) return;
   s.user = r.result.user;
-  if (s.insert.preset === id) s.insert = { preset: DEFAULT_PRESET, custom: null };
+  if (s.settings) s.settings = { ...s.settings, pocket_shapes: withoutKey(s.settings.pocket_shapes ?? {}, id) };   // Python dropped it too
+  if (s.insert.preset === id) choosePreset(DEFAULT_PRESET);
+}
+
+/** A preset is picked: its pocket shape comes along, the one picked for it before or the insert's own. */
+export function choosePreset(id: string | null): void {
+  s.insert = { preset: id, custom: null };
+  s.pocketShape = rememberedShape(s.settings?.pocket_shapes, id);
+}
+
+const withoutKey = <T>(map: Record<string, T>, key: string): Record<string, T> =>
+  Object.fromEntries(Object.entries(map).filter(([k]) => k !== key));
+
+// The kept shapes the newest pick asks for while a save is out: quick picks are saved in turn, the last one last.
+let wantedShapes: Record<string, PocketShape> | null = null;
+
+/** A pocket shape is picked. For a preset it is kept (quietly: a failed save says so) and comes back with it; the
+ *  newest pick goes last, since Python keeps the newest MAX_POCKET_SHAPES. */
+export async function choosePocketShape(shape: PocketShape): Promise<void> {
+  s.pocketShape = shape;
+  const id = s.insert.custom ? null : s.insert.preset;
+  if (!id || !s.settings) return;
+  const base = wantedShapes ?? s.settings.pocket_shapes ?? {};
+  if (!wantedShapes && base[id] === shape) return;
+  const saving = wantedShapes != null;
+  wantedShapes = { ...withoutKey(base, id), [id]: shape };
+  if (saving) return;   // the save that is out sends it when it is back
+  try {
+    let want: Record<string, PocketShape>;
+    do {
+      want = wantedShapes;
+      const r = await tracker.run<Settings>({ key: 'pocket-shape', label: t('act.settings'), cmd: 'settings.save',
+        args: { settings: { pocket_shapes: want } } });
+      if (!r.ok) break;
+      s.settings = r.result;
+    } while (wantedShapes !== want);
+  } finally {
+    wantedShapes = null;
+  }
 }
 
 export function start(): () => void {

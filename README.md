@@ -80,6 +80,7 @@ Embedder is an independent project, not made or supported by the OrcaSlicer team
 | | Embedded pockets | A cavity sealed under a cover (1.0 mm for magnets, 0.6 mm for NFC by default) on flat faces and upright side faces. The print pauses one layer before the cavity closes. |
 | | Open pockets | A pocket cut into any face, tilted ones included, for press-fit after printing. No pause. |
 | | Vented shapes | A disc sits in a hexagon and a block in a box with a 1 mm round vent on each corner. Air and spare glue get out, so the insert goes all the way down. |
+| | Pick the shape | Circle, hexagon, square or rectangle, each the smallest that holds the insert. Your pick is kept for its preset. |
 | | Side-face slots | Behind an upright wall the insert stands on edge in a vertical slot and is dropped in from above. |
 | | Centre on the face | Puts the pocket in the middle of the flat face you click, which is what a lid, a base or a tile needs. |
 | | Your own sizes | Any disc or block, saved by name and kept between sessions. |
@@ -159,7 +160,7 @@ Check three things. The print sequence must be "By layer". The printer profile m
 <details>
 <summary>Why is the pocket a hexagon?</summary>
 
-A hexagon is as wide across the flats as a round pocket would be, so the six flats hold the disc and the six corners stay open for air and spare glue. A block gets a box with a 1 mm round vent on each corner for the same reason. The tab shows both sizes: the fit, and how wide the pocket is with its corners or vents. A pocket added by a version before 0.3.0 keeps its shape until you remove it and add it again.
+A hexagon is as wide across the flats as a round pocket would be, so the six flats hold the disc and the six corners stay open for air and spare glue. A block gets a box with a 1 mm round vent on each corner for the same reason. The tab shows both sizes: the fit, and how wide the pocket is with its corners or vents. A pocket added by a version before 0.3.0 keeps its shape until you remove it and add it again. Want a round hole, a square or a rectangle instead? Pick it under **Pocket shape**.
 </details>
 
 <details>

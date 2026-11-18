@@ -1,7 +1,7 @@
 // Pure Embed-panel rules: plan arguments, the Embedded block reason, pause summary, preset groups, staging.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { embeddedBlock, groupPresets, insertsNeeded, pauseSummary, planArgs, previewsFor, sizeOf, splitLead, stage, toggle, unstage } from '../../src/app/logic.ts';
+import { defaultPocketShape, embeddedBlock, groupPresets, POCKET_SHAPES, rememberedShape, insertsNeeded, pauseSummary, planArgs, previewsFor, sizeOf, splitLead, stage, toggle, unstage } from '../../src/app/logic.ts';
 import type { ObjectInfo, Plan, Preset, Staged } from '../../src/app/types.ts';
 
 const hit = { part: 1, tri: 7, point: [1, 2, 3] as [number, number, number] };
@@ -16,6 +16,21 @@ test('plan arguments name the hit, the insert and only the options that are set'
   assert.equal(planArgs(0, hit, { preset: null, custom: null }, { mode: 'open', spin: null, cover: null }), null);
   assert.equal(planArgs(0, hit, { preset: 'x', custom: null }, { mode: 'open', spin: null, cover: null, center: true })?.center, true);
   assert.equal('center' in (planArgs(0, hit, { preset: 'x', custom: null }, { mode: 'open', spin: null, cover: null, center: false }) ?? {}), false);
+});
+
+test('the pocket shape: the insert\'s own unless picked, a pick sent as pocket_shape and kept per preset', () => {
+  assert.equal(defaultPocketShape('disc'), 'hexagon');
+  assert.equal(defaultPocketShape('block'), 'rectangle');
+  assert.deepEqual([...POCKET_SHAPES], ['circle', 'hexagon', 'square', 'rectangle']);
+  const insert = { preset: 'magnet-disc-6x3', custom: null };
+  assert.equal(planArgs(0, hit, insert, { mode: 'open', spin: null, cover: null, pocketShape: 'circle' })?.pocket_shape, 'circle');
+  assert.equal('pocket_shape' in (planArgs(0, hit, insert, { mode: 'open', spin: null, cover: null, pocketShape: null }) ?? {}), false);
+  const saved = { 'magnet-disc-6x3': 'square', odd: 'oval' } as Record<string, 'square'>;
+  assert.equal(rememberedShape(saved, 'magnet-disc-6x3'), 'square');
+  assert.equal(rememberedShape(saved, 'odd'), null, 'a value the page does not know is the default');
+  assert.equal(rememberedShape(saved, 'other'), null);
+  assert.equal(rememberedShape(undefined, 'magnet-disc-6x3'), null);
+  assert.equal(rememberedShape(saved, null), null, 'a custom size has no preset to remember by');
 });
 
 test('Embedded is blocked by the object first, then by an embedded plan', () => {
