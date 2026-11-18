@@ -237,6 +237,7 @@ export const zhCN: Record<MessageKey, string> = {
   'settings.unsaved': '有未保存的更改',
   'settings.discard': '放弃',
   'settings.nav': '设置分区',
+  'settings.hasError': '有需要修正的值',
   'settings.saved': '设置已保存。',
   'settings.presets': '我的预设',
   'settings.presetsEmpty': '还没有预设。请在“嵌入”标签页使用自定义尺寸，然后点击“另存为预设”。',

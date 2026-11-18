@@ -6,6 +6,9 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Settings pages: in a narrow window the list of settings pages opens one page at a time, with a Back button; an address link into Settings opens its page and moves focus to its heading, a plain visit opens the page used last, and a page with a value to fix is flagged in the list.
+
 ## [0.4.3] - 2026-11-17
 
 ### Added
