@@ -1,7 +1,7 @@
 # Orca Cloud description
 
 The text of the Embedder listing on Orca Cloud, in English and Brazilian Portuguese. Paste the block for the listing's
-language as it is; each one is under 4000 characters (3152 and 3290). The images are the four store feature
+language as it is; each one is under 4000 characters (3257 and 3398). The images are the four store feature
 images on `main`, so they show once the commit that adds them is merged. The line for each plugin of the set is the same
 in all six repositories; keep it in step with the README's "More plugins by bloodf" table.
 
@@ -33,6 +33,8 @@ NFC stickers from 10 to 38 mm, two coin tags and a card go under a 0.6 mm cover.
 A sealed pocket gets OrcaSlicer's own layer pause on the first layer above the cavity. You see it on the layer slider.
 
 ![Pause at the right layer](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-feature-04-pause-en.png){align=center}
+
+Each pocket can be a circle, hexagon, square or rectangle, sized to hold the insert with its clearance.
 
 Apply writes a new copy of the project and opens it. Your original is never changed.
 
@@ -93,6 +95,8 @@ Adesivos NFC de 10 a 38 mm, duas moedas e um cartão ficam sob uma cobertura de 
 Um bolso selado ganha a pausa por camada do próprio OrcaSlicer, na primeira camada acima da cavidade. Ela aparece no controle de camadas.
 
 ![Pause na camada certa](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-feature-04-pause-pt-BR.png){align=center}
+
+Cada bolso pode ser círculo, hexágono, quadrado ou retângulo, no tamanho que segura o inserto com a folga.
 
 Aplicar grava uma nova cópia do projeto e a abre. O original nunca é alterado.
 
