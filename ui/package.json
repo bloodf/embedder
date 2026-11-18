@@ -1,6 +1,6 @@
 {
   "name": "embedder-ui",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "private": true,
   "type": "module",
   "description": "Embedder page (Vue 3 + PrimeVue 5, shared Orca UI foundation 4.2.1), built into one offline HTML file",
