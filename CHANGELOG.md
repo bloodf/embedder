@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- New look on the shared Orca UI foundation 5.0.0: the page uses OrcaSlicer's own greys, with its teal for Apply, the chosen option, focus and the pocket being placed. Embedder's teal is now only on its mark. The plan of a pocket is a plain grey block (amber when the pocket cannot be made), and the 3D view sits on a neutral grey.
+- The notes under Pocket shape, Pocket, Centre on the face, the list of pockets and the pockets already in the project are behind an (i) beside each label. Why a control is off still shows under it.
+- In a narrow window the name, the state and Load again stay on one line above the tabs.
+
 ## [0.5.0] - 2026-11-18
 
 ### Changed

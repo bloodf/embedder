@@ -140,7 +140,7 @@ onBeforeUnmount(() => {
 <style>
 /* The view takes the height its grid cell gives the panel: the canvas is out of flow, so it can never set that height. */
 .em-viewer > .oui-panel-body { display: grid; min-height: 0; }
-.em-stage { position: relative; min-height: 0; overflow: hidden; background: var(--oui-sky-soft); border-radius: 0 0 var(--oui-radius-lg) var(--oui-radius-lg); }
+.em-stage { position: relative; min-height: 0; overflow: hidden; background: var(--oui-inset); border-radius: 0 0 var(--oui-radius-lg) var(--oui-radius-lg); }
 .em-stage-host { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
 .em-stage-host[data-over] { cursor: grab; }
 .em-stage-host[data-drag] { cursor: grabbing; }

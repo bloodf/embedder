@@ -16,7 +16,7 @@ import { t, tn, tMaybe, fmt } from '../core/i18n';
 
     <OuiPanel :title="s.result.name" :icon="file" flush>
       <!-- What to do at the printer is the main line: where the print stops and what goes in. -->
-      <div v-if="s.result.pauses.length" class="oui-hero oui-on-band em-result-pauses">
+      <div v-if="s.result.pauses.length" class="oui-hero em-result-pauses">
         <OuiReadout v-for="p in s.result.pauses" :key="p.top_z" :icon="pause" :label="t('plan.pause')" :value="'Z ' + fmt.number(p.top_z, 2)" unit="mm" size="lg" :sub="p.extra" />
       </div>
       <div class="em-result-body">
