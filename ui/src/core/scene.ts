@@ -239,7 +239,7 @@ export function createScene(host: HTMLElement, events: SceneEvents): SceneApi {
     setPockets(current, staged) {
       disposeAll(marks.map(m => m.mesh));
       const kind = { magnet: css('--em-magnet', '#8c4b08'), nfc: css('--em-nfc', '#6541a6') };
-      const tone = { ok: css('--oui-primary', '#00675b'), warn: css('--oui-warning', '#c08a00'), blocked: css('--oui-danger', '#b3261e') };
+      const tone = { ok: css('--oui-primary-mark', '#009688'), warn: css('--oui-warning', '#c08a00'), blocked: css('--oui-danger', '#b3261e') };
       marks = staged.map(p => ({ id: p.key, mesh: previewMesh(p, kind[p.kind], 0.85), at: anchorOf(p.positions, targets, p.base) }));
       inHand = null;
       if (current) {

@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
-import { OuiEmpty, OuiIcon, OuiPanel } from '../../shared/src/components';
+import { OuiEmpty, OuiHint, OuiIcon, OuiPanel } from '../../shared/src/components';
 import { check, insert, layers, pause, rfid, trash, warning } from '../../shared/src/icons';
 import { s, tracker } from '../app/store';
 import { apply, markRemove, removeStaged, selectStaged } from '../app/project';
@@ -27,6 +27,9 @@ function where(p: Staged): string {
 
 <template>
   <OuiPanel :title="t('list.title')" :icon="layers" tone="lime" flush>
+    <!-- How a staged pocket is changed and moved: behind an (i), once there is one to change. At the header's right end
+         and opening inwards: the panel's own hint sits by the title and would open past the edge of the page here. -->
+    <template v-if="s.staged.length" #actions><OuiHint :label="t('list.title')" end><span data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</span></OuiHint></template>
     <template #meta><span class="oui-chip oui-num" data-test="staged-count">{{ s.staged.length }}</span></template>
 
     <OuiEmpty v-if="!s.staged.length" compact :icon="layers" tone="lime" :title="empty[0]" :text="empty[1]" data-test="staged-empty" />
@@ -44,7 +47,6 @@ function where(p: Staged): string {
         <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: insertLabel(p.plan.label) })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
       </li>
     </ul>
-    <p v-if="s.staged.length" class="oui-meta em-list-help" data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</p>
 
     <div v-if="inserts.length || pauses.length" class="em-ready">
       <template v-if="inserts.length">
@@ -62,8 +64,7 @@ function where(p: Staged): string {
     </div>
 
     <div v-if="existing.length" class="em-ready em-existing">
-      <p id="em-existing-l" class="oui-label">{{ t('list.existing') }}</p>
-      <p class="oui-meta">{{ t('list.existingHelp') }}</p>
+      <div class="em-labelled"><p id="em-existing-l" class="oui-label">{{ t('list.existing') }}</p><OuiHint :label="t('list.existing')" end>{{ t('list.existingHelp') }}</OuiHint></div>
       <ul class="em-ready-list" aria-labelledby="em-existing-l" data-test="existing">
         <li v-for="x in existing" :key="x.id">
           <label class="em-check" :for="'rm-' + x.id"><Checkbox :model-value="s.remove.includes(x.id)" binary :input-id="'rm-' + x.id" @update:model-value="markRemove(x.id, $event)" />
@@ -89,9 +90,8 @@ function where(p: Staged): string {
   margin: calc(-1 * var(--oui-s2)) 0 calc(-1 * var(--oui-s2)) calc(-1 * var(--oui-s4)); padding: var(--oui-s2) 0 var(--oui-s2) var(--oui-s4);
   appearance: none; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; }
 .orca-ui .em-row-pick:focus-visible { outline-offset: -2px; }
-.em-rows > li:has(> .em-row-pick:hover) { background: color-mix(in srgb, var(--oui-primary) 7%, transparent); }
-.em-rows > li[data-selected] { background: var(--oui-primary-soft); box-shadow: inset 3px 0 0 var(--oui-primary); }
-.em-list-help { padding: var(--oui-s2) var(--oui-s4) 0; }
+.em-rows > li:has(> .em-row-pick:hover) { background: var(--oui-raised); }
+.em-rows > li[data-selected] { background: var(--oui-primary-soft); box-shadow: inset 3px 0 0 var(--oui-primary-mark); }
 .em-ready { display: grid; gap: var(--oui-s1); padding: var(--oui-s4); }
 .em-ready > .oui-label:not(:first-child) { margin-top: var(--oui-s3); }
 .em-ready + .em-ready { border-top: 1px solid var(--oui-border); }

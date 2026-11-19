@@ -299,13 +299,15 @@ test('theme follows the host colour while the page runs', `
   await until(() => !root.classList.contains('orca-dark'), 'light', 15000);
   root.style.setProperty('--orca-bg', '#151515');
   await until(() => root.classList.contains('orca-dark'), 'dark after the host changed', 15000);
-  eq(getComputedStyle(document.body).backgroundColor, 'rgb(11, 26, 28)', 'dark palette background, tinted teal');
+  eq(getComputedStyle(document.body).backgroundColor, 'rgb(36, 36, 40)', "dark palette background: OrcaSlicer's grey, not tinted");
   eq(document.documentElement.dataset.orcaUiAccent, 'teal', 'Embedder accent');
-  eq(getComputedStyle(q('.oui-appbar')).backgroundColor, 'rgb(0, 103, 91)', 'the bar is the teal band in both themes');
+  eq(getComputedStyle(q('.oui-appbar')).backgroundColor, 'rgb(45, 45, 49)', 'the bar is neutral');
+  eq(getComputedStyle(q('.oui-appbar-mark')).backgroundColor, 'rgb(0, 103, 91)', 'the accent is the mark tile');
   root.style.setProperty('--orca-bg', '#f4f4f4');
   await until(() => !root.classList.contains('orca-dark'), 'light again', 15000);
-  eq(getComputedStyle(document.body).backgroundColor, 'rgb(214, 226, 229)', 'light palette background');
-  eq(getComputedStyle(q('.oui-appbar')).backgroundColor, 'rgb(0, 103, 91)', 'same band');
+  eq(getComputedStyle(document.body).backgroundColor, 'rgb(240, 240, 240)', 'light palette background');
+  eq(getComputedStyle(q('.oui-appbar')).backgroundColor, 'rgb(255, 255, 255)', 'neutral bar');
+  eq(getComputedStyle(q('.oui-appbar-mark')).backgroundColor, 'rgb(0, 103, 91)', 'same mark tile in both themes');
 `);
 
 test('load shows the progress of reading the project', `
@@ -341,7 +343,7 @@ test('placing sends a plan request; the preview is listed and staged with its pa
   assert(Math.abs(a.point[0] - 100) < 1e-3 && Math.abs(a.point[1] - 100) < 1e-3 && Math.abs(a.point[2] - 20) < 1e-3, 'point at the top centre: ' + a.point);
   eq(Object.keys(a).sort(), ['job', 'mode', 'object', 'part', 'point', 'preset', 'tri'], 'no unset options sent');
   assert(text(byTest('plan-pause')).includes('19'), 'pause shown: ' + text(byTest('plan')));
-  assert(q('#em-plan-state').classList.contains('oui-on-band'), 'a planned pocket is the accent block');
+  assert(!q('#em-plan-state').classList.contains('oui-on-band') && !q('#em-plan-state').dataset.tone, 'a planned pocket is a neutral block (ui-foundation 5: no accent fill)');
   assert(byTest('staged-empty') && byTest('apply').disabled, 'nothing staged yet');
   await click(byTest('add'));
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'one row: the name, then where and how on its second line');
@@ -392,6 +394,7 @@ test('the pocket shape starts at the insert\'s own, a pick is planned and kept p
   eq(qa('[data-test=pocket-shape] button svg').length, 4, 'and each drawn');
   eq(picked(), ['Hexagon'], 'a disc starts in a hexagon');
   eq(text(q('#cut-help')), 'Hexagon for this insert unless you pick another. A pick is kept for its preset.', 'the default said');
+  assert(q('#cut-help').closest('.oui-hint-bubble[role=tooltip]') && q('.em-form .oui-hint-btn[aria-label="Pocket shape"]'), 'what the picker does is behind its (i), not a line under it');
   eq(q('[data-test=pocket-shape]').getAttribute('aria-labelledby'), 'cut-l', 'labelled');
   const first = await place(PLAN);
   assert(!('pocket_shape' in first.args), 'the default is not sent');
@@ -428,6 +431,7 @@ test('embedded on a side face the shape picker is off and says why; Open turns i
   await place({...PLAN, face: 'side', shape: 'slot', size: [6.4, 3.4, 6.2], outer: [7.4, 3.9]});
   assert(qa('[data-test=pocket-shape] button').every(b => b.disabled), 'every shape off');
   eq(text(byTest('pocket-shape-slot')), 'On a side face an embedded insert stands on edge in a slot. The shape applies to flat faces and open pockets.', 'why');
+  assert(!byTest('pocket-shape-slot').closest('.oui-hint-bubble'), 'why the picker is off stays on screen');
   eq(q('[data-test=pocket-shape]').getAttribute('aria-describedby'), 'cut-help', 'the note describes the picker');
   const before = cmds('pocket.plan').length;
   await click(qa('[data-test=mode] button').find(b => text(b) === 'Open'));
@@ -901,10 +905,12 @@ test('three columns side by side: the form, the view and the list fill the windo
   assert(Math.abs(foot.bottom - list.bottom) < 2, 'Apply sits at the foot of the list');
   document.documentElement.style.setProperty('--orca-bg', '#151515');   // the host's theme, not the runner's
   await until(() => document.documentElement.classList.contains('orca-dark'), 'dark', 15000);
-  eq(getComputedStyle(q('.em-form .oui-panel-head')).backgroundColor, 'rgb(16, 61, 60)', 'panel header strip in the accent tint');
-  eq(getComputedStyle(q('.em-list .oui-panel-head .oui-tile')).backgroundColor, 'rgb(185, 220, 108)', 'the list is lime');
+  eq(getComputedStyle(q('.em-form .oui-panel-head')).backgroundColor, 'rgba(0, 0, 0, 0)', 'panel headers are neutral: no tinted strip');
+  eq(getComputedStyle(q('.em-form')).backgroundColor, 'rgb(45, 45, 49)', "panels are OrcaSlicer's panel grey");
+  eq(getComputedStyle(q('.em-list .oui-panel-head .oui-panel-icon')).color, 'rgb(185, 220, 108)', 'the list icon is lime; nothing else in the header is');
+  eq(getComputedStyle(byTest('apply')).backgroundColor, 'rgb(0, 103, 91)', "Apply is OrcaSlicer's teal");
   eq(getComputedStyle(byTest('apply')).height, '32px', 'control height');
-  eq(getComputedStyle(q('.em-form')).borderRadius, '8px', 'panel radius');
+  eq(getComputedStyle(q('.em-form')).borderRadius, '6px', 'panel radius');
 `);
 
 test('one column when the window is narrow, in the order form, view, list; nothing overflows', `
@@ -1289,6 +1295,8 @@ test('the 3D view says how to move a pocket in Portuguese too, and the hint stay
   const hint = q('.em-hint'), box = q('.em-stage').getBoundingClientRect(), r = hint.getBoundingClientRect();
   assert(text(hint).includes('arraste um bolso para movê-lo'), 'hint: ' + text(hint));
   assert(r.left >= box.left && r.right <= box.right && r.bottom <= box.bottom && r.top > box.top + box.height / 2, 'the hint sits at the foot of the view');
+  const inset = (() => { const p = document.createElement('i'); p.style.background = 'var(--oui-inset)'; document.body.append(p); const c = getComputedStyle(p).backgroundColor; p.remove(); return c; })();
+  eq(getComputedStyle(q('.em-stage')).backgroundColor, inset, 'the stage behind the 3D view is the neutral inset grey, not a tint');
   await place3d([0, 0]);
   await click(byTest('add'));
   eq(text(byTest('staged-help')), 'Selecione um bolso para alterá-lo. Arraste-o na visualização 3D para movê-lo.', 'the list says how');

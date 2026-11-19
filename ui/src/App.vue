@@ -29,7 +29,7 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
 <template>
   <OuiAppBar v-model="s.tab" :name="t('app.brand')" :tabs="tabs" :tabs-label="t('nav.label')">
     <template #mark>
-      <!-- The brand kit's micro mark (assets/embedder-micro-24.svg): the bars take the band colour, the insert its ink. -->
+      <!-- The brand kit's micro mark (assets/embedder-micro-24.svg): the bars are white on the teal tile, the insert its ink. -->
       <svg viewBox="0 0 24 24" fill="currentColor"><title>{{ t('about.text', { version: s.version || '—' }) }}</title>
         <rect x="3" y="3" width="18" height="3" rx=".5" /><rect x="3" y="18" width="18" height="3" rx=".5" />
         <rect x="3" y="8" width="4" height="3" rx=".5" /><rect x="17" y="8" width="4" height="3" rx=".5" />
@@ -38,7 +38,7 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
     </template>
     <template #status>
       <OuiStatus :state="state.kind" data-test="state">{{ state.label }}</OuiStatus>
-      <span v-if="s.project" class="oui-truncate" data-test="project">
+      <span v-if="s.project" class="oui-truncate em-project" data-test="project">
         <span data-test="project-name">{{ s.project.name }}</span> · {{ t('load.plate', { plate: s.project.plate, plates: s.project.plates }) }} · {{ tn('load.objects', s.project.objects.length) }}
       </span>
     </template>
@@ -69,6 +69,13 @@ html:lang(zh-CN) { --oui-font: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK 
 /* A classic scrollbar (Windows) appearing when the page grows must not narrow the page and flip the Embed layout. */
 html { scrollbar-gutter: stable; }
 .em-mark-insert { fill: var(--em-ink); }
+/* Narrow: the state gives way so the name, the state and Load again stay on one line over the tabs; under 520 px the
+   project line (its name is the 3D view's title) leaves and the chip stays. */
+@container oui-appbar (max-width: 760px) {
+  .oui-appbar-row > .oui-spacer { display: none; }
+  .oui-appbar-row > .oui-appbar-status { flex: 1 1 0; justify-content: flex-end; }
+}
+@container oui-appbar (max-width: 520px) { .em-project { display: none; } }
 .em-view { display: grid; gap: var(--oui-s3); min-width: 0; }
 
 /* Shared by the Embed panels and Settings: what kind of insert a thing is, as a dot (in a line of text) or a tile (on a row). */

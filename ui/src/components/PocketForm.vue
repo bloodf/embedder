@@ -5,7 +5,7 @@ import Select from 'primevue/select';
 import SelectButton from 'primevue/selectbutton';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
-import { OuiIcon, OuiPanel } from '../../shared/src/components';
+import { OuiHint, OuiIcon, OuiPanel } from '../../shared/src/components';
 import { check, insert, magnet, plus, rfid, save, user, type OuiIconData } from '../../shared/src/icons';
 import PlanCard from './PlanCard.vue';
 import { choosePocketShape, choosePreset, s, savePreset } from '../app/store';
@@ -130,21 +130,22 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
       </div>
 
       <div class="oui-field">
-        <label id="cut-l">{{ t('form.pocketShape') }}</label>
+        <div class="em-labelled"><label id="cut-l">{{ t('form.pocketShape') }}</label>
+          <OuiHint v-if="!inSlot" :label="t('form.pocketShape')" end><span id="cut-help">{{ t('form.pocketShapeHelp', { shape: t(`cut.${defaultPocketShape(insertShape)}`) }) }}</span></OuiHint></div>
         <SelectButton :model-value="pocketShape" :options="pocketShapes" option-label="label" option-value="value" :allow-empty="false" class="em-cuts" :disabled="inSlot"
                       aria-labelledby="cut-l" aria-describedby="cut-help" data-test="pocket-shape" fluid @update:model-value="choosePocketShape($event)">
           <template #option="{ option }"><span class="em-cut" :data-test="`cut-${option.value}`"><OuiIcon :icon="option.icon" :size="16" />{{ option.label }}</span></template>
         </SelectButton>
+        <!-- Why the picker is off is said under it; what it does, when it is on, is behind the (i). -->
         <span v-if="inSlot" id="cut-help" class="oui-meta" data-test="pocket-shape-slot">{{ t('form.pocketShapeSlot') }}</span>
-        <span v-else id="cut-help" class="oui-meta">{{ t('form.pocketShapeHelp', { shape: t(`cut.${defaultPocketShape(insertShape)}`) }) }}</span>
       </div>
 
       <div class="oui-field">
-        <label id="mode-l">{{ t('form.mode') }}</label>
+        <div class="em-labelled"><label id="mode-l">{{ t('form.mode') }}</label>
+          <OuiHint v-if="!block" :label="t('form.mode')" end><span id="em-mode-note">{{ t(s.mode === 'embedded' ? 'mode.embeddedHelp' : 'mode.openHelp') }}</span></OuiHint></div>
         <SelectButton v-model="s.mode" :options="modes" option-label="label" option-value="value" option-disabled="disabled" :allow-empty="false"
                       aria-labelledby="mode-l" :aria-describedby="block ? (blockSaidAbove ? 'em-blocks' : 'em-mode-note') : 'em-mode-note'" data-test="mode" fluid />
         <span v-if="block && !blockSaidAbove" id="em-mode-note" class="oui-meta em-warn" data-test="embedded-block">{{ t('mode.blocked', { reason: tMaybe(`block.${block}`, block) }) }}</span>
-        <span v-else-if="!block" id="em-mode-note" class="oui-meta">{{ t(s.mode === 'embedded' ? 'mode.embeddedHelp' : 'mode.openHelp') }}</span>
       </div>
 
       <div class="em-two">
@@ -155,9 +156,9 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
                        :placeholder="t('form.coverDefault', { mm: fmt.number(coverDefault, 1) })" :title="t('form.coverDefault', { mm: fmt.number(coverDefault, 1) })" :disabled="s.mode !== 'embedded'" /></div>
       </div>
 
-      <div class="oui-field">
+      <div class="em-labelled">
         <label class="em-check" for="f-center"><Checkbox v-model="s.center" binary input-id="f-center" data-test="center" aria-describedby="f-center-help" />{{ t('form.center') }}</label>
-        <span id="f-center-help" class="oui-meta">{{ t('form.centerHelp') }}</span>
+        <OuiHint :label="t('form.center')" end><span id="f-center-help">{{ t('form.centerHelp') }}</span></OuiHint>
       </div>
     </div>
 
@@ -177,6 +178,10 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
 .em-two[data-three] { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--oui-s2); }
 .em-check { display: flex; align-items: center; gap: var(--oui-s2); min-height: 24px; width: fit-content; }
 .oui-field > label.em-check { font-size: inherit; font-weight: inherit; color: inherit; }
+/* A label with its (i): the explanation that used to be a line under the control. The (i) is at the row's right end and
+   opens inwards (end), so its bubble stays inside a 320 px column wherever that column is on the page. */
+.em-labelled { display: flex; align-items: center; justify-content: space-between; gap: var(--oui-s1); min-width: 0; min-height: 22px; }
+.oui-field > .em-labelled > label { font-size: var(--oui-text-sm); font-weight: 600; color: var(--oui-muted); }
 .em-opt { display: inline-flex; align-items: center; gap: var(--oui-s2); min-width: 0; }
 .em-group { gap: 6px; font-weight: 700; }
 .em-custom { display: grid; gap: var(--oui-s3); padding: var(--oui-s3); justify-items: start; }

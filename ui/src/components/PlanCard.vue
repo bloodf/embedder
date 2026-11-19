@@ -28,13 +28,13 @@ const at = computed(() => {
 });
 </script>
 
-<!-- The pocket the last click would make: the page's one strongly coloured block once there is a plan, a quiet
-     prompt before that, and a warning block when the pocket cannot be made. Add pocket (the panel footer) points here. -->
+<!-- The pocket the last click would make: a neutral block (raised, with a hairline) holding a prompt, then the plan's
+     facts, and tinted as a warning when the pocket cannot be made. Add pocket (the panel footer) points here. -->
 <template>
   <section class="em-plan" data-test="plan" aria-labelledby="plan-h" :aria-live="s.dragging ? 'off' : 'polite'">
-    <div id="em-plan-state" class="oui-hero em-plan-block" :class="{ 'oui-on-band': planned }" :data-tone="planned ? undefined : s.hit && s.plan?.blocked ? 'warn' : 'accent'">
+    <div id="em-plan-state" class="oui-hero em-plan-block" :data-tone="s.hit && s.plan?.blocked ? 'warn' : undefined">
       <h3 id="plan-h" class="oui-label">{{ t('plan.title') }}</h3>
-      <p v-if="!s.hit" class="em-note" data-test="plan-empty"><OuiIcon :icon="target" tone="accent" :size="16" />{{ t(s.webgl === false ? 'plan.emptyFallback' : 'plan.empty') }}</p>
+      <p v-if="!s.hit" class="em-note" data-test="plan-empty"><OuiIcon :icon="target" :size="16" />{{ t(s.webgl === false ? 'plan.emptyFallback' : 'plan.empty') }}</p>
       <p v-else-if="s.plan?.blocked" class="em-note" data-test="plan-blocked"><OuiIcon :icon="warning" tone="warn" :size="16" />
         {{ t('plan.blocked', { reason: tMaybe(`block.${s.plan.blocked.code}`, s.plan.blocked.detail || s.plan.blocked.code) }) }}</p>
       <dl v-else-if="s.plan" class="em-facts oui-num">
@@ -68,6 +68,8 @@ const at = computed(() => {
 <style>
 .em-plan { display: grid; gap: var(--oui-s2); margin-top: var(--oui-s4); }
 .em-plan-block { gap: var(--oui-s2); padding: var(--oui-s3) var(--oui-s4); }
+.em-plan-block:not([data-tone]) { box-shadow: inset 0 0 0 1px var(--oui-border); }
+.em-plan-block > .em-note > .oui-icon { color: var(--oui-muted); }
 .em-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px var(--oui-s4); }
 .em-facts dt { display: inline-flex; align-items: center; gap: var(--oui-s1); color: var(--oui-muted); }
 .em-facts dd { min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
