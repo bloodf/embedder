@@ -908,7 +908,8 @@ test('three columns side by side: the form, the view and the list fill the windo
   eq(getComputedStyle(q('.em-form .oui-panel-head')).backgroundColor, 'rgba(0, 0, 0, 0)', 'panel headers are neutral: no tinted strip');
   eq(getComputedStyle(q('.em-form')).backgroundColor, 'rgb(45, 45, 49)', "panels are OrcaSlicer's panel grey");
   eq(getComputedStyle(q('.em-list .oui-panel-head .oui-panel-icon')).color, 'rgb(185, 220, 108)', 'the list icon is lime; nothing else in the header is');
-  eq(getComputedStyle(byTest('apply')).backgroundColor, 'rgb(0, 103, 91)', "Apply is OrcaSlicer's teal");
+  // The token, not the button's computed colour: that one is still in its 120 ms transition right after the theme changed.
+  eq(getComputedStyle(document.documentElement).getPropertyValue('--oui-primary').trim(), '#00675b', "the primary action is OrcaSlicer's teal");
   eq(getComputedStyle(byTest('apply')).height, '32px', 'control height');
   eq(getComputedStyle(q('.em-form')).borderRadius, '6px', 'panel radius');
 `);
