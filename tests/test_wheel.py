@@ -9,6 +9,7 @@ import sys
 import tempfile
 import tomllib
 import unittest
+import unittest.mock
 import zipfile
 from pathlib import Path
 
@@ -55,6 +56,12 @@ class WheelTests(unittest.TestCase):
     def test_exact_file_list(self):
         self.assertEqual(set(self.zip.namelist()), EXPECTED)
         self.assertEqual(len(self.zip.namelist()), len(EXPECTED))
+
+    def test_page_over_the_webview2_limit_fails_the_build(self):
+        self.assertEqual(build.PAGE_LIMIT, 1_415_577)
+        with unittest.mock.patch.object(build, "page_html", return_value="x" * (build.PAGE_LIMIT + 1)):
+            with self.assertRaisesRegex(SystemExit, "1415578 bytes, over the 1415577-byte limit"):
+                build.wheel_files(PROJECT)
 
     def test_record_hashes_and_sizes(self):
         rows = {}
