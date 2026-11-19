@@ -27,9 +27,8 @@ function where(p: Staged): string {
 
 <template>
   <OuiPanel :title="t('list.title')" :icon="layers" tone="lime" flush>
-    <!-- How a staged pocket is changed and moved: behind an (i), once there is one to change. At the header's right end
-         and opening inwards: the panel's own hint sits by the title and would open past the edge of the page here. -->
-    <template v-if="s.staged.length" #actions><OuiHint :label="t('list.title')" end><span data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</span></OuiHint></template>
+    <!-- How a staged pocket is changed and moved: behind the module's (i), once there is one to change. -->
+    <template v-if="s.staged.length" #hint><span data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</span></template>
     <template #meta><span class="oui-chip oui-num" data-test="staged-count">{{ s.staged.length }}</span></template>
 
     <OuiEmpty v-if="!s.staged.length" compact :icon="layers" tone="lime" :title="empty[0]" :text="empty[1]" data-test="staged-empty" />
@@ -64,7 +63,7 @@ function where(p: Staged): string {
     </div>
 
     <div v-if="existing.length" class="em-ready em-existing">
-      <div class="em-labelled"><p id="em-existing-l" class="oui-label">{{ t('list.existing') }}</p><OuiHint :label="t('list.existing')" end>{{ t('list.existingHelp') }}</OuiHint></div>
+      <div class="em-labelled"><p id="em-existing-l" class="oui-label">{{ t('list.existing') }}</p><OuiHint :label="t('list.existing')">{{ t('list.existingHelp') }}</OuiHint></div>
       <ul class="em-ready-list" aria-labelledby="em-existing-l" data-test="existing">
         <li v-for="x in existing" :key="x.id">
           <label class="em-check" :for="'rm-' + x.id"><Checkbox :model-value="s.remove.includes(x.id)" binary :input-id="'rm-' + x.id" @update:model-value="markRemove(x.id, $event)" />
