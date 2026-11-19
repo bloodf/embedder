@@ -1,6 +1,6 @@
 [project]
 name = "embedder"
-version = "0.4.3"
+version = "0.5.0"
 description = "Magnet and NFC pockets for OrcaSlicer: click a face, pick an insert size, and get a pocket plus a pause at the right layer."
 authors = [{ name = "bloodf" }]
 license = "GPL-3.0-only"
