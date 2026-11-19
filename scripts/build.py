@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "embedder"
 MODULES = ("geometry", "presets", "pocket", "settings", "threemf", "session")  # dependency order
 ASSETS = {"APP_HTML": "app.html", "ICON_PNG": "icon.png"}   # app.html: the compiled Vue page (ui/, npm run build); icon.png: the brand tile at 40x40 RGBA
+# OrcaSlicer on Windows shows the page in WebView2, which renders a page over 2 MiB of base64 (1,572,864 bytes) blank.
+PAGE_LIMIT = 1_572_864 * 9 // 10   # bytes of UTF-8, with 10% headroom
 
 
 def page_html(name):
@@ -48,6 +50,9 @@ def wheel_files(project):
     if plugin.count('VERSION = "0.0.0-dev"') != 1:
         raise SystemExit("plugin.py must contain exactly one VERSION placeholder")
     plugin = plugin.replace('VERSION = "0.0.0-dev"', "VERSION = %r" % version)
+    size = len(page_html("app.html").encode("utf-8"))
+    if size > PAGE_LIMIT:
+        raise SystemExit("app.html is %d bytes, over the %d-byte limit (90%% of WebView2's 1,572,864)" % (size, PAGE_LIMIT))
     sources = {"__init__": plugin, **{m: (SRC / (m + ".py")).read_text("utf-8") for m in MODULES}}
     assets = "".join("%s = %r\n" % (const, (SRC / "ui" / name).read_bytes() if name.endswith(".png") else page_html(name))
                      for const, name in ASSETS.items())
