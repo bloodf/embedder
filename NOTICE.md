@@ -11,8 +11,8 @@ Embedder is licensed under the GNU General Public License v3.0 only (see [LICENS
 - **three.js** (MIT, copyright three.js authors) draws the 3D view. The licence text is in
   [ui/licenses/Three.txt](ui/licenses/Three.txt).
 - **Vue** (MIT), **PrimeVue** (MIT) and **PrimeUIX** (MIT) come in through the shared Orca UI foundation,
-  vendored in `ui/shared/`, together with its icons from **Lucide** (ISC) and the **Manrope** typeface
-  (SIL OFL 1.1), which the page embeds. The licence texts are in [ui/shared/licenses](ui/shared/licenses)
+  the `@orca-plugins/ui-foundation` dependency (github.com/bloodf/orca-ui-foundation), together with its icons from **Lucide** (ISC) and the **Manrope** typeface
+  (SIL OFL 1.1), which the page embeds. The licence texts are in that packages `licenses/` (`ui/node_modules/@orca-plugins/ui-foundation/licenses/`)
   and travel in the wheel.
 
 ## Brand art and fonts

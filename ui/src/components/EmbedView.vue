@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import Button from 'primevue/button';
 import ProgressBar from 'primevue/progressbar';
-import { OuiBanner, OuiEmpty, OuiIcon, OuiPanel } from '../../shared/src/components';
-import { box, folder, warning } from '../../shared/src/icons';
+import { OuiBanner, OuiEmpty, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
+import { box, folder, warning } from '@orca-plugins/ui-foundation/src/icons';
 import insertArt from '../assets/embedder-insert.webp';
 import Viewer from './Viewer.vue';
 import PlaceFallback from './PlaceFallback.vue';

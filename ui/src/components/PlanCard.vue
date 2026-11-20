@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import Message from 'primevue/message';
-import { OuiIcon } from '../../shared/src/components';
-import { info, layers, pause, target, warning } from '../../shared/src/icons';
+import { OuiIcon } from '@orca-plugins/ui-foundation/src/components';
+import { info, layers, pause, target, warning } from '@orca-plugins/ui-foundation/src/icons';
 import { s } from '../app/store';
 import { t, tMaybe, fmt, insertLabel } from '../core/i18n';
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import { OuiIcon, OuiPanel } from '../../shared/src/components';
-import { box, target } from '../../shared/src/icons';
+import { OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
+import { box, target } from '@orca-plugins/ui-foundation/src/icons';
 import { s } from '../app/store';
 import { currentObject, dragEnd, dragStart, meshesOf, moveTo, placeAt, removeInHand, selectStaged } from '../app/project';
 import { hitOf, previewsFor, sizeOf, turn } from '../app/logic';

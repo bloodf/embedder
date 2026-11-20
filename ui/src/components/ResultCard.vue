@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Button from 'primevue/button';
 import Message from 'primevue/message';
-import { OuiBanner, OuiIcon, OuiPanel, OuiReadout, OuiStatus } from '../../shared/src/components';
-import { external, file, pause, warning } from '../../shared/src/icons';
+import { OuiBanner, OuiIcon, OuiPanel, OuiReadout, OuiStatus } from '@orca-plugins/ui-foundation/src/components';
+import { external, file, pause, warning } from '@orca-plugins/ui-foundation/src/icons';
 import { s, tracker } from '../app/store';
 import { openResult } from '../app/project';
 import { t, tn, tMaybe, fmt } from '../core/i18n';

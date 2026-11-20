@@ -2,8 +2,8 @@
 import { reactive, watchEffect } from 'vue';
 import type { Pending } from '../core/tracker';
 import Button from 'primevue/button';
-import { OuiBanner } from '../../shared/src/components';
-import { hourglass } from '../../shared/src/icons';
+import { OuiBanner } from '@orca-plugins/ui-foundation/src/components';
+import { hourglass } from '@orca-plugins/ui-foundation/src/icons';
 import { s, tracker, hello } from '../app/store';
 import { t } from '../core/i18n';
 

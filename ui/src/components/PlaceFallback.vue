@@ -2,8 +2,8 @@
 import { ref } from 'vue';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
-import { OuiEmpty, OuiIcon, OuiPanel } from '../../shared/src/components';
-import { box, eye, target } from '../../shared/src/icons';
+import { OuiEmpty, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
+import { box, eye, target } from '@orca-plugins/ui-foundation/src/icons';
 import { s } from '../app/store';
 import { currentObject, meshesOf, placeAt } from '../app/project';
 import { centrePick, partMesh } from '../core/pick';

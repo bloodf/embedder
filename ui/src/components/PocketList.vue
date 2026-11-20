@@ -2,8 +2,8 @@
 import { computed } from 'vue';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
-import { OuiEmpty, OuiHint, OuiIcon, OuiPanel } from '../../shared/src/components';
-import { check, insert, layers, pause, rfid, trash, warning } from '../../shared/src/icons';
+import { OuiEmpty, OuiHint, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
+import { check, insert, layers, pause, rfid, trash, warning } from '@orca-plugins/ui-foundation/src/icons';
 import { s, tracker } from '../app/store';
 import { apply, markRemove, removeStaged, selectStaged } from '../app/project';
 import { insertsNeeded, pauseSummary, splitLead } from '../app/logic';

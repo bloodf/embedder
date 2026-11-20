@@ -48,7 +48,7 @@ class WheelTests(unittest.TestCase):
         tree = ast.parse(self.read("embedder/_assets.py"))
         (notices,) = [ast.literal_eval(n.value) for n in tree.body
                       if isinstance(n, ast.Assign) and [t.id for t in n.targets] == ["THIRD_PARTY_NOTICES"]]
-        shipped = sorted([*(ROOT / "ui" / "shared" / "licenses").glob("*.txt"), *(ROOT / "ui" / "licenses").glob("*.txt")])
+        shipped = sorted([*(ROOT / "ui" / "node_modules" / "@orca-plugins" / "ui-foundation" / "licenses").glob("*.txt"), *(ROOT / "ui" / "licenses").glob("*.txt")])
         self.assertEqual(set(notices), {"Lucide", "Manrope", "PrimeUIX", "PrimeVue", "Three", "Vue"})
         for lic in shipped:
             self.assertEqual(notices[lic.stem], lic.read_text("utf-8"), lic.name)

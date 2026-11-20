@@ -32,7 +32,7 @@ def page_html(name):
 def third_party_licences():
     """The licence texts of what the page bundles: the shared foundation's (Vue, PrimeVue, PrimeUIX, Lucide, Manrope)
     and ours (three.js), sorted by file name."""
-    return sorted([*(ROOT / "ui" / "shared" / "licenses").glob("*.txt"), *(ROOT / "ui" / "licenses").glob("*.txt")])
+    return sorted([*(ROOT / "ui" / "node_modules" / "@orca-plugins" / "ui-foundation" / "licenses").glob("*.txt"), *(ROOT / "ui" / "licenses").glob("*.txt")])
 
 
 def relative_imports(source):
