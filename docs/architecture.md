@@ -22,7 +22,7 @@ storage folder. (`orca_organizer` uses the same route.)
 | `geometry.py` | 4x4 matrices, 3MF and config transform strings, hexagon and vented box meshes, face tilt | no |
 | `presets.py` | Built-in insert table, validation of user presets | no |
 | `settings.py` | Validated settings store (JSON file) | no |
-| `ui/app.html` | The Embedder tab: one compiled Vue page, built from `ui/` | - |
+| `ui/app.html` | The Embedder tab: one compiled Vue page, built from `ui/`. The wheel ships it as a plain file, `embedder/app.html`, read with `pkgutil.get_data` | - |
 
 Only `plugin.py` imports `orca`, so everything else is tested without OrcaSlicer. All modules are
 standard library only (Python 3.12 or newer).
