@@ -45,6 +45,18 @@ test('the fallback picks straight down onto the top and up onto the bottom', () 
   assert.equal(centrePick([], 'top'), null);
 });
 
+test('fit sees all of the box in a view taller than wide, and in one wider than tall', () => {
+  const box = new Box3(new Vector3(0, 0, 0), new Vector3(120, 40, 20));
+  for (const aspect of [0.4, 2.5]) {
+    const cam = new PerspectiveCamera(40, aspect, 0.1, 1000);
+    fitCamera(cam, box);
+    for (const x of [0, 120]) for (const y of [0, 40]) for (const z of [0, 20]) {
+      const p = new Vector3(x, y, z).project(cam);
+      assert.ok(Math.abs(p.x) <= 1 && Math.abs(p.y) <= 1, `aspect ${aspect}: corner ${[x, y, z]} at ${p.x.toFixed(2)}, ${p.y.toFixed(2)}`);
+    }
+  }
+});
+
 test('fit aims a Z-up camera at the box and sees all of it', () => {
   const cam = new PerspectiveCamera(40, 1, 0.1, 1000);
   const box = boundsOf([cube()]);
