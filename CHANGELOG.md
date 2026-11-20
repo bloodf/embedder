@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-11-20
+
+### Changed
+- The page ships in the plugin as a plain `embedder/app.html` file next to the code, instead of a long string inside a Python file. Nothing changes in OrcaSlicer.
+
 ## [0.6.1] - 2026-11-19
 
 ### Fixed
