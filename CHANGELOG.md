@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-19
+
+### Fixed
+- Fit in the 3D view now sees the whole part in a view taller than wide. It went by the view's height alone, so a narrow view cut the part at the sides.
+
 ## [0.6.0] - 2026-11-19
 
 ### Changed
