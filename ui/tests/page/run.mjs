@@ -609,7 +609,7 @@ test('apply writes a copy with the staged and removed pockets; open asks OrcaSli
   await reply(last('cmd', 'project.apply'), {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 1, removed: 1,
     pauses: [{top_z: 19, extra: 'Embedder: insert 1 x 6x3 magnet'}], warnings: ['existing_gcode_at_layer'], pruned: 2});
   eq(text(byTest('result-pruned')), '2 older copies were deleted from the plugin folder.', 'pruned shown');
-  assert(text(byTest('result')).includes('1 pockets added, 1 removed'), 'result: ' + text(byTest('result')));
+  assert(text(byTest('result')).includes('1 pocket added, 1 removed'), 'result: ' + text(byTest('result')));
   assert(text(byTest('result')).includes('Save Project As'), 'save-as note');
   assert(text(byTest('result')).includes('Your own custom G-code'), 'apply warning');
   eq(text(byTest('result-path')), path, 'path shown');
