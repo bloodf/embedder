@@ -2661,7 +2661,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-en.png in the panel at 846,96,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1240188,
+      "bytes": 1240125,
       "date": "2026-11-16"
     },
     {
@@ -2670,7 +2670,7 @@
       "operation": "crop to 1:1, scale to 900x900, panel-main-dark-en.png in the panel at 490,292,865,667",
       "width": 900,
       "height": 900,
-      "bytes": 812214,
+      "bytes": 811672,
       "date": "2026-11-16"
     },
     {
@@ -2679,7 +2679,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-placement-dark-en.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1264334,
+      "bytes": 1265192,
       "date": "2026-11-16"
     },
     {
@@ -2688,7 +2688,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-magnets-dark-en.png in the panel at 847,96,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1293334,
+      "bytes": 1303985,
       "date": "2026-11-16"
     },
     {
@@ -2697,7 +2697,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-nfc-dark-en.png in the panel at 847,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1275205,
+      "bytes": 1276267,
       "date": "2026-11-16"
     },
     {
@@ -2706,7 +2706,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-pause-dark-en.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1325469,
+      "bytes": 1319456,
       "date": "2026-11-16"
     },
     {
@@ -2715,7 +2715,7 @@
       "operation": "crop to 2:1, scale to 1280x640, panel-main-dark-en.png in the panel at 723,60,1209,545",
       "width": 1280,
       "height": 640,
-      "bytes": 766914,
+      "bytes": 766622,
       "date": "2026-11-16"
     },
     {
@@ -2724,7 +2724,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-en.png in the panel at 847,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1336239,
+      "bytes": 1338086,
       "date": "2026-11-16"
     },
     {
@@ -2733,7 +2733,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-light-en.png in the panel at 845,95,1530,755",
       "width": 1600,
       "height": 900,
-      "bytes": 1285386,
+      "bytes": 1269342,
       "date": "2026-11-16"
     },
     {
@@ -2742,7 +2742,7 @@
       "operation": "scale to 1440x900",
       "width": 1440,
       "height": 900,
-      "bytes": 230392,
+      "bytes": 218459,
       "date": "2026-11-16"
     },
     {
@@ -2751,7 +2751,7 @@
       "operation": "scale to 1440x900",
       "width": 1440,
       "height": 900,
-      "bytes": 236021,
+      "bytes": 195972,
       "date": "2026-11-16"
     },
     {
@@ -2760,7 +2760,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 112632,
+      "bytes": 103419,
       "date": "2026-11-16"
     },
     {
@@ -2769,7 +2769,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 110511,
+      "bytes": 98190,
       "date": "2026-11-16"
     },
     {
@@ -2778,7 +2778,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-pt-BR.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1247458,
+      "bytes": 1254985,
       "date": "2026-11-16"
     },
     {
@@ -2787,7 +2787,7 @@
       "operation": "crop to 1:1, scale to 900x900, panel-main-dark-pt-BR.png in the panel at 498,305,868,673",
       "width": 900,
       "height": 900,
-      "bytes": 823914,
+      "bytes": 824657,
       "date": "2026-11-16"
     },
     {
@@ -2796,7 +2796,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-placement-dark-pt-BR.png in the panel at 846,95,1527,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1280131,
+      "bytes": 1288633,
       "date": "2026-11-16"
     },
     {
@@ -2805,7 +2805,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-magnets-dark-pt-BR.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1260145,
+      "bytes": 1273639,
       "date": "2026-11-16"
     },
     {
@@ -2814,7 +2814,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-nfc-dark-pt-BR.png in the panel at 847,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1296437,
+      "bytes": 1304119,
       "date": "2026-11-16"
     },
     {
@@ -2823,7 +2823,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-pause-dark-pt-BR.png in the panel at 846,95,1528,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1262649,
+      "bytes": 1259266,
       "date": "2026-11-16"
     },
     {
@@ -2832,7 +2832,7 @@
       "operation": "crop to 2:1, scale to 1280x640, panel-main-dark-pt-BR.png in the panel at 684,49,1222,549",
       "width": 1280,
       "height": 640,
-      "bytes": 773945,
+      "bytes": 775476,
       "date": "2026-11-16"
     },
     {
@@ -2841,7 +2841,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-dark-pt-BR.png in the panel at 846,95,1527,754",
       "width": 1600,
       "height": 900,
-      "bytes": 1283018,
+      "bytes": 1290543,
       "date": "2026-11-16"
     },
     {
@@ -2850,7 +2850,7 @@
       "operation": "crop to 16:9, scale to 1600x900, panel-main-light-pt-BR.png in the panel at 846,95,1527,753",
       "width": 1600,
       "height": 900,
-      "bytes": 1147093,
+      "bytes": 1261966,
       "date": "2026-11-16"
     },
     {
@@ -2859,7 +2859,7 @@
       "operation": "scale to 1440x900",
       "width": 1440,
       "height": 900,
-      "bytes": 247723,
+      "bytes": 238995,
       "date": "2026-11-16"
     },
     {
@@ -2868,7 +2868,7 @@
       "operation": "scale to 1440x900",
       "width": 1440,
       "height": 900,
-      "bytes": 252379,
+      "bytes": 216611,
       "date": "2026-11-16"
     },
     {
@@ -2877,7 +2877,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 123892,
+      "bytes": 111580,
       "date": "2026-11-16"
     },
     {
@@ -2886,7 +2886,7 @@
       "operation": "scale to 960x600",
       "width": 960,
       "height": 600,
-      "bytes": 121194,
+      "bytes": 108281,
       "date": "2026-11-16"
     }
   ],

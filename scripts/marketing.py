@@ -83,6 +83,8 @@ def clean_bottom(render):
     y = h - 1
     while y > 0 and not near(y):
         y -= 1
+    if y < 0.85 * h:   # more than a sliver: the window is too short for the page, and a cut here would lose most of it
+        raise SystemExit("the render ends inside the page, %d px above a clean edge: make its window taller in shots.mjs" % (h - 1 - y))
     return render.crop((0, 0, w, y + 1))
 
 
