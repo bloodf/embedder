@@ -26,6 +26,7 @@ class UiAssets(unittest.TestCase):
         cls.artifact = build.build(out_dir=Path(tempfile.mkdtemp()))
         with zipfile.ZipFile(cls.artifact) as z:
             cls.text = z.read("embedder/_assets.py").decode("utf-8")
+            cls.shipped = z.read("embedder/app.html").decode("utf-8")
 
     @staticmethod
     def shared_icon(name):
@@ -49,7 +50,8 @@ class UiAssets(unittest.TestCase):
     def test_the_wheel_carries_the_committed_page(self):
         html = build.page_html("app.html")
         self.assertEqual(html, (UI / "app.html").read_text("utf-8"))
-        self.assertIn(repr(html), self.text)   # the wheel carries exactly this page
+        self.assertEqual(self.shipped, html)   # the wheel carries exactly this page, as a plain file
+        self.assertNotIn("APP_HTML", self.text)   # not as a Python string
 
     def test_no_loose_icon_files_are_shipped(self):
         """Icons come compiled into the page from the shared set; the plugin folder keeps only the page and its mark."""
@@ -88,7 +90,7 @@ class UiAssets(unittest.TestCase):
                 self.assertIn(part, html, name)
 
     def test_no_unresolved_placeholders(self):
-        self.assertIsNone(re.search(r"APP_HTML = '[^\n]*__ICONS__", self.text))
+        self.assertNotIn("__ICONS__", self.shipped)
         self.assertNotIn("__ICONS__", build.page_html("app.html"))
         self.assertIn("__BOOT__", build.page_html("app.html"))   # filled per page by plugin.page_html
 

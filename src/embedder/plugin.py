@@ -3,6 +3,7 @@ UI thread; parsing and writing project copies run on the plugin's own threads (s
 
 import json
 import os
+import pkgutil
 import subprocess
 import sys
 import threading
@@ -85,10 +86,16 @@ def _cap_config(cap):
 
 
 def _asset(name):
-    """From the generated _assets module in the wheel; from src/embedder/ui during development."""
+    """Packaged: the icon from _assets, the page from app.html next to the modules (pkgutil reads it from a folder
+    or a zip alike). During development: from src/embedder/ui."""
     if __package__:
-        from . import _assets
-        return {"app.html": _assets.APP_HTML, "icon.png": _assets.ICON_PNG}[name]
+        if name == "icon.png":
+            from . import _assets
+            return _assets.ICON_PNG
+        data = pkgutil.get_data(__package__, name)
+        if data is None:
+            raise FileNotFoundError("%s is missing from the embedder package" % name)
+        return data.decode("utf-8")
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", name)
     if name.endswith(".png"):
         with open(path, "rb") as f:

@@ -1,7 +1,7 @@
 """Build the OrcaSlicer plugin as a pure-Python wheel: dist/embedder_any.whl.
 
-Layout inside the wheel: embedder/__init__.py (plugin.py), one module per helper, and _assets.py
-(the HTML page as a string constant, the PNG tab icon as bytes). The sources keep plain imports (`import settings`) so
+Layout inside the wheel: embedder/__init__.py (plugin.py), one module per helper, _assets.py (the PNG tab icon
+as bytes and the bundled licence notices) and app.html (the compiled page as a plain file, read with pkgutil.get_data). The sources keep plain imports (`import settings`) so
 they run and test in place; the build rewrites them to package-relative form in the wheel copies.
 Nothing is executed or compiled at load time; the wheel is plain importable source. Zip timestamps
 are fixed so equal sources give equal bytes.
@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "embedder"
 MODULES = ("geometry", "presets", "pocket", "settings", "threemf", "session")  # dependency order
-ASSETS = {"APP_HTML": "app.html", "ICON_PNG": "icon.png"}   # app.html: the compiled Vue page (ui/, npm run build); icon.png: the brand tile at 40x40 RGBA
+ASSETS = {"ICON_PNG": "icon.png"}   # icon.png: the brand tile at 40x40 RGBA; the page (app.html) ships as its own file
 # OrcaSlicer on Windows shows the page in WebView2, which renders a page over 2 MiB of base64 (1,572,864 bytes) blank.
 PAGE_LIMIT = 1_572_864 * 9 // 10   # bytes of UTF-8, with 10% headroom
 
@@ -54,8 +54,7 @@ def wheel_files(project):
     if size > PAGE_LIMIT:
         raise SystemExit("app.html is %d bytes, over the %d-byte limit (90%% of WebView2's 1,572,864)" % (size, PAGE_LIMIT))
     sources = {"__init__": plugin, **{m: (SRC / (m + ".py")).read_text("utf-8") for m in MODULES}}
-    assets = "".join("%s = %r\n" % (const, (SRC / "ui" / name).read_bytes() if name.endswith(".png") else page_html(name))
-                     for const, name in ASSETS.items())
+    assets = "".join("%s = %r\n" % (const, (SRC / "ui" / name).read_bytes()) for const, name in ASSETS.items())
     # The notices also travel inside the plugin's own code: OrcaSlicer installs the package, not the dist-info.
     notices = {lic.stem: lic.read_text("utf-8") for lic in third_party_licences()}
     assets += "THIRD_PARTY_NOTICES = %r\n" % notices
@@ -66,6 +65,7 @@ def wheel_files(project):
         text = relative_imports(text) if name != "_assets" else text
         ast.parse(text, name + ".py")   # syntax check only
         files["embedder/%s.py" % name] = text.encode("utf-8")
+    files["embedder/app.html"] = page_html("app.html").encode("utf-8")   # the compiled Vue page (ui/, npm run build), as a plain file
     return files
 
 

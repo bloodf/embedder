@@ -20,7 +20,7 @@ import fake_orca  # noqa: E402
 
 PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text("utf-8"))["project"]
 DIST_INFO = "embedder-%s.dist-info/" % PROJECT["version"]
-EXPECTED = {"embedder/%s.py" % n for n in ("__init__", "_assets") + build.MODULES} | {
+EXPECTED = {"embedder/%s.py" % n for n in ("__init__", "_assets") + build.MODULES} | {"embedder/app.html"} | {
     DIST_INFO + n for n in ("METADATA", "WHEEL", "RECORD", "top_level.txt", "licenses/LICENSE", "licenses/PrimeUIX.txt",
                             "licenses/PrimeVue.txt", "licenses/Vue.txt", "licenses/Three.txt", "licenses/Lucide.txt",
                             "licenses/Manrope.txt")}
@@ -111,6 +111,7 @@ class WheelTests(unittest.TestCase):
         self.assertEqual([c.__name__ for c in orca.registered], ["EmbedderPage"])
         self.assertEqual(orca.permissions, [{"threading": True}])
         page = ns["EmbedderPage"]().get_ui()
+        self.assertIn("<title>", page)   # the page, read from embedder/app.html inside the zipped wheel
         self.assertNotIn("__BOOT__", page)
         self.assertNotIn("__ICONS__", page)
 
