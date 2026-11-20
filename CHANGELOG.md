@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-11-20
+
+### Fixed
+- Activating the plugin no longer makes OrcaSlicer ask for the Python audit event "open" with no file named. The tab icon module is now loaded with the plugin, so OrcaSlicer no longer sees a write to its Python cache without a path, which it can only show as a permission prompt with no target.
+- Where file links are not supported, the copy of the project is written through its path, so OrcaSlicer can show which file a prompt is about.
+
 ## [0.6.2] - 2026-11-20
 
 ### Changed
