@@ -664,8 +664,9 @@ def _publish(tmp, out):
         fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o644)
     except FileExistsError:
         raise ThreeMFError("exists", out) from None
+    os.close(fd)   # created exclusively; reopened by path: os.fdopen is an audited "open" without a path to show
     try:
-        with os.fdopen(fd, "wb") as dst, open(tmp, "rb") as src:
+        with open(out, "wb") as dst, open(tmp, "rb") as src:
             shutil.copyfileobj(src, dst)
     except BaseException:
         os.remove(out)
