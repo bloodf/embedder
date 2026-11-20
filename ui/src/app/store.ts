@@ -1,7 +1,7 @@
 import { reactive } from 'vue';
 import * as bridge from '../core/bridge';
 import { Tracker, message, type Notice } from '../core/tracker';
-import { showToast, type OuiToastTone } from '../../shared/src/components/toast';
+import { showToast, type OuiToastTone } from '@orca-plugins/ui-foundation/src/components/toast';
 import { t, tMaybe, fmt, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';

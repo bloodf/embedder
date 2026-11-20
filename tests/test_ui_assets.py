@@ -16,7 +16,7 @@ import build  # noqa: E402
 
 UI = ROOT / "src" / "embedder" / "ui"
 MAX_BUILT_BYTES = 440_000   # the wheel measures ~420 kB with three.js, OrbitControls, the panel and six languages (page ~1.35 MB raw, deflated)
-SHARED_ICONS = ROOT / "ui" / "shared" / "src" / "icons.ts"
+SHARED_ICONS = ROOT / "ui" / "node_modules" / "@orca-plugins" / "ui-foundation" / "src" / "icons.ts"
 ICON_SHA256 = "584571402c06e72fb4bcc1da62ed6433cfd1b085a11a5a87d87071a290c408a6"   # src/embedder/ui/icon.png
 
 

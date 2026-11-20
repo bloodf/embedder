@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { applyOrcaTheme, type OrcaTheme } from '../../shared/src';
+import { applyOrcaTheme, type OrcaTheme } from '@orca-plugins/ui-foundation/src';
 
 /** The theme the page shows now; the 3D view repaints its materials when it changes. */
 export const theme = ref<OrcaTheme | null>(null);

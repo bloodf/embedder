@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Button from 'primevue/button';
-import { OuiAppBar, OuiIcon, OuiStatus, OuiToastHost, type OuiState } from '../shared/src/components';
-import { magnet, refresh, settings } from '../shared/src/icons';
+import { OuiAppBar, OuiIcon, OuiStatus, OuiToastHost, type OuiState } from '@orca-plugins/ui-foundation/src/components';
+import { magnet, refresh, settings } from '@orca-plugins/ui-foundation/src/icons';
 import ConfirmDialog from './components/ConfirmDialog.vue';
 import NoticeArea from './components/NoticeArea.vue';
 import EmbedView from './components/EmbedView.vue';

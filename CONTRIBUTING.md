@@ -97,7 +97,7 @@ be readable. The art's tile is for listings and the README only; the mark inside
 
 **The brand kit** is the rest: the identity marks, diagrams, install cards, the other social formats and the release
 banner, made from [docs/brand-images-prompt.md](docs/brand-images-prompt.md); each image has an SVG master and a PNG.
-The icons inside the page come from the shared Orca UI foundation (`ui/shared/src/icons.ts`), and the no-project
+The icons inside the page come from the shared Orca UI foundation (`@orca-plugins/ui-foundation/src/icons.ts`), and the no-project
 illustration (`ui/src/assets/embedder-insert.webp`) is the foundation's Embedder illustration; neither is drawn
 here. The app bar carries the brand kit's micro mark (`assets/embedder-micro-24.svg`), inlined in `ui/src/App.vue`.
 
