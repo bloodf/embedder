@@ -50,12 +50,12 @@ async function loadCopies() {
 async function clearCopies() {
   const c = copies.value;
   if (!c?.count) return;
-  if (!(await ask({ title: t('copies.clearTitle'), text: t('copies.clearText', { n: c.count, size: size(c.bytes) }), yes: t('copies.clear'), danger: true }))) return;
+  if (!(await ask({ title: t('copies.clearTitle'), text: tn('copies.clearText', c.count, { size: size(c.bytes) }), yes: t('copies.clear'), danger: true }))) return;
   const r = await tracker.run<CopiesCleared>({ key: 'copies-clear', label: t('act.copiesClear'), cmd: 'copies.clear' });
   if (!r.ok) return;
   copies.value = r.result;
-  if (r.result.removed) tracker.notify('success', t('copies.cleared', { n: r.result.removed, size: size(r.result.freed) }));
-  if (r.result.failed) tracker.notify('error', t('copies.failed', { n: r.result.failed }));
+  if (r.result.removed) tracker.notify('success', tn('copies.cleared', r.result.removed, { size: size(r.result.freed) }));
+  if (r.result.failed) tracker.notify('error', tn('copies.failed', r.result.failed));
 }
 watch(() => s.tab, tab => { if (tab === 'settings') void loadCopies(); }, { immediate: true });
 
