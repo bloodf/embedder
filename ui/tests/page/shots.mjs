@@ -23,7 +23,7 @@ const LANGS = ['en', 'pt-BR'];
 // the 3D view and the whole header line in Portuguese (it is wider than the panel's shape; the render is fitted whole).
 // The square and social images reuse that render, fitted whole into their smaller panel.
 // 960 px tall holds the whole form down to Add pocket, and is the panel's own shape, so the render fills it.
-const PANEL = [1000, 960], RESULT = [960, 600], ZOOM = 4;   // ZOOM: wheel notches that bring the whole tile into the panel's view
+const PANEL = [1000, 960], RESULT = [960, 600];
 const LABELS = {
   en: { disc: 'Ø10 × 3 mm disc', sticker: 'Ø25 mm sticker', badge: 'Badge' },
   'pt-BR': { disc: 'Disco Ø10 × 3 mm', sticker: 'Adesivo Ø25 mm', badge: 'Crachá' },
@@ -73,16 +73,8 @@ async function session(browser, dir, theme, [W, H], lang) {
     await p.call('Input.dispatchMouseEvent', { type: 'mousePressed', ...at });
     await p.call('Input.dispatchMouseEvent', { type: 'mouseReleased', ...at });
   };
-  /** Scroll the mouse wheel over the 3D view to zoom out, as a user would. In the art's panel the view is taller than
-   *  wide, and the view's own fit goes by its height, so the object would be cut at the sides. */
-  const zoomOut = async (notches) => {
-    const r = await p.evaluate(`(() => { const b = document.querySelector('[data-test=viewer] canvas').getBoundingClientRect();
-      return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; })()`);
-    for (let i = 0; i < notches; i++) await p.call('Input.dispatchMouseEvent', { type: 'mouseWheel', x: r.x, y: r.y, deltaX: 0, deltaY: 100 });
-    await new Promise(done => setTimeout(done, 400));
-  };
   const close = async () => { open = false; await pump; host.stdin.end(); await p.close(); if (host.exitCode === null && host.signalCode === null) await new Promise(r => host.once('exit', r)); };
-  return { p, run, clickView, zoomOut, close };
+  return { p, run, clickView, close };
 }
 
 // Scenario pieces, in the page's own terms (data-test hooks and the visible option labels).
@@ -119,13 +111,13 @@ const SHOTS = [
   } },
   // For scripts/marketing.py, in both languages: the near-square panels of the marketing art, and the README's own screenshots.
   { name: 'panel-main', themes: ['dark', 'light'], langs: LANGS, size: PANEL, async go(s) {
-    await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED); await s.zoomOut(ZOOM);
+    await s.run(LOADED + CENTRE); await s.clickView(); await s.run(PLANNED);
   } },
   { name: 'panel-placement', themes: ['dark'], langs: LANGS, size: PANEL, async go(s) {
-    await s.run(LOADED); await s.clickView(-70, -15); await s.run(PLANNED + ADD); await s.clickView(95, 20); await s.run(PLANNED); await s.zoomOut(ZOOM);
+    await s.run(LOADED); await s.clickView(-70, -15); await s.run(PLANNED + ADD); await s.clickView(95, 20); await s.run(PLANNED);
   } },
   { name: 'panel-magnets', themes: ['dark'], langs: LANGS, size: PANEL, async go(s, lang) {
-    await s.run(LOADED + choose('preset', LABELS[lang].disc) + CENTRE); await s.clickView(); await s.run(PLANNED); await s.zoomOut(ZOOM); await s.run(`await click(q('[data-test=preset]')); await sleep(400);`);
+    await s.run(LOADED + choose('preset', LABELS[lang].disc) + CENTRE); await s.clickView(); await s.run(PLANNED); await s.run(`await click(q('[data-test=preset]')); await sleep(400);`);
   } },
   { name: 'panel-nfc', themes: ['dark'], langs: LANGS, size: PANEL, async go(s, lang) {
     await s.run(LOADED + choose('object', LABELS[lang].badge) + `await until(() => MESHED(), 'badge mesh', 30000); await sleep(400);`

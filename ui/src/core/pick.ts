@@ -124,11 +124,14 @@ export function centrePick(targets: Mesh[], face: 'top' | 'bottom'): Hit | null 
   return first(ray.intersectObjects(targets, false));
 }
 
-/** Aim the camera (Z up) at the box from the front-right, far enough to see all of it. Returns the orbit target. */
+/** Aim the camera (Z up) at the box from the front-right, far enough to see all of it across both the view's height
+ *  and its width. Returns the orbit target. */
 export function fitCamera(camera: PerspectiveCamera, box: Box3): Vector3 {
   const target = box.isEmpty() ? new Vector3() : box.getCenter(new Vector3());
   const radius = box.isEmpty() ? 50 : Math.max(box.getSize(new Vector3()).length() / 2, 1);
-  const dist = radius / Math.sin((camera.fov * Math.PI) / 360) * 1.15;
+  // camera.fov is vertical; the horizontal half-angle comes from the aspect. The narrower of the two decides.
+  const half = Math.atan(Math.tan((camera.fov * Math.PI) / 360) * Math.min(1, camera.aspect));
+  const dist = radius / Math.sin(half) * 1.15;
   camera.up.set(0, 0, 1);
   camera.position.copy(target).add(new Vector3(0.6, -1, 0.8).normalize().multiplyScalar(dist));
   camera.near = dist / 100;

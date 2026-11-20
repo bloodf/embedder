@@ -102,10 +102,13 @@ async function loaded3d(project) {
   canvas().scrollIntoView({ block: 'center' });   // real mouse events only reach what is in the window
   await settle();
 }
-// Spots of the view as fractions of its height from its centre (the camera is fitted by the height alone): two on the
-// cube's top face, one on its front wall, one beside it.
+// Spots of the view as fractions of its shorter side from its centre (the camera is fitted to the shorter side): two on
+// the cube's top face, one on its front wall, one beside it.
 const TOP_A = [0, -0.195], TOP_B = [0.08, -0.195], FRONT = [0, 0], NOTHING = [0, -0.47];
-function spot(s) { const r = canvas().getBoundingClientRect(); return { x: r.left + r.width / 2 + s[0] * r.height, y: r.top + r.height / 2 + s[1] * r.height }; }
+function spot(s) {
+  const r = canvas().getBoundingClientRect(), u = Math.min(r.width, r.height);
+  return { x: r.left + r.width / 2 + s[0] * u, y: r.top + r.height / 2 + s[1] * u };
+}
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 /** A plan as the plugin would answer these arguments: a 5 mm box sunk 2 mm under the point, on the face of its triangle. */
 function planAt(args, extra) {
