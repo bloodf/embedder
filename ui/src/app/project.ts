@@ -50,7 +50,11 @@ export async function selectObject(k: number): Promise<void> {
   letGo();
   s.object = k;
   if (obj.embedded_block && s.mode === 'embedded') s.mode = 'open';
-  if (meshes.has(k)) { s.mesh = { ...s.mesh, state: 'ready', version: s.mesh.version + 1 }; return; }
+  if (meshes.has(k)) {
+    pullToken++;   // a pull still running for the object left must not mark this one loading or failed
+    s.mesh = { ...s.mesh, state: 'ready', version: s.mesh.version + 1 };
+    return;
+  }
   const token = ++pullToken;
   const total = obj.parts.reduce((n, p) => n + p.pos_chunks + p.idx_chunks, 0);
   s.mesh = { ...s.mesh, state: 'loading', done: 0, total };

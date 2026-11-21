@@ -27,6 +27,7 @@ GLOBAL_BLOCKS = ("by_object", "no_pause_gcode", "raft")
 COPY_RE = re.compile(r"^(.*?)(?:-embedder-\d{8}-\d{6}-[0-9a-f]{6}(?:-\d+)?)+\.3mf$")
 KEEP_COPIES = 10             # older copies kept after an apply, besides the ones OrcaSlicer may have open
 KEEP_DAYS = 30               # ...and none of them older than this
+READ_SLACK = 1e-4            # mm; a height read back from a float32 mesh is off by up to ~3e-5 at 300 mm
 
 
 class SessionError(Exception):
@@ -140,6 +141,7 @@ class Session:
         folder = os.path.join(self.storage, "jobs", job_id)
         try:
             pkg = threemf.read(os.path.join(folder, "source.3mf"), {k: live.get(k) for k in LIVE_KEYS if k in live})
+            entries = self._entries(pkg, plate, progress)
         except threemf.ThreeMFError as e:
             if not self._is_pending(job_id):
                 raise SessionError("stale_job", "a newer load replaced this one") from None
@@ -148,7 +150,6 @@ class Session:
             if not self._is_pending(job_id):
                 raise SessionError("stale_job", "a newer load replaced this one") from None
             raise
-        entries = self._entries(pkg, plate, progress)
         loaded = Job(job_id, folder, _stem(project_path), plate, pkg, entries)
         jobs = os.path.join(self.storage, "jobs")
         with self.lock:
@@ -358,7 +359,7 @@ class Session:
                 if part.subtype != "negative_part" or not m or m.group(2) != "embedded" or part.id in removed or grid is None \
                         or not pos:
                     continue
-                top = grid.snap_up(max(pos[2::3]))
+                top = grid.snap_up(max(pos[2::3]) - READ_SLACK)   # 8.6 reads 8.6000004: not the next layer
                 label = presets.Preset("kept", m.group(1), "magnet", "disc", 0, 0, 0, False)
                 out.append((pocket.Pocket(label, "embedded", "", "", (0, 0, 0), geometry.IDENTITY,
                                           pause_z=round(top + grid.height, 6)), job.copies(e.obj.id)))
