@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from xml.etree import ElementTree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path[:0] = [os.path.join(ROOT, "src", "embedder"), os.path.join(ROOT, "tests")]
@@ -260,6 +261,10 @@ class Write(Base):
         matrix = re.search(r'key="matrix" value="([^"]+)"', part).group(1)
         transform = re.search(r'transform="([^"]+)"', comp[-1]).group(1)
         self.assertTrue(all(abs(a - b) < 1e-6 for a, b in zip(g.from_config(matrix), g.from_3mf(transform))))
+
+    def test_part_extruder_is_escaped(self):
+        part = ElementTree.fromstring(threemf._part_xml("7", "Embedder x", g.IDENTITY, '1"&<', 12))
+        self.assertEqual([m.get("value") for m in part.iter("metadata") if m.get("key") == "extruder"], ['1"&<'])
 
     def test_no_model_settings_refuses_additions(self):
         src = self.make(fixtures.no_model_settings)

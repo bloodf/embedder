@@ -146,6 +146,20 @@ class Load(Base):
         self.assertEqual(self.plan(r["job"])["blocked"]["code"], "instances_other_plate")
         self.assertIsNone(self.plan(r["job"], mode="open")["blocked"])
 
+    def test_another_plate_without_a_printable_area_is_refused(self):
+        """Every plate at the origin would put plate 2 objects (and their pockets) in the wrong place."""
+        no_bed = {k: v for k, v in fixtures.SETTINGS.items() if k != "printable_area"}
+        self.assertEqual(self.error(self.load, fixtures.two_plates, plate=2, settings=no_bed), "no_bed")
+        self.assertEqual([o["item"] for o in self.load(fixtures.two_plates, plate=1, settings=no_bed)["objects"]], [0])
+
+    def test_kept_cavity_tops_read_back_from_float32_stay_on_their_layer(self):
+        """8.6 is 8.6000004 as float32: snapped up it was the next layer, and the pause came one layer late."""
+        for first, height in ((0.2, 0.2), (0.3, 0.2), (0.2, 0.12), (0.24, 0.08)):
+            grid = pocket.Grid(first, height)
+            for k in range(2000):
+                z = array("f", [grid.top(k)])[0]
+                self.assertEqual(grid.snap_up(z - session.READ_SLACK), grid.top(k), (first, height, k))
+
     def test_two_instances_are_listed(self):
         r = self.load(fixtures.two_instances)
         self.assertEqual([(o["item"], o["instance"]) for o in r["objects"]], [(0, 0), (1, 1)])

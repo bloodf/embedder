@@ -138,8 +138,10 @@ class Package:
         return value
 
     def plate_origin(self, plate):
-        if self.bed is None or plate <= 1:
+        if plate <= 1:
             return (0.0, 0.0)
+        if self.bed is None:   # every plate at the origin would put plate 2+ objects in the wrong place
+            raise ThreeMFError("no_bed", "the printable area is unknown; plates cannot be told apart")
         cols = max(1, math.ceil(math.sqrt(self.plate_count)))
         row, col = divmod(plate - 1, cols)
         (x0, y0), (x1, y1) = self.bed
@@ -518,9 +520,9 @@ def _mesh_object(oid, verts, tris, prod):
 
 def _part_xml(oid, name, matrix, extruder, faces):
     return ('    <part id="%s" subtype="negative_part">\n      <metadata key="name" value=%s/>\n'
-            '      <metadata key="matrix" value="%s"/>\n      <metadata key="extruder" value="%s"/>\n'
+            '      <metadata key="matrix" value="%s"/>\n      <metadata key="extruder" value=%s/>\n'
             '      <mesh_stat face_count="%d" edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0"/>\n'
-            '    </part>\n' % (oid, quoteattr(name), geometry.to_config(matrix), extruder, faces))
+            '    </part>\n' % (oid, quoteattr(name), geometry.to_config(matrix), quoteattr(extruder), faces))
 
 
 def _component_matrix(pkg, add):

@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.7.1] - 2026-11-21
+
+### Changed
+- Shared UI 5.6.2: fixes from the shared Orca UI foundation.
+
+### Fixed
+- An embedded pocket kept from an earlier Apply gets its pause at the right layer again. Its top was read back a hair too high, so on many heights the pause came one layer late, after the layer that closes the pocket.
+- Placing and dragging a pocket, and loading the meshes of a big model, no longer freeze OrcaSlicer: that work now runs off its main thread.
+- A project on plate 2 or later is refused when its printable area is unknown, instead of placing every object and pocket in the wrong spot.
+- Choosing an object whose mesh is already loaded, while another one is still loading, no longer shows that object as loading or failed.
+- A project whose extruder setting holds an unusual character is still written as a valid file.
+
 ## [0.7.0] - 2026-11-21
 
 ### Changed

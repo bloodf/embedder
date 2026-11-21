@@ -275,7 +275,10 @@ def _worker(page, msg_id, fn):
             page.reply(msg_id, error={"code": e.code, "detail": e.detail})
         except Exception as e:
             log("worker failed: %r" % e)
-            page.reply(msg_id, error={"code": "internal", "detail": str(e)})
+            try:
+                page.reply(msg_id, error={"code": "internal", "detail": str(e)})
+            except Exception as e2:   # the page is gone: nothing left to tell
+                log("worker reply failed: %r" % e2)
     threading.Thread(target=run, daemon=True).start()
 
 
@@ -286,13 +289,14 @@ COMMANDS = {
     "presets.list": _cmd_presets_list,
     "presets.save": _cmd_presets_save,
     "presets.delete": _cmd_presets_delete,
-    "mesh.chunk": lambda page, args: get_session(page).mesh_chunk(args),
-    "pocket.plan": lambda page, args: get_session(page).plan(args),
     "project.open": _cmd_project_open,
     "copies.status": lambda page, args: get_session(page).copies_status(),
     "copies.clear": lambda page, args: get_session(page).clear_copies(),
 }
-ASYNC_COMMANDS = {"project.load": _cmd_project_load, "project.apply": _cmd_project_apply}
+# Mesh chunks and plans scan whole meshes: off the UI thread, so a big model and a drag never freeze OrcaSlicer.
+ASYNC_COMMANDS = {"project.load": _cmd_project_load, "project.apply": _cmd_project_apply,
+                  "mesh.chunk": lambda page, args, msg_id: _worker(page, msg_id, lambda: get_session(page).mesh_chunk(args)),
+                  "pocket.plan": lambda page, args, msg_id: _worker(page, msg_id, lambda: get_session(page).plan(args))}
 
 
 # ====================================================================== Embedder tab
