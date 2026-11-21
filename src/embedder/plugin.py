@@ -206,7 +206,7 @@ def _cmd_settings_get(page, args):
 
 
 def _cmd_settings_save(page, args):
-    return get_store(page).update(dict(args.get("settings") or {}))
+    return get_store(page).update(args.get("settings"))   # update ignores anything but a dict
 
 
 def _cmd_presets_list(page, args):

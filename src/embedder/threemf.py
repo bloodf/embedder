@@ -228,8 +228,8 @@ def _parse_model(zf, name, names):
         raise ThreeMFError("bad_xml", "%s: %s" % (name, e)) from None
     except ThreeMFError:
         raise
-    except (ValueError, TypeError) as e:
-        raise ThreeMFError("bad_xml", "%s: %s" % (name, e)) from None
+    except (ValueError, TypeError, OverflowError, AttributeError) as e:   # Overflow: a negative index; Attribute:
+        raise ThreeMFError("bad_xml", "%s: %s" % (name, e)) from None          # a vertex or triangle outside a <mesh>
 
 
 def _walk(events, name, names):
@@ -630,7 +630,7 @@ def gcode_xml(text, plate, pauses, new_mode='<mode value="MultiExtruder"/>'):
         text = '<?xml version="1.0" encoding="utf-8"?>\n<custom_gcodes_per_layer>\n</custom_gcodes_per_layer>\n'
     for m in re.finditer(r"<plate>(.*?)</plate>\s*", text, re.S):
         info = re.search(r"<plate_info\b[^>]*>", m.group(1))
-        pid = (_value(info.group(0), "id") or "").strip() if info else ""
+        pid = (_value(info.group(0), "id") or "").strip() if info else "1"   # as _layers reads it
         if pid.isdigit() and int(pid) == plate:
             layers = re.findall(r"<layer\b[^>]*/>", m.group(1))
             kept = [t for t in layers if not (_value(t, "extra") or "").startswith(PAUSE_PREFIX)]
