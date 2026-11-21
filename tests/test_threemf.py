@@ -184,6 +184,27 @@ class Read(Base):
                 threemf.read(path)
             self.assertEqual(cm.exception.code, "bad_package")
 
+    def test_malformed_meshes_are_bad_xml(self):
+        """A negative triangle index or a vertex outside a <mesh> is refused, not an internal error."""
+        path = self.make(fixtures.cube)
+        with zipfile.ZipFile(path) as z:
+            names = [n for n in z.namelist() if n.endswith(".model") and "<triangle " in z.read(n).decode()]
+            model = z.read(names[0]).decode()
+        edits = (re.sub(r'v1="\d+"', 'v1="-1"', model, count=1),
+                 model.replace("<mesh>", '<vertex x="0" y="0" z="0"/><mesh>', 1))
+        for n, text in enumerate(edits):
+            self.assertNotEqual(text, model)
+            bad = fixtures.build(os.path.join(self.tmp, "mesh%d.3mf" % n), extra={names[0]: text})
+            with self.assertRaises(threemf.ThreeMFError) as cm:
+                threemf.read(bad)
+            self.assertEqual(cm.exception.code, "bad_xml")
+
+    def test_a_plate_without_plate_info_is_plate_1(self):
+        """_layers reads it as plate 1, so the writer replaces it instead of adding a second plate 1 block."""
+        xml = '<custom_gcodes_per_layer><plate><layer top_z="5" type="1" extra="Embedder: old"/></plate></custom_gcodes_per_layer>'
+        out = threemf.gcode_xml(xml, 1, [(7.0, "Embedder: new")])
+        self.assertEqual((out.count("<plate>"), "Embedder: old" in out), (1, False))
+
 
 def cavity(z0=15.8, z1=19.0, x=110.0, y=110.0):
     """A plate-frame pocket: a 6.4 mm cylinder from z0 to z1."""

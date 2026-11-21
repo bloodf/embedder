@@ -6,6 +6,7 @@ import tempfile
 import time
 import unittest
 from array import array
+from dataclasses import replace as replace_job
 from unittest import mock
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -77,6 +78,15 @@ class Load(Base):
             args = {"job": r["job"], "object": 0, "part": 0, "kind": "pos", "i": 0, **bad}
             self.assertEqual(self.error(self.s.mesh_chunk, args), "bad_request", bad)
 
+    def test_chunks_copy_only_their_slice(self):
+        r = self.load()
+        (part,) = r["objects"][0]["parts"]
+        with mock.patch.object(session, "CHUNK_BYTES", 40):
+            got = [self.s.mesh_chunk({"job": r["job"], "object": 0, "part": 0, "kind": "idx", "i": i}) for i in range(4)]
+        self.assertEqual([c["chunks"] for c in got], [4] * 4)
+        self.assertEqual(b"".join(base64.b64decode(c["data"]) for c in got), session._bytes(self.s.job.entries[0].meshes[0][1]))
+        self.assertEqual(part["idx_bytes"], 144)
+
     def test_big_meshes_are_chunked(self):
         old = session.CHUNK_BYTES
         session.CHUNK_BYTES = 64
@@ -104,6 +114,17 @@ class Load(Base):
         fixtures.cube(source)
         self.s.new_job()
         self.assertEqual(self.error(self.s.load, first, "", 1, {}), "stale_job")
+
+    def test_a_failed_load_keeps_the_loaded_project(self):
+        """The export or the parse of a new load fails: the project on screen keeps working."""
+        first = self.load()
+        self.s.new_job()                                      # export failed: nothing written
+        job_id, source = self.s.new_job()
+        with open(source, "wb") as f:
+            f.write(b"junk")
+        self.assertEqual(self.error(self.s.load, job_id, "", 1, {}), "bad_package")
+        self.assertIsNone(self.plan(first["job"])["blocked"])
+        self.assertTrue(os.path.isdir(os.path.join(self.storage, "jobs", first["job"])))
 
     def test_empty_project_settings_use_live_values(self):
         live = {"layer_height": "0.12", "initial_layer_print_height": "0.2", "machine_pause_gcode": "",
@@ -287,6 +308,17 @@ class Apply(Base):
         r = self.load(fixtures.two_instances)
         out = self.apply(r["job"], [self.pocket(point=[70, 110, 20])])
         self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 2 x 6x3 magnet"}])
+
+    def test_an_empty_embedded_pocket_is_skipped(self):
+        """An Embedder pocket with no vertices left in the project has no top: it gets no pause, not a crash."""
+        first = self.apply(self.load()["job"], [self.pocket()])
+        job_id, source = self.s.new_job()
+        shutil.copyfile(first["path"], source)
+        self.s.load(job_id, first["path"], 1, {})
+        e = self.s.job.entries[0]
+        empty = tuple(m if p.subtype == "normal_part" else (array("f"), array("I")) for p, m in zip(e.obj.parts, e.meshes))
+        self.s.job = replace_job(self.s.job, entries=(replace_job(e, meshes=empty),))
+        self.assertEqual(self.apply(job_id)["pauses"], [])
 
     def test_an_applied_job_is_finished(self):
         r = self.load()

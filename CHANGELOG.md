@@ -4,11 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.7.0] - 2026-11-21
 
 ### Changed
+- Shared UI 5.6.1: the page now takes the shared Orca UI foundation from its own repository; no visible change.
 
-- Shared Orca UI foundation 5.0.8 (Vue 3.5.46, lucide-static 1.77.0); no visible change.
+### Fixed
+- A Load project that fails (OrcaSlicer does not write the copy, or the copy can't be read) no longer leaves the project on screen dead. It keeps working, where every click used to fail asking for another load.
+- Big meshes reach the 3D view much faster, and OrcaSlicer no longer freezes while they are sent: each piece of a mesh used to copy the whole mesh first.
+- A project with a broken mesh (a negative corner number, or a point outside a mesh) is refused as a broken file instead of failing with an internal error.
+- A pause list without a plate number is read and rewritten as plate 1, so Apply no longer adds a second plate 1 list next to it.
+- Apply no longer fails with an internal error on a project holding an empty Embedder pocket.
+- The success banner and the Settings copy messages agree with their counts ("1 pocket added", "1 old copy"), in every language.
 
 ## [0.6.3] - 2026-11-20
 

@@ -102,28 +102,26 @@ class Session:
     def __init__(self, storage, settings_fn):
         self.storage, self.settings_fn = storage, settings_fn
         self.lock = threading.Lock()
-        self.job = None
+        self.job = None          # the loaded project; it stays usable until a newer load succeeds
+        self.pending = None      # id of the load in flight: its export or parse may still fail
         self.written = set()     # copies applied in this OrcaSlicer session: any of them may be open
 
     # -------------------------------------------------------------- lifecycle
 
     def new_job(self):
-        """A fresh job folder; returns (job id, path the project copy goes to). Older jobs are dropped."""
+        """A fresh job folder; returns (job id, path the project copy goes to). The loaded job stays current until
+        this one loads, so a failed export or parse leaves the project on screen working."""
         job_id = uuid.uuid4().hex[:12]
         folder = os.path.join(self.storage, "jobs", job_id)
-        os.makedirs(folder)
-        with self.lock:
-            self.job = Job(job_id, folder, "", 0, None, ())
-        jobs = os.path.join(self.storage, "jobs")
-        old = [os.path.join(jobs, n) for n in os.listdir(jobs) if n != job_id]
-        if old:   # off the caller's (UI) thread; a worker still reading one of them gets stale_job
-            threading.Thread(target=lambda: [shutil.rmtree(d, ignore_errors=True) for d in old], daemon=True).start()
+        with self.lock:   # under the lock: a load finishing now must not list this folder as old
+            os.makedirs(folder)
+            self.pending = job_id
         return job_id, os.path.join(folder, "source.3mf")
 
-    def _current(self, job_id, loaded=True):
+    def _current(self, job_id):
         with self.lock:
             job = self.job
-        if job is None or job.id != job_id or (loaded and (job.pkg is None or job.applied)):
+        if job is None or job.id != job_id or job.applied:
             raise SessionError("stale_job", "the project was loaded again or already applied; load it once more")
         return job
 
@@ -131,25 +129,35 @@ class Session:
         with self.lock:
             return self.job is not None and self.job.id == job_id
 
+    def _is_pending(self, job_id):
+        with self.lock:
+            return self.pending == job_id
+
     def load(self, job_id, project_path, plate, live, progress=None):
         """Parse the copy in the job folder. `live`: preset values for settings the project does not carry."""
-        job = self._current(job_id, loaded=False)
+        if not self._is_pending(job_id):
+            raise SessionError("stale_job", "a newer load replaced this one")
+        folder = os.path.join(self.storage, "jobs", job_id)
         try:
-            pkg = threemf.read(os.path.join(job.dir, "source.3mf"), {k: live.get(k) for k in LIVE_KEYS if k in live})
+            pkg = threemf.read(os.path.join(folder, "source.3mf"), {k: live.get(k) for k in LIVE_KEYS if k in live})
         except threemf.ThreeMFError as e:
-            if not self._is_current(job_id):
+            if not self._is_pending(job_id):
                 raise SessionError("stale_job", "a newer load replaced this one") from None
             raise SessionError(e.code, e.detail) from None
         except OSError:
-            if not self._is_current(job_id):
+            if not self._is_pending(job_id):
                 raise SessionError("stale_job", "a newer load replaced this one") from None
             raise
         entries = self._entries(pkg, plate, progress)
-        loaded = Job(job.id, job.dir, _stem(project_path), plate, pkg, entries)
+        loaded = Job(job_id, folder, _stem(project_path), plate, pkg, entries)
+        jobs = os.path.join(self.storage, "jobs")
         with self.lock:
-            if self.job is None or self.job.id != job.id:
+            if self.pending != job_id:
                 raise SessionError("stale_job", "a newer load replaced this one")
-            self.job = loaded
+            self.job, self.pending = loaded, None
+            old = [os.path.join(jobs, n) for n in os.listdir(jobs) if n != job_id]
+        if old:   # off this thread; a worker still reading one of them gets stale_job
+            threading.Thread(target=lambda: [shutil.rmtree(d, ignore_errors=True) for d in old], daemon=True).start()
         return self._describe(loaded)
 
     def _entries(self, pkg, plate, progress):
@@ -224,11 +232,13 @@ class Session:
         kind = args.get("kind")
         if kind not in ("pos", "idx"):
             raise SessionError("bad_request", "kind is pos or idx")
-        data = _bytes(entry.meshes[j][0 if kind == "pos" else 1])
-        chunks = max(1, math.ceil(len(data) / CHUNK_BYTES))
+        arr = entry.meshes[j][0 if kind == "pos" else 1]
+        size = len(arr) * arr.itemsize
+        chunks = max(1, math.ceil(size / CHUNK_BYTES))
         i = _index(args, "i", chunks)
-        return {"i": i, "chunks": chunks, "bytes": len(data),
-                "data": base64.b64encode(data[i * CHUNK_BYTES:(i + 1) * CHUNK_BYTES]).decode("ascii")}
+        per = CHUNK_BYTES // arr.itemsize   # only this chunk is copied: the whole array per chunk was quadratic
+        return {"i": i, "chunks": chunks, "bytes": size,
+                "data": base64.b64encode(_bytes(arr[i * per:(i + 1) * per])).decode("ascii")}
 
     # -------------------------------------------------------------- planning
 
@@ -345,7 +355,8 @@ class Session:
             grid = self._grid(job, e)
             for part, (pos, _) in zip(e.obj.parts, e.meshes):
                 m = threemf.PART_NAME_RE.match(part.name)
-                if part.subtype != "negative_part" or not m or m.group(2) != "embedded" or part.id in removed or grid is None:
+                if part.subtype != "negative_part" or not m or m.group(2) != "embedded" or part.id in removed or grid is None \
+                        or not pos:
                     continue
                 top = grid.snap_up(max(pos[2::3]))
                 label = presets.Preset("kept", m.group(1), "magnet", "disc", 0, 0, 0, False)
