@@ -100,7 +100,7 @@ Plugin to page:
 | `project.load` | | the job description below (asynchronous) |
 | `mesh.chunk` | `job`, `object`, `part`, `kind` (`pos` or `idx`), `i` | `{i, chunks, bytes, data}` (base64) |
 | `pocket.plan` | see below | the planned pocket or a block |
-| `pocket.auto_fridge` | `job`, `object`, `count` (`auto` or `1`..`8`), `spread`, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
+| `pocket.auto_fridge` | `job`, `object` (an index, or `"all"`: each object once), `count` (`auto` or `1`..`8`), `spread`, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
 | `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings, pruned}` (asynchronous) |
 | `project.open` | `path` | `{open: "asked" or "none"}` |
 | `copies.status` | | `{count, bytes, kept}`: the old applied copies that may be deleted, and how many are kept |
@@ -140,10 +140,10 @@ bounding boxes of its parts.
 ### Planning
 
 `pocket.plan` takes `job`, `object` (index into the job's objects), `part`, `tri` (the clicked triangle),
-`point` (plate frame), `preset` (id) or `custom` (`{kind, shape, d, t}` or `{kind, shape, l, w, t}`),
+`point` (plate frame), `preset` (id) or `custom` (`{kind, shape, d, t}` or `{kind, shape, l, w, t}`; `kind` is `magnet`, `nfc` or `nut`),
 `mode` (`open` or `embedded`), and optionally `pocket_shape` (`circle`, `hexagon`, `square` or `rectangle`; left out:
 the insert's default, a hexagon for a disc and a rectangle for a block; anything else plans as blocked `bad_shape`),
-`cover`, `spin` (degrees about the pocket axis), `center`
+`cover`, `spin` (degrees about the pocket axis), `polarity` (magnets only: `N` or `S`, added to the pause message as "N up"), `center`
 (`true`: move the point to the area-weighted middle of the flat face around `tri`, the coplanar triangles
 joined to it through shared edges; the clicked point stays when that middle is off the face) and `others`
 (the other pockets already placed, for the NFC-near-magnet check).

@@ -291,11 +291,14 @@ class Session:
         except presets.PresetError as e:
             raise SessionError(e.code, e.detail) from None
         cfg = self.settings_fn()
-        cover = cfg["cover_magnet"] if insert.kind == "magnet" else cfg["cover_nfc"]
+        cover = cfg["cover_nfc"] if insert.kind == "nfc" else cfg["cover_magnet"]
         if args.get("cover") is not None:
             cover = _number(args, "cover", low=0, high=10)
         spin = _number(args, "spin", 0)
-        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover, args.get("pocket_shape"))
+        polarity = args.get("polarity")
+        if polarity is not None and (polarity not in ("N", "S") or insert.kind != "magnet"):
+            raise SessionError("bad_request", "polarity is N or S for magnets")
+        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover, args.get("pocket_shape"), polarity)
 
     def _context(self, job, entry):
         block = self._object_block(job, entry)
@@ -337,17 +340,8 @@ class Session:
         return {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": job.copies(entry.obj.id),
                 "warnings": warnings, "blocked": None}
 
-    def auto_fridge(self, args):
-        """Plan 1, 2, 3, or 4 symmetric bottom-face fridge magnet pockets on the selected object."""
-        job = self._current(args.get("job"))
-        obj_idx, entry = self._usable_entry(job, args)
-
-        raw_count = args.get("count", "auto")
-        if raw_count != "auto" and raw_count is not None:
-            if isinstance(raw_count, bool) or not isinstance(raw_count, int) or not 1 <= raw_count <= 8:
-                raise SessionError("bad_request", "count is auto or 1..8")
-        spread = _number(args, "spread", 0.28, low=0.10, high=0.45)
-
+    def _auto_fridge_for_object(self, job, obj_idx, args, raw_count, spread, insert, cfg):
+        _, entry = self._usable_entry(job, {"object": obj_idx})
         normal_parts = [(j, entry.meshes[j][0], entry.meshes[j][1])
                         for j, p in enumerate(entry.obj.parts)
                         if p.subtype == "normal_part" and len(entry.meshes[j][0]) >= 9]
@@ -357,16 +351,8 @@ class Session:
         if not down_tris:
             raise SessionError("bad_part", "no bottom face found on this object")
 
-        resolve_args = dict(args)
-        if resolve_args.get("preset") is None and resolve_args.get("custom") is None:
-            resolve_args["preset"] = "magnet-disc-6x2"
-        try:
-            insert = presets.resolve(resolve_args, self.settings_fn().get("user_presets"))
-        except presets.PresetError as e:
-            raise SessionError(e.code, e.detail) from None
-
-        cfg = self.settings_fn()
         targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread)
+        pocket_r = 0.5 * max(insert.l, insert.w) + cfg["xy_clearance"]
 
         mode = args.get("mode") if args.get("mode") in ("embedded", "open") else "embedded"
         if self._object_block(job, entry) and mode == "embedded":
@@ -390,14 +376,33 @@ class Session:
             return out
 
         planned_entries = []
+        nudge_dirs = ((1, 0), (-1, 0), (0, 1), (0, -1), (0.7, 0.7), (-0.7, 0.7), (0.7, -0.7), (-0.7, -0.7))
         for tx, ty in targets:
-            part_j, tri_t, pt = geometry.snap_to_bottom(tx, ty, down_tris)
+            part_j, tri_t, pt = geometry.snap_to_bottom(tx, ty, down_tris, margin=pocket_r + 1.2)
             p_args = build_args(part_j, tri_t, pt, mode)
             p, point = None, None
             try:
                 _, p, point = self._plan_at(job, p_args)
             except pocket.Blocked:
                 pass
+            if p is not None and p_args["mode"] == "embedded" and "breaks_surface" in p.warnings:
+                bx, by = pt[0], pt[1]
+                for step in (pocket_r * 0.85, pocket_r * 1.5):
+                    found_clean = False
+                    for dx, dy in nudge_dirs:
+                        cj, ct, cpt = geometry.snap_to_bottom(bx + dx * step, by + dy * step, down_tris, margin=pocket_r + 1.2)
+                        c_args = build_args(cj, ct, cpt, mode)
+                        try:
+                            _, cp, cpoint = self._plan_at(job, c_args)
+                        except pocket.Blocked:
+                            continue
+                        if "breaks_surface" not in cp.warnings:
+                            p_args, p, point = c_args, cp, cpoint
+                            part_j, tri_t, pt = cj, ct, cpt
+                            found_clean = True
+                            break
+                    if found_clean:
+                        break
             if p_args["mode"] == "embedded" and (
                 p is None or (args.get("cover") is None and "breaks_surface" in p.warnings)
             ):
@@ -422,6 +427,45 @@ class Session:
             plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
                         "warnings": warnings, "blocked": None}
             staged_out.append({"args": p_args, "plan": plan_res})
+        return staged_out
+
+    def auto_fridge(self, args):
+        """Plan 1, 2, 3, or 4 symmetric bottom-face fridge magnet pockets on one or all objects."""
+        job = self._current(args.get("job"))
+        raw_count = args.get("count", "auto")
+        if raw_count != "auto" and raw_count is not None:
+            if isinstance(raw_count, bool) or not isinstance(raw_count, int) or not 1 <= raw_count <= 8:
+                raise SessionError("bad_request", "count is auto or 1..8")
+        spread = _number(args, "spread", 0.28, low=0.10, high=0.45)
+
+        resolve_args = dict(args)
+        if resolve_args.get("preset") is None and resolve_args.get("custom") is None:
+            resolve_args["preset"] = "magnet-disc-6x2"
+        try:
+            insert = presets.resolve(resolve_args, self.settings_fn().get("user_presets"))
+        except presets.PresetError as e:
+            raise SessionError(e.code, e.detail) from None
+
+        cfg = self.settings_fn()
+        if args.get("object") == "all":
+            if not job.entries:
+                raise SessionError("bad_request", "no objects in project")
+            staged_out, first_err, seen = [], None, set()
+            for obj_idx, e in enumerate(job.entries):
+                if e.obj.id in seen:   # another instance of an object already planned: its pockets cut every copy
+                    continue
+                seen.add(e.obj.id)
+                try:
+                    staged_out.extend(self._auto_fridge_for_object(job, obj_idx, args, raw_count, spread, insert, cfg))
+                except SessionError as e:
+                    if first_err is None:
+                        first_err = e
+            if not staged_out and first_err is not None:
+                raise first_err
+            return {"items": staged_out, "count": len(staged_out)}
+
+        obj_idx = _index(args, "object", len(job.entries))
+        staged_out = self._auto_fridge_for_object(job, obj_idx, args, raw_count, spread, insert, cfg)
         return {"items": staged_out, "count": len(staged_out)}
 
     def _plan_quiet(self, job, many):
@@ -571,4 +615,5 @@ def _describe_pocket(p):
             "outer": [round(v, 6) for v in p.outer()],
             "transform": [round(v, 9) for v in p.transform], "floor": _round(p.floor), "top": _round(p.top),
             "pause_z": _round(p.pause_z), "cover": _round(p.cover), "label": p.insert.label, "kind": p.insert.kind,
+            **({"polarity": p.polarity} if p.polarity else {}),
             "preview": {"positions": [round(c, 4) for v in verts for c in v], "indices": [i for t in tris for i in t]}}

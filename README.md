@@ -100,6 +100,8 @@ Built-in sizes, in mm:
 | Round NFC stickers, diameter (0.4 mm deep) | 10, 13, 20, 22, 25, 30, 38 |
 | NFC coins | 25x1, 30x2 |
 | NFC card | 85.6 x 54 x 0.9 |
+| Hex nuts, across flats x thickness (hexagon pocket) | M3 5.5x2.4, M4 7x3.2, M5 8x4, M6 10x5 |
+| Square nuts, side x thickness | M3 5.5x2.4, M4 7x3.2, M5 8x4 |
 
 The full rules for pocket shapes, the pause, warnings and limits are in [docs/pockets.md](docs/pockets.md).
 

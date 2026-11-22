@@ -6,8 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- **Hex and square nut presets** (M3 to M6 hex nuts, M3 to M5 square nuts) and a "Nut" kind for your own sizes, so a nut can be trapped inside a print. Thanks @plbogen2 (#49).
+- **Polarity note** for magnet pockets: mark a magnet "N up" or "S up" and the note shows in the pocket list and in the pause message, so you put each magnet in the right way round. Thanks @plbogen2 (#50).
+- **Auto all objects** next to the auto fridge magnet buttons: places the bottom magnet pockets on every object of the plate in one click. An object printed more than once is planned once, since its pockets go into every copy. Thanks @plbogen2 (#51).
+
 ### Changed
-- Speed up `geometry.face_centre` (check plane coplanarity before computing triangle normals) and `pocket.breaks_surface` (precompute XY bounds on near triangles once per plan instead of repeating full coordinate unpacking across all 26 probe rays).
+- Auto fridge magnet keeps pockets away from the edge of the bottom face and, when a pocket would break through the surface, tries nearby solid spots before falling back to an open pocket. Thanks @plbogen2 (#48).
+- Placing a pocket on large models is faster: finding the middle of a flat face and checking whether a pocket breaks the surface do less work. Thanks @plbogen2 (#47).
 
 ## [0.8.0] - 2026-11-22
 

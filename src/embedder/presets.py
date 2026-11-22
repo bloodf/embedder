@@ -4,7 +4,7 @@ import math
 import uuid
 from dataclasses import dataclass
 
-KINDS = ("magnet", "nfc")
+KINDS = ("magnet", "nfc", "nut")
 SHAPES = ("disc", "block")
 MAX_USER_PRESETS = 200
 MAX_NAME = 40
@@ -64,6 +64,10 @@ def _table():
     for d, t in ((25, 1), (30, 2)):
         out.append(_disc("nfc-coin-%dx%d" % (d, t), "%dx%d NFC coin" % (d, t), "nfc", d, t))
     out.append(_block("nfc-card", "NFC card", "nfc", 85.6, 54, 0.9))
+    for size, af, t in ((3, 5.5, 2.4), (4, 7.0, 3.2), (5, 8.0, 4.0), (6, 10.0, 5.0)):
+        out.append(_disc("nut-hex-m%d" % size, "M%d hex nut" % size, "nut", af, t))
+    for size, af, t in ((3, 5.5, 2.4), (4, 7.0, 3.2), (5, 8.0, 4.0)):
+        out.append(_block("nut-square-m%d" % size, "M%d square nut" % size, "nut", af, af, t))
     return tuple(out)
 
 
@@ -87,7 +91,7 @@ def _dim(raw, key):
 def _shape_dims(raw):
     kind, shape = raw.get("kind"), raw.get("shape")
     if kind not in KINDS:
-        raise PresetError("bad_kind", "kind must be magnet or nfc")
+        raise PresetError("bad_kind", "kind must be magnet, nfc or nut")
     if shape not in SHAPES:
         raise PresetError("bad_shape", "shape must be disc or block")
     if shape == "disc":
@@ -98,7 +102,8 @@ def _shape_dims(raw):
 
 def default_label(kind, shape, l, w, t):
     dims = "x".join(_g(v) for v in ((l, t) if shape == "disc" else (l, w, t)))
-    return "%s %s" % (dims, "magnet" if kind == "magnet" else "NFC")
+    suffix = {"magnet": "magnet", "nfc": "NFC", "nut": "nut"}[kind]
+    return "%s %s" % (dims, suffix)
 
 
 def parse_user(raw):

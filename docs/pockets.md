@@ -109,6 +109,8 @@ never picks M600 or any other command itself.
 - **Round NFC stickers** (diameter, 0.4 mm deep): 10, 13, 20, 22, 25, 30, 38 mm
 - **NFC coins:** 25x1 and 30x2 mm
 - **NFC card:** 85.6 x 54 x 0.9 mm
+- **Hex nuts** (across flats x thickness, mm, hexagon pocket): M3 5.5x2.4, M4 7x3.2, M5 8x4, M6 10x5
+- **Square nuts** (side x thickness, mm): M3 5.5x2.4, M4 7x3.2, M5 8x4
 - **Your own:** any disc or block, saved by name and kept between sessions
 
 ## Warnings and limits

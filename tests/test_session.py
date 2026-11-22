@@ -297,6 +297,24 @@ class Plan(Base):
         p = self.plan(r["job"], point=[110, 110, 60], others=[near])
         self.assertIn("nfc_near_magnet", p["warnings"])
 
+    def test_polarity_note_in_plan_and_apply_pauses(self):
+        r = self.load()
+        p_n = self.plan(r["job"], polarity="N")
+        self.assertEqual(p_n["polarity"], "N")
+        self.assertEqual(self.error(self.plan, r["job"], polarity="E"), "bad_request")
+        self.assertEqual(self.error(self.plan, r["job"], preset="nfc-sticker-25", polarity="N"), "bad_request")
+        applied = self.s.apply({
+            "job": r["job"],
+            "pockets": [
+                {"object": 0, "part": 0, "tri": TOP_TRI, "point": [105, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded", "polarity": "N"},
+                {"object": 0, "part": 0, "tri": TOP_TRI, "point": [115, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded", "polarity": "S"},
+            ],
+            "remove": [],
+        })
+        self.assertEqual(applied["pauses"], [
+            {"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet (N up), 1 x 6x3 magnet (S up)"}
+        ])
+
     def test_auto_fridge_places_symmetric_bottom_pockets(self):
         r = self.load(fixtures.build, objects=[fixtures.cube_object(size=60)])
         one = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2", "mode": "embedded"})
@@ -376,6 +394,26 @@ class Plan(Base):
         res_bev = self.s.auto_fridge({"job": r_bev["job"], "object": 0, "count": 1})
         self.assertEqual(res_bev["count"], 1)
 
+        # Hollow rectangular frame: centre (125, 125) is an open cutout, so count=1 snaps onto a solid arm without breaks_surface
+        # Outer: 0..50 x 0..50, inner cutout: 15..35 x 15..35, height: 12
+        ov = [(0, 0, 0), (50, 0, 0), (50, 50, 0), (0, 50, 0), (15, 15, 0), (35, 15, 0), (35, 35, 0), (15, 35, 0)]
+        fv = ov + [(x, y, 12) for x, y, _ in ov]
+        ft = [
+            # bottom ring (4 quads -> 8 tris, normal -Z)
+            (0, 4, 1), (1, 4, 5), (1, 5, 2), (2, 5, 6), (2, 6, 3), (3, 6, 7), (3, 7, 0), (0, 7, 4),
+            # top ring (normal +Z)
+            (8, 9, 12), (9, 13, 12), (9, 10, 13), (10, 14, 13), (10, 11, 14), (11, 15, 14), (11, 8, 15), (8, 12, 15),
+            # outer walls
+            (0, 1, 8), (1, 9, 8), (1, 2, 9), (2, 10, 9), (2, 3, 10), (3, 11, 10), (3, 0, 11), (0, 8, 11),
+            # inner cutout walls
+            (4, 12, 5), (5, 12, 13), (5, 13, 6), (6, 13, 14), (6, 14, 7), (7, 14, 15), (7, 15, 4), (4, 15, 12),
+        ]
+        r_frame = self.load(fixtures.build, objects=[{"name": "frame", "parts": [fixtures.part("frame", (fv, ft))]}])
+        res_frame = self.s.auto_fridge({"job": r_frame["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})
+        self.assertEqual(res_frame["count"], 1)
+        self.assertEqual(res_frame["items"][0]["args"]["mode"], "embedded")
+        self.assertNotIn("breaks_surface", res_frame["items"][0]["plan"]["warnings"])
+
         # Object with only upward-facing triangles (no bottom face) -> bad_part
         up_verts = [(0, 0, 0), (20, 0, 0), (0, 20, 0)]
         up_tris = [(0, 1, 2)]
@@ -395,6 +433,29 @@ class Plan(Base):
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r_no_ms["job"], "object": 0}), "no_model_settings")
         r_plain = self.load(fixtures.plain_mesh)
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r_plain["job"], "object": 0}), "unsupported_object")
+
+    def test_auto_fridge_all_objects(self):
+        r = self.load(fixtures.build,
+                      objects=[fixtures.cube_object("a", size=20), fixtures.cube_object("b", size=60)],
+                      items=[(0, "1 0 0 0 1 0 0 0 1 50 100 0"), (1, "1 0 0 0 1 0 0 0 1 150 100 0")])
+        res = self.s.auto_fridge({"job": r["job"], "object": "all", "count": "auto"})
+        self.assertEqual(res["count"], 5)   # 1 on small 20mm object + 4 on 60mm object
+        self.assertEqual([it["args"]["object"] for it in res["items"]], [0, 1, 1, 1, 1])
+        # If one object is cut/invalid and another is valid, "all" skips the invalid one and stages the valid one
+        cut = '<?xml version="1.0"?>\n<objects>\n <object id="1">\n  <cut_id id="5" check_sum="1" connectors_cnt="1"/>\n </object>\n</objects>\n'
+        r2 = self.load(fixtures.build,
+                       objects=[fixtures.cube_object("cut_obj", size=20), fixtures.cube_object("ok_obj", size=20)],
+                       items=[(0, "1 0 0 0 1 0 0 0 1 50 100 0"), (1, "1 0 0 0 1 0 0 0 1 150 100 0")],
+                       extra={"Metadata/cut_information.xml": cut})
+        res2 = self.s.auto_fridge({"job": r2["job"], "object": "all", "count": "auto"})
+        self.assertEqual(res2["count"], 1)
+        self.assertEqual(res2["items"][0]["args"]["object"], 1)
+        # Two instances of one object share its pockets: "all" plans that object once, not once per instance
+        r3 = self.load(fixtures.two_instances)
+        one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})
+        both = self.s.auto_fridge({"job": r3["job"], "object": "all", "count": 2})
+        self.assertEqual(both["count"], one["count"])
+        self.assertEqual({it["args"]["object"] for it in both["items"]}, {0})
 
 
 class Apply(Base):

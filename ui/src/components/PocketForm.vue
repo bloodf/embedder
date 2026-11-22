@@ -22,10 +22,12 @@ function presetLabel(p: Preset): string {
   if (p.id.startsWith('nfc-sticker')) return t('preset.sticker', { d: n(p.d) });
   if (p.id.startsWith('nfc-coin')) return t('preset.coin', { d: n(p.d), t: n(p.t) });
   if (p.id === 'nfc-card') return t('preset.card', { l: n(p.l), w: n(p.w), t: n(p.t) });
+  if (p.id.startsWith('nut-hex-m')) return t('preset.hexNut', { size: p.id.slice('nut-hex-m'.length).toUpperCase() });
+  if (p.id.startsWith('nut-square-m')) return t('preset.squareNut', { size: p.id.slice('nut-square-m'.length).toUpperCase() });
   return p.shape === 'disc' ? t('preset.disc', { d: n(p.d), t: n(p.t) }) : t('preset.block', { l: n(p.l), w: n(p.w), t: n(p.t) });
 }
 
-const GROUP_ICON = { magnet, nfc: rfid, mine: user };
+const GROUP_ICON = { magnet, nfc: rfid, nut: insert, mine: user };
 const groups = computed(() => groupPresets(s.builtin, s.user).map(g => ({
   label: t(`group.${g.key}`), icon: GROUP_ICON[g.key], items: g.items.map(p => ({ id: p.id, label: presetLabel(p), kind: p.kind })) })));
 const chosen = computed(() => groups.value.flatMap(g => g.items).find(p => p.id === s.insert.preset));
@@ -37,11 +39,18 @@ const blockSaidAbove = computed(() => !!block.value && (s.project?.blocks ?? [])
 const modes = computed(() => [
   { value: 'embedded', label: t('mode.embedded'), disabled: !!block.value },
   { value: 'open', label: t('mode.open'), disabled: false }]);
-const coverDefault = computed(() => {
-  const kind = s.insert.custom?.kind ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.kind ?? 'magnet';
-  return (kind === 'nfc' ? s.settings?.cover_nfc : s.settings?.cover_magnet) ?? 1;
-});
-const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { value: 'nfc', label: t('kind.nfc') }]);
+const kinds = computed(() => [
+  { value: 'magnet', label: t('kind.magnet') },
+  { value: 'nfc', label: t('kind.nfc') },
+  { value: 'nut', label: t('kind.nut') },
+]);
+const insertKind = computed(() => s.insert.custom?.kind ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.kind ?? 'magnet');
+const coverDefault = computed(() => (insertKind.value === 'nfc' ? s.settings?.cover_nfc : s.settings?.cover_magnet) ?? 1);
+const polarities = computed(() => [
+  { value: null, label: t('polarity.none') },
+  { value: 'N', label: t('polarity.N') },
+  { value: 'S', label: t('polarity.S') },
+]);
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
 const canAdd = computed(addable);
 
@@ -77,7 +86,8 @@ async function saveAsPreset() {
   if (picked) void choosePocketShape(picked);   // the new preset keeps the shape it was made with
 }
 
-watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => { void replan(); });
+watch(insertKind, k => { if (k !== 'magnet' && s.polarity != null) s.polarity = null; });
+watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polarity], () => { void replan(); });
 </script>
 
 <template>
@@ -148,6 +158,12 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
         <span v-if="block && !blockSaidAbove" id="em-mode-note" class="oui-meta em-warn" data-test="embedded-block">{{ t('mode.blocked', { reason: tMaybe(`block.${block}`, block) }) }}</span>
       </div>
 
+      <div v-if="insertKind === 'magnet'" class="oui-field">
+        <label id="pol-l">{{ t('form.polarity') }}</label>
+        <SelectButton v-model="s.polarity" :options="polarities" option-label="label" option-value="value" :allow-empty="false"
+                      aria-labelledby="pol-l" data-test="polarity" fluid />
+      </div>
+
       <div class="em-two">
         <div class="oui-field"><label for="f-spin">{{ t('form.spin') }}</label>
           <InputNumber :locale="locale" v-model="s.spin" input-id="f-spin" :min="-360" :max="360" suffix=" °" placeholder="0 °" fluid /></div>
@@ -172,6 +188,7 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
           <Button label="2×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-2" @click="autoFridge(2)" />
           <Button label="4×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-4" @click="autoFridge(4)" />
         </div>
+        <Button v-if="objects.length > 1" :label="t('form.autoFridgeAll')" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-all" @click="autoFridge('auto', true)" />
       </div>
     </div>
 
