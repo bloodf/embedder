@@ -1,5 +1,5 @@
 // Shapes of the plugin's replies (src/embedder/plugin.py, session.py). Python is the single source of geometry truth.
-export type Kind = 'magnet' | 'nfc';
+export type Kind = 'magnet' | 'nfc' | 'nut';
 export type Shape = 'disc' | 'block';
 export type Mode = 'open' | 'embedded';
 /** The pocket's outline, picked by the user; without a pick the insert's own (pocket.default_shape). */

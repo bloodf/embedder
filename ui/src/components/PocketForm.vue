@@ -22,10 +22,12 @@ function presetLabel(p: Preset): string {
   if (p.id.startsWith('nfc-sticker')) return t('preset.sticker', { d: n(p.d) });
   if (p.id.startsWith('nfc-coin')) return t('preset.coin', { d: n(p.d), t: n(p.t) });
   if (p.id === 'nfc-card') return t('preset.card', { l: n(p.l), w: n(p.w), t: n(p.t) });
+  if (p.id.startsWith('nut-hex-m')) return t('preset.hexNut', { size: p.id.slice('nut-hex-m'.length).toUpperCase() });
+  if (p.id.startsWith('nut-square-m')) return t('preset.squareNut', { size: p.id.slice('nut-square-m'.length).toUpperCase() });
   return p.shape === 'disc' ? t('preset.disc', { d: n(p.d), t: n(p.t) }) : t('preset.block', { l: n(p.l), w: n(p.w), t: n(p.t) });
 }
 
-const GROUP_ICON = { magnet, nfc: rfid, mine: user };
+const GROUP_ICON = { magnet, nfc: rfid, nut: insert, mine: user };
 const groups = computed(() => groupPresets(s.builtin, s.user).map(g => ({
   label: t(`group.${g.key}`), icon: GROUP_ICON[g.key], items: g.items.map(p => ({ id: p.id, label: presetLabel(p), kind: p.kind })) })));
 const chosen = computed(() => groups.value.flatMap(g => g.items).find(p => p.id === s.insert.preset));
@@ -41,7 +43,11 @@ const coverDefault = computed(() => {
   const kind = s.insert.custom?.kind ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.kind ?? 'magnet';
   return (kind === 'nfc' ? s.settings?.cover_nfc : s.settings?.cover_magnet) ?? 1;
 });
-const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { value: 'nfc', label: t('kind.nfc') }]);
+const kinds = computed(() => [
+  { value: 'magnet', label: t('kind.magnet') },
+  { value: 'nfc', label: t('kind.nfc') },
+  { value: 'nut', label: t('kind.nut') },
+]);
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
 const canAdd = computed(addable);
 
