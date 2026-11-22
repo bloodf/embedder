@@ -297,6 +297,26 @@ class Plan(Base):
         p = self.plan(r["job"], point=[110, 110, 60], others=[near])
         self.assertIn("nfc_near_magnet", p["warnings"])
 
+    def test_auto_fridge_places_symmetric_bottom_pockets(self):
+        r = self.load(fixtures.build, objects=[fixtures.cube_object(size=60)])
+        one = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2", "mode": "embedded"})
+        self.assertEqual(one["count"], 1)
+        self.assertEqual(one["items"][0]["plan"]["face"], "bottom")
+        self.assertEqual(one["items"][0]["plan"]["point"], [130.0, 130.0, 0.0])
+
+        two = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 2, "preset": "magnet-disc-6x2", "mode": "embedded"})
+        self.assertEqual(two["count"], 2)
+        xs2 = [it["plan"]["point"][0] for it in two["items"]]
+        self.assertAlmostEqual(sum(xs2) / 2.0, 130.0)
+        self.assertGreater(xs2[1] - xs2[0], 30.0)
+
+        four = self.s.auto_fridge({"job": r["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2", "mode": "embedded"})
+        self.assertEqual(four["count"], 4)
+        pts4 = [it["plan"]["point"] for it in four["items"]]
+        self.assertAlmostEqual(sum(p[0] for p in pts4) / 4.0, 130.0)
+        self.assertAlmostEqual(sum(p[1] for p in pts4) / 4.0, 130.0)
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r["job"], "object": 0, "count": 99}), "bad_request")
+
 
 class Apply(Base):
     def apply(self, job, pockets=(), remove=()):

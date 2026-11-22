@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Auto fridge magnet (bottom)** (`Auto`, `1×`, `2×`, `4×`) in the pocket form: automatically finds the bottom base triangles of the selected object and stages symmetric bottom-face magnet pockets in one click.
+
 ## [0.7.1] - 2026-11-21
 
 ### Changed

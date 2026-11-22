@@ -4,7 +4,7 @@ import * as bridge from '../core/bridge';
 import { t, tMaybe, insertLabel } from '../core/i18n';
 import { pullPart, type PartMesh } from '../core/mesh';
 import type { Hit } from '../core/pick';
-import { formOf, hitOf, othersOf, planArgs, restage, stage, unstage, toggle, verdict } from './logic';
+import { customDims, formOf, hitOf, othersOf, planArgs, restage, stage, unstage, toggle, verdict } from './logic';
 import { s, tracker, errorText } from './store';
 import type { ApplyResult, Plan, PlanArgs, Project, Staged } from './types';
 
@@ -289,6 +289,34 @@ export function canAdd(): boolean {
 export function addStaged(): void {
   if (!canAdd() || !s.plan || !s.planArgs) return;
   const staged = stage(s.staged, s.planArgs, s.plan);
+  letGo();
+  Object.assign(s, { staged, result: null });
+}
+
+export async function autoFridge(count: 'auto' | number = 'auto'): Promise<void> {
+  const project = s.project;
+  if (!project || s.object == null) return;
+  const obj = s.object;
+  const which = s.insert.custom ? { custom: customDims(s.insert.custom) } : s.insert.preset ? { preset: s.insert.preset } : { preset: 'magnet-disc-6x2' };
+  const r = await tracker.run<{ items: { args: PlanArgs; plan: Plan }[]; count: number }>({
+    key: 'auto-fridge',
+    label: t('act.autoFridge'),
+    cmd: 'pocket.auto_fridge',
+    args: {
+      job: project.job,
+      object: obj,
+      count,
+      mode: s.mode,
+      spread: 0.28,
+      ...which,
+      ...(s.spin ? { spin: s.spin } : {}),
+      ...(s.cover != null ? { cover: s.cover } : {}),
+      ...(s.pocketShape ? { pocket_shape: s.pocketShape } : {}),
+    },
+  });
+  if (!r.ok || !r.result.items.length) return;
+  let staged = s.staged.filter(x => x.args.object !== obj);
+  for (const item of r.result.items) staged = stage(staged, item.args, item.plan);
   letGo();
   Object.assign(s, { staged, result: null });
 }
