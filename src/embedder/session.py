@@ -450,8 +450,11 @@ class Session:
         if args.get("object") == "all":
             if not job.entries:
                 raise SessionError("bad_request", "no objects in project")
-            staged_out, first_err = [], None
-            for obj_idx in range(len(job.entries)):
+            staged_out, first_err, seen = [], None, set()
+            for obj_idx, e in enumerate(job.entries):
+                if e.obj.id in seen:   # another instance of an object already planned: its pockets cut every copy
+                    continue
+                seen.add(e.obj.id)
                 try:
                     staged_out.extend(self._auto_fridge_for_object(job, obj_idx, args, raw_count, spread, insert, cfg))
                 except SessionError as e:

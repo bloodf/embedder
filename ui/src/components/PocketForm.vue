@@ -39,10 +39,6 @@ const blockSaidAbove = computed(() => !!block.value && (s.project?.blocks ?? [])
 const modes = computed(() => [
   { value: 'embedded', label: t('mode.embedded'), disabled: !!block.value },
   { value: 'open', label: t('mode.open'), disabled: false }]);
-const coverDefault = computed(() => {
-  const kind = s.insert.custom?.kind ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.kind ?? 'magnet';
-  return (kind === 'nfc' ? s.settings?.cover_nfc : s.settings?.cover_magnet) ?? 1;
-});
 const kinds = computed(() => [
   { value: 'magnet', label: t('kind.magnet') },
   { value: 'nfc', label: t('kind.nfc') },
@@ -55,7 +51,6 @@ const polarities = computed(() => [
   { value: 'N', label: t('polarity.N') },
   { value: 'S', label: t('polarity.S') },
 ]);
-const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { value: 'nfc', label: t('kind.nfc') }]);
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
 const canAdd = computed(addable);
 

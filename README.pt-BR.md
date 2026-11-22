@@ -100,6 +100,8 @@ Tamanhos prontos, em mm:
 | Adesivos NFC redondos, diâmetro (0,4 mm de profundidade) | 10, 13, 20, 22, 25, 30, 38 |
 | Moedas NFC | 25x1, 30x2 |
 | Cartão NFC | 85,6 x 54 x 0,9 |
+| Porcas sextavadas, entre faces x espessura (bolso hexagonal) | M3 5,5x2,4, M4 7x3,2, M5 8x4, M6 10x5 |
+| Porcas quadradas, lado x espessura | M3 5,5x2,4, M4 7x3,2, M5 8x4 |
 
 As regras completas dos formatos de bolso, da pausa, dos avisos e dos limites estão em [docs/pockets.md](docs/pockets.md) (em inglês).
 

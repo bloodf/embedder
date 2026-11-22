@@ -450,6 +450,12 @@ class Plan(Base):
         res2 = self.s.auto_fridge({"job": r2["job"], "object": "all", "count": "auto"})
         self.assertEqual(res2["count"], 1)
         self.assertEqual(res2["items"][0]["args"]["object"], 1)
+        # Two instances of one object share its pockets: "all" plans that object once, not once per instance
+        r3 = self.load(fixtures.two_instances)
+        one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})
+        both = self.s.auto_fridge({"job": r3["job"], "object": "all", "count": 2})
+        self.assertEqual(both["count"], one["count"])
+        self.assertEqual({it["args"]["object"] for it in both["items"]}, {0})
 
 
 class Apply(Base):

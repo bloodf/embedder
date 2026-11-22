@@ -6,16 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- **Hex and square nut presets** (M3 to M6 hex nuts, M3 to M5 square nuts) and a "Nut" kind for your own sizes, so a nut can be trapped inside a print. Thanks @plbogen2 (#49).
+- **Polarity note** for magnet pockets: mark a magnet "N up" or "S up" and the note shows in the pocket list and in the pause message, so you put each magnet in the right way round. Thanks @plbogen2 (#50).
+- **Auto all objects** next to the auto fridge magnet buttons: places the bottom magnet pockets on every object of the plate in one click. An object printed more than once is planned once, since its pockets go into every copy. Thanks @plbogen2 (#51).
+
 ### Changed
-- Speed up `geometry.face_centre` (check plane coplanarity before computing triangle normals) and `pocket.breaks_surface` (precompute XY bounds on near triangles once per plan instead of repeating full coordinate unpacking across all 26 probe rays).
-### Improved
-- Perimeter-safe snapping in `auto_fridge`: `geometry.snap_to_bottom()` now pulls edge-snapped points inward by the pocket radius + wall margin, and `Session.auto_fridge()` nudges targets that trigger `breaks_surface` onto nearby solid interior regions before falling back to open mode.
-### Added
-- Captive **Hex & Square Nut** presets (`M3`–`M6` hex nuts, `M3`–`M5` square nuts, and `nut` custom insert kind) using vented hexagonal and square pockets.
-### Added
-- Optional **Polarity note** (`None`, `N up`, `S up`) for magnet pockets, shown in the staged list and included in the OrcaSlicer pause message (e.g. `Embedder: insert 1 x 6x3 magnet (N up)`).
-### Added
-- **Auto all objects** support in `auto_fridge`: passing `object="all"` (or clicking **Auto all objects** when a plate has multiple objects) places symmetric bottom magnet pockets across every usable object on the plate in one click.
+- Auto fridge magnet keeps pockets away from the edge of the bottom face and, when a pocket would break through the surface, tries nearby solid spots before falling back to an open pocket. Thanks @plbogen2 (#48).
+- Placing a pocket on large models is faster: finding the middle of a flat face and checking whether a pocket breaks the surface do less work. Thanks @plbogen2 (#47).
 
 ## [0.8.0] - 2026-11-22
 
