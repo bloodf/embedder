@@ -72,6 +72,7 @@ class Request(NamedTuple):
     spin: float = 0.0               # degrees about the pocket axis (flat faces and open pockets)
     cover: float = 1.0              # mm of material over an embedded insert
     shape: str = None               # one of SHAPES, or None for the insert's default (default_shape)
+    polarity: str = None            # optional "N" | "S" orientation note for magnets
 
 
 @dataclass(frozen=True)
@@ -88,6 +89,7 @@ class Pocket:
     cover: float = None
     warnings: tuple = ()
     turned: bool = False            # a hexagon turned 30 degrees: flats across local X (hexagon_turned)
+    polarity: str = None            # optional "N" | "S" orientation note for magnets
 
     def mesh(self):
         """A circle is a round prism, no larger than the fit anywhere; a hexagon holds a disc on its six flats and vents
@@ -250,14 +252,15 @@ def plan(req, ctx):
     kind = geometry.tilt(req.normal)
     face = _face(req.normal, kind)
     if req.mode == "open":
-        return _open(req, ctx, face)
+        return Pocket(**{**_open(req, ctx, face).__dict__, "polarity": req.polarity})
     _check_embedded(ctx, kind)
     p = _embedded_flat(req, ctx, face) if kind == "flat" else _embedded_side(req, ctx)
     pause_z = round(p.top + ctx.grid.height, 6)
     check_pause(pause_z, ctx.grid)
     limit = THIN_SIDE_WALL if p.face == "side" else THIN_COVER_LAYERS * ctx.grid.height
     thin = p.cover < limit - EPS
-    return Pocket(**{**p.__dict__, "pause_z": pause_z, "warnings": ("thin_cover",) if thin else ()})
+    return Pocket(**{**p.__dict__, "pause_z": pause_z, "polarity": req.polarity,
+                     "warnings": ("thin_cover",) if thin else ()})
 
 
 def pause_text(labels):
@@ -273,7 +276,8 @@ def pauses(pockets, existing, copies=None):
     for i, p in enumerate(pockets):
         if p.pause_z is not None:
             n = copies[i] if copies else 1
-            groups.setdefault(round(p.pause_z, 6), []).extend([p.insert.label] * n)
+            label = "%s (%s up)" % (p.insert.label, p.polarity) if p.polarity else p.insert.label
+            groups.setdefault(round(p.pause_z, 6), []).extend([label] * n)
     taken = [round(z, 6) for z in existing]
     out, warnings = [], []
     for z in sorted(groups):

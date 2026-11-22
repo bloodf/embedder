@@ -297,6 +297,24 @@ class Plan(Base):
         p = self.plan(r["job"], point=[110, 110, 60], others=[near])
         self.assertIn("nfc_near_magnet", p["warnings"])
 
+    def test_polarity_note_in_plan_and_apply_pauses(self):
+        r = self.load()
+        p_n = self.plan(r["job"], polarity="N")
+        self.assertEqual(p_n["polarity"], "N")
+        self.assertEqual(self.error(self.plan, r["job"], polarity="E"), "bad_request")
+        self.assertEqual(self.error(self.plan, r["job"], preset="nfc-sticker-25", polarity="N"), "bad_request")
+        applied = self.s.apply({
+            "job": r["job"],
+            "pockets": [
+                {"object": 0, "part": 0, "tri": TOP_TRI, "point": [105, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded", "polarity": "N"},
+                {"object": 0, "part": 0, "tri": TOP_TRI, "point": [115, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded", "polarity": "S"},
+            ],
+            "remove": [],
+        })
+        self.assertEqual(applied["pauses"], [
+            {"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet (N up), 1 x 6x3 magnet (S up)"}
+        ])
+
     def test_auto_fridge_places_symmetric_bottom_pockets(self):
         r = self.load(fixtures.build, objects=[fixtures.cube_object(size=60)])
         one = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2", "mode": "embedded"})

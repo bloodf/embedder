@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Optional **Polarity note** (`None`, `N up`, `S up`) for magnet pockets, shown in the staged list and included in the OrcaSlicer pause message (e.g. `Embedder: insert 1 x 6x3 magnet (N up)`).
+
 ## [0.8.0] - 2026-11-22
 
 ### Added

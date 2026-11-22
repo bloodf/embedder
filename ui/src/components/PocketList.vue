@@ -21,6 +21,7 @@ const lower = (text: string) => text.toLocaleLowerCase(locale.value);
  *  never starts with a dot. */
 function where(p: Staged): string {
   return [s.project?.objects[p.args.object]?.name ?? '', p.plan.face ? lower(tMaybe(`face.${p.plan.face}`, p.plan.face)) : '', lower(t(`mode.${p.plan.mode}`)),
+    p.plan.polarity ? t(`polarity.${p.plan.polarity}`) : '',
     p.plan.pause_z != null ? t('list.pauseAt', { z: fmt.number(p.plan.pause_z, 2) }) : ''].filter(Boolean).join(' · ');
 }
 </script>

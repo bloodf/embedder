@@ -2,6 +2,7 @@
 export type Kind = 'magnet' | 'nfc';
 export type Shape = 'disc' | 'block';
 export type Mode = 'open' | 'embedded';
+export type Polarity = 'N' | 'S';
 /** The pocket's outline, picked by the user; without a pick the insert's own (pocket.default_shape). */
 export type PocketShape = 'circle' | 'hexagon' | 'square' | 'rectangle';
 
@@ -82,6 +83,7 @@ export interface PlanArgs {
   cover?: number;
   center?: boolean;
   pocket_shape?: PocketShape;
+  polarity?: Polarity;
 }
 
 export interface Plan {
@@ -97,6 +99,7 @@ export interface Plan {
   cover?: number | null;
   label?: string;
   kind?: Kind;
+  polarity?: Polarity;
   preview: { positions: number[]; indices: number[] } | null;
   warnings?: string[];
   point?: [number, number, number];   // where it was planned: the face's middle under center
