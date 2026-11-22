@@ -8,8 +8,8 @@ import Checkbox from 'primevue/checkbox';
 import { OuiHint, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
 import { check, insert, magnet, plus, rfid, save, user, type OuiIconData } from '@orca-plugins/ui-foundation/src/icons';
 import PlanCard from './PlanCard.vue';
-import { choosePocketShape, choosePreset, s, savePreset } from '../app/store';
-import { addStaged, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
+import { choosePocketShape, choosePreset, s, savePreset, tracker } from '../app/store';
+import { addStaged, autoFridge, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
 import { customDims, defaultPocketShape, embeddedBlock, groupPresets, POCKET_SHAPES } from '../app/logic';
 import type { Custom, PocketShape, Preset } from '../app/types';
 import { prompt } from '../core/dialog';
@@ -160,6 +160,19 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
         <label class="em-check" for="f-center"><Checkbox v-model="s.center" binary input-id="f-center" data-test="center" aria-describedby="f-center-help" />{{ t('form.center') }}</label>
         <OuiHint :label="t('form.center')"><span id="f-center-help">{{ t('form.centerHelp') }}</span></OuiHint>
       </div>
+
+      <div class="oui-field">
+        <div class="em-labelled">
+          <label id="fridge-l">{{ t('form.autoFridge') }}</label>
+          <OuiHint :label="t('form.autoFridge')"><span id="fridge-help">{{ t('form.autoFridgeHelp') }}</span></OuiHint>
+        </div>
+        <div class="em-fridge" role="group" aria-labelledby="fridge-l" aria-describedby="fridge-help" data-test="auto-fridge">
+          <Button :label="t('form.autoFridgeAuto')" severity="secondary" size="small" fluid :loading="tracker.isBusy('auto-fridge')" data-test="auto-fridge-auto" @click="autoFridge('auto')" />
+          <Button label="1×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-1" @click="autoFridge(1)" />
+          <Button label="2×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-2" @click="autoFridge(2)" />
+          <Button label="4×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-4" @click="autoFridge(4)" />
+        </div>
+      </div>
     </div>
 
     <PlanCard />
@@ -191,5 +204,6 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
 .em-cuts.p-selectbutton { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @container (min-width: 460px) { .em-cuts.p-selectbutton { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .em-cut { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.em-fridge { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--oui-s2); }
 .em-form .oui-panel-foot { margin-top: auto; }
 </style>

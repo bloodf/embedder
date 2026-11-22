@@ -296,7 +296,8 @@ COMMANDS = {
 # Mesh chunks and plans scan whole meshes: off the UI thread, so a big model and a drag never freeze OrcaSlicer.
 ASYNC_COMMANDS = {"project.load": _cmd_project_load, "project.apply": _cmd_project_apply,
                   "mesh.chunk": lambda page, args, msg_id: _worker(page, msg_id, lambda: get_session(page).mesh_chunk(args)),
-                  "pocket.plan": lambda page, args, msg_id: _worker(page, msg_id, lambda: get_session(page).plan(args))}
+                  "pocket.plan": lambda page, args, msg_id: _worker(page, msg_id, lambda: get_session(page).plan(args)),
+                  "pocket.auto_fridge": lambda page, args, msg_id: _worker(page, msg_id, lambda: get_session(page).auto_fridge(args))}
 
 
 # ====================================================================== Embedder tab

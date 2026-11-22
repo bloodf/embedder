@@ -251,18 +251,23 @@ class Session:
         except (TypeError, ValueError):
             return None
 
-    def _request(self, job, args):
-        entry = job.entries[_index(args, "object", len(job.entries))]
-        j = _index(args, "part", len(entry.meshes))
-        part = entry.obj.parts[j]
-        if part.subtype != "normal_part":
-            raise SessionError("bad_part", "pockets go on model parts only")
+    def _usable_entry(self, job, args):
+        obj_idx = _index(args, "object", len(job.entries))
+        entry = job.entries[obj_idx]
         if job.pkg.has_cut_connectors(entry.obj.id):
             raise SessionError("cut_object", entry.obj.name)   # the detail is the name: the page writes the sentence
         if not job.pkg.has_settings:
             raise SessionError("no_model_settings", "the project has no model_settings.config")
         if entry.obj.plain:
             raise SessionError("unsupported_object", entry.obj.name)
+        return obj_idx, entry
+
+    def _request(self, job, args):
+        _, entry = self._usable_entry(job, args)
+        j = _index(args, "part", len(entry.meshes))
+        part = entry.obj.parts[j]
+        if part.subtype != "normal_part":
+            raise SessionError("bad_part", "pockets go on model parts only")
         pos, idx = entry.meshes[j]
         t = _index(args, "tri", len(idx) // 3)
         corners = [tuple(pos[3 * idx[3 * t + c] + a] for a in range(3)) for c in range(3)]
@@ -331,6 +336,93 @@ class Session:
             warnings += [w[0] for w in pocket.proximity_warnings(planned) if 0 in w[1:]]
         return {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": job.copies(entry.obj.id),
                 "warnings": warnings, "blocked": None}
+
+    def auto_fridge(self, args):
+        """Plan 1, 2, 3, or 4 symmetric bottom-face fridge magnet pockets on the selected object."""
+        job = self._current(args.get("job"))
+        obj_idx, entry = self._usable_entry(job, args)
+
+        raw_count = args.get("count", "auto")
+        if raw_count != "auto" and raw_count is not None:
+            if isinstance(raw_count, bool) or not isinstance(raw_count, int) or not 1 <= raw_count <= 8:
+                raise SessionError("bad_request", "count is auto or 1..8")
+        spread = _number(args, "spread", 0.28, low=0.10, high=0.45)
+
+        normal_parts = [(j, entry.meshes[j][0], entry.meshes[j][1])
+                        for j, p in enumerate(entry.obj.parts)
+                        if p.subtype == "normal_part" and len(entry.meshes[j][0]) >= 9]
+        if not normal_parts:
+            raise SessionError("bad_part", "object has no normal model parts")
+        down_tris = geometry.bottom_triangles(normal_parts)
+        if not down_tris:
+            raise SessionError("bad_part", "no bottom face found on this object")
+
+        resolve_args = dict(args)
+        if resolve_args.get("preset") is None and resolve_args.get("custom") is None:
+            resolve_args["preset"] = "magnet-disc-6x2"
+        try:
+            insert = presets.resolve(resolve_args, self.settings_fn().get("user_presets"))
+        except presets.PresetError as e:
+            raise SessionError(e.code, e.detail) from None
+
+        cfg = self.settings_fn()
+        targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread)
+
+        mode = args.get("mode") if args.get("mode") in ("embedded", "open") else "embedded"
+        if self._object_block(job, entry) and mode == "embedded":
+            mode = "open"
+        cover = args.get("cover")
+        if cover is None:
+            cover = min(cfg["cover_magnet"], 0.4)
+
+        def build_args(part_j, tri_t, pt, item_mode):
+            out = {"object": obj_idx, "part": part_j, "tri": tri_t, "point": pt, "mode": item_mode}
+            if isinstance(args.get("custom"), dict):
+                out["custom"] = args["custom"]
+            else:
+                out["preset"] = insert.id
+            if args.get("spin"):
+                out["spin"] = args["spin"]
+            if item_mode == "embedded" and cover is not None:
+                out["cover"] = float(cover)
+            if args.get("pocket_shape"):
+                out["pocket_shape"] = args["pocket_shape"]
+            return out
+
+        planned_entries = []
+        for tx, ty in targets:
+            part_j, tri_t, pt = geometry.snap_to_bottom(tx, ty, down_tris)
+            p_args = build_args(part_j, tri_t, pt, mode)
+            p, point = None, None
+            try:
+                _, p, point = self._plan_at(job, p_args)
+            except pocket.Blocked:
+                pass
+            if p_args["mode"] == "embedded" and (
+                p is None or (args.get("cover") is None and "breaks_surface" in p.warnings)
+            ):
+                open_args = build_args(part_j, tri_t, pt, "open")
+                try:
+                    _, open_p, open_pt = self._plan_at(job, open_args)
+                    if p is None or "breaks_surface" not in open_p.warnings:
+                        p_args, p, point = open_args, open_p, open_pt
+                except pocket.Blocked:
+                    pass
+            if p is not None:
+                planned_entries.append((p_args, p, point))
+
+        all_pockets = [p for _, p, _ in planned_entries]
+        prox = pocket.proximity_warnings(all_pockets) if len(all_pockets) > 1 else ()
+        user_layers = self._user_layers(job)
+        copies = job.copies(entry.obj.id)
+        staged_out = []
+        for idx_i, (p_args, p, point) in enumerate(planned_entries):
+            warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], user_layers)[1]]
+            warnings += [w[0] for w in prox if idx_i in w[1:]]
+            plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
+                        "warnings": warnings, "blocked": None}
+            staged_out.append({"args": p_args, "plan": plan_res})
+        return {"items": staged_out, "count": len(staged_out)}
 
     def _plan_quiet(self, job, many):
         out = []

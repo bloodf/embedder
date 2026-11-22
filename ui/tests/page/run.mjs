@@ -16,8 +16,13 @@ const repo = resolve(here, '../../..');
 
 async function builtPage() {
   if (process.env.PAGE) return readFile(process.env.PAGE, 'utf8');
-  return execFileSync('python3', ['-c', 'import sys; sys.path.insert(0, "scripts"); import build; sys.stdout.write(build.page_html("app.html"))'],
-    { cwd: repo, encoding: 'utf8', maxBuffer: 64 << 20 });
+  const args = ['-c', 'import sys; sys.path.insert(0, "scripts"); import build; sys.stdout.write(build.page_html("app.html"))'];
+  const opts = { cwd: repo, encoding: 'utf8', maxBuffer: 64 << 20 };
+  try {
+    return execFileSync('python3', args, opts);
+  } catch {
+    return execFileSync('python', args, opts);
+  }
 }
 
 // English sentences of the page (the words before a placeholder, long enough to be a phrase) that must not show
@@ -690,6 +695,26 @@ test('Centre on the face plans again with center and keeps it for Apply', `
   await click(byTest('apply'));
   await until(() => last('cmd', 'project.apply'), 'apply sent');
   eq(last('cmd', 'project.apply').args.pockets[0].center, true, 'center kept for Apply');
+`);
+
+test('Auto fridge magnet stages symmetric bottom pockets in one click', `
+  await loaded();
+  await click(byTest('auto-fridge-2'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'auto_fridge sent');
+  const m = last('cmd', 'pocket.auto_fridge');
+  eq([m.args.job, m.args.object, m.args.count, m.args.preset], ['j1', 0, 2, 'magnet-disc-6x3'], 'auto_fridge args');
+  const p1 = {object: 0, part: 0, tri: 0, point: [104, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded'};
+  const p2 = {object: 0, part: 0, tri: 0, point: [116, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded'};
+  await reply(m, {
+    count: 2,
+    items: [
+      {args: p1, plan: {...PLAN, face: 'bottom', pause_z: 3.8, point: [104, 110, 0]}},
+      {args: p2, plan: {...PLAN, face: 'bottom', pause_z: 3.8, point: [116, 110, 0]}},
+    ],
+  });
+  await settle();
+  eq(rows('staged').length, 2, 'two bottom pockets staged');
+  eq(rows('staged')[0][1], 'Cube · bottom · embedded · pause at Z 3.80 mm', 'bottom row');
 `);
 
 test('the list says which inserts to have ready, open pockets and copies included', `
