@@ -48,6 +48,14 @@ const kinds = computed(() => [
   { value: 'nfc', label: t('kind.nfc') },
   { value: 'nut', label: t('kind.nut') },
 ]);
+const insertKind = computed(() => s.insert.custom?.kind ?? [...s.builtin, ...s.user].find(p => p.id === s.insert.preset)?.kind ?? 'magnet');
+const coverDefault = computed(() => (insertKind.value === 'nfc' ? s.settings?.cover_nfc : s.settings?.cover_magnet) ?? 1);
+const polarities = computed(() => [
+  { value: null, label: t('polarity.none') },
+  { value: 'N', label: t('polarity.N') },
+  { value: 'S', label: t('polarity.S') },
+]);
+const kinds = computed(() => [{ value: 'magnet', label: t('kind.magnet') }, { value: 'nfc', label: t('kind.nfc') }]);
 const shapes = computed(() => [{ value: 'disc', label: t('shape.disc') }, { value: 'block', label: t('shape.block') }]);
 const canAdd = computed(addable);
 
@@ -83,7 +91,8 @@ async function saveAsPreset() {
   if (picked) void choosePocketShape(picked);   // the new preset keeps the shape it was made with
 }
 
-watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => { void replan(); });
+watch(insertKind, k => { if (k !== 'magnet' && s.polarity != null) s.polarity = null; });
+watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polarity], () => { void replan(); });
 </script>
 
 <template>
@@ -152,6 +161,12 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape], () => 
         <SelectButton v-model="s.mode" :options="modes" option-label="label" option-value="value" option-disabled="disabled" :allow-empty="false"
                       aria-labelledby="mode-l" :aria-describedby="block ? (blockSaidAbove ? 'em-blocks' : 'em-mode-note') : 'em-mode-note'" data-test="mode" fluid />
         <span v-if="block && !blockSaidAbove" id="em-mode-note" class="oui-meta em-warn" data-test="embedded-block">{{ t('mode.blocked', { reason: tMaybe(`block.${block}`, block) }) }}</span>
+      </div>
+
+      <div v-if="insertKind === 'magnet'" class="oui-field">
+        <label id="pol-l">{{ t('form.polarity') }}</label>
+        <SelectButton v-model="s.polarity" :options="polarities" option-label="label" option-value="value" :allow-empty="false"
+                      aria-labelledby="pol-l" data-test="polarity" fluid />
       </div>
 
       <div class="em-two">

@@ -12,6 +12,8 @@ All notable changes to this project are documented here. The format follows
 - Perimeter-safe snapping in `auto_fridge`: `geometry.snap_to_bottom()` now pulls edge-snapped points inward by the pocket radius + wall margin, and `Session.auto_fridge()` nudges targets that trigger `breaks_surface` onto nearby solid interior regions before falling back to open mode.
 ### Added
 - Captive **Hex & Square Nut** presets (`M3`–`M6` hex nuts, `M3`–`M5` square nuts, and `nut` custom insert kind) using vented hexagonal and square pockets.
+### Added
+- Optional **Polarity note** (`None`, `N up`, `S up`) for magnet pockets, shown in the staged list and included in the OrcaSlicer pause message (e.g. `Embedder: insert 1 x 6x3 magnet (N up)`).
 
 ## [0.8.0] - 2026-11-22
 

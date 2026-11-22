@@ -1,9 +1,9 @@
 // Pure rules of the Embed panel (no Vue, no bridge), unit-tested in tests/unit/logic.test.ts.
-import type { Custom, Kind, Mode, ObjectInfo, Plan, PlanArgs, PocketShape, Preset, Shape, Staged } from './types.ts';
+import type { Custom, Kind, Mode, ObjectInfo, Plan, PlanArgs, PocketShape, Polarity, Preset, Shape, Staged } from './types.ts';
 import type { Hit } from '../core/pick.ts';
 
 export interface InsertChoice { preset: string | null; custom: Custom | null }
-export interface Options { mode: Mode; spin: number | null; cover: number | null; center?: boolean; pocketShape?: PocketShape | null }
+export interface Options { mode: Mode; spin: number | null; cover: number | null; center?: boolean; pocketShape?: PocketShape | null; polarity?: Polarity | null }
 
 export const POCKET_SHAPES: readonly PocketShape[] = ['circle', 'hexagon', 'square', 'rectangle'];
 
@@ -28,7 +28,7 @@ export function planArgs(object: number, hit: Hit, insert: InsertChoice, o: Opti
   const which = insert.custom ? { custom: customDims(insert.custom) } : insert.preset ? { preset: insert.preset } : null;
   if (!which) return null;
   return { ...base, ...which, ...(o.spin ? { spin: o.spin } : {}), ...(o.cover != null ? { cover: o.cover } : {}), ...(o.center ? { center: true } : {}),
-    ...(o.pocketShape ? { pocket_shape: o.pocketShape } : {}) };
+    ...(o.pocketShape ? { pocket_shape: o.pocketShape } : {}), ...(o.polarity ? { polarity: o.polarity } : {}) };
 }
 
 /** Why Embedded is not offered: the object's (or project's) block first, then the last plan's. */
@@ -84,7 +84,7 @@ export const hitOf = (a: PlanArgs): Hit => ({ part: a.part, tri: a.tri, point: a
  *  preset list stays while a custom size is shown. */
 export function formOf(a: PlanArgs, preset: string | null): Required<Options> & { insert: InsertChoice } {
   const insert: InsertChoice = a.custom ? { preset, custom: { d: 6, l: 10, w: 5, ...a.custom } as Custom } : { preset: a.preset ?? null, custom: null };
-  return { insert, mode: a.mode, spin: a.spin ?? null, cover: a.cover ?? null, center: !!a.center, pocketShape: a.pocket_shape ?? null };
+  return { insert, mode: a.mode, spin: a.spin ?? null, cover: a.cover ?? null, center: !!a.center, pocketShape: a.pocket_shape ?? null, polarity: a.polarity ?? null };
 }
 
 /** The list with one pocket planned anew, in its place. */

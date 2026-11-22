@@ -7,7 +7,7 @@ import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';
 import type { Hit } from '../core/pick';
 import { rememberedShape, splitLead, type InsertChoice } from './logic';
-import type { ApplyResult, Hello, Mode, Plan, PlanArgs, PocketShape, Preset, Project, Settings, Staged } from './types';
+import type { ApplyResult, Hello, Mode, Plan, PlanArgs, PocketShape, Polarity, Preset, Project, Settings, Staged } from './types';
 
 export const DEFAULT_PRESET = 'magnet-disc-6x3';
 
@@ -34,6 +34,7 @@ export const s = reactive({
   cover: null as number | null,
   center: false,
   pocketShape: null as PocketShape | null,   // null: the insert's own (defaultPocketShape)
+  polarity: null as Polarity | null,
   // the pocket in hand (where it is, its plan), the staged pockets and the applied copy. `selected`: the staged pocket
   // that is in hand (its key), or null while a new one is being placed. `dragging`: the pointer is sliding it.
   hit: null as Hit | null,

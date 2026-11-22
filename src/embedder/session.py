@@ -295,7 +295,10 @@ class Session:
         if args.get("cover") is not None:
             cover = _number(args, "cover", low=0, high=10)
         spin = _number(args, "spin", 0)
-        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover, args.get("pocket_shape"))
+        polarity = args.get("polarity")
+        if polarity is not None and (polarity not in ("N", "S") or insert.kind != "magnet"):
+            raise SessionError("bad_request", "polarity is N or S for magnets")
+        return entry, j, pocket.Request(insert, args.get("mode"), point, normal, spin, cover, args.get("pocket_shape"), polarity)
 
     def _context(self, job, entry):
         block = self._object_block(job, entry)
@@ -591,4 +594,5 @@ def _describe_pocket(p):
             "outer": [round(v, 6) for v in p.outer()],
             "transform": [round(v, 9) for v in p.transform], "floor": _round(p.floor), "top": _round(p.top),
             "pause_z": _round(p.pause_z), "cover": _round(p.cover), "label": p.insert.label, "kind": p.insert.kind,
+            **({"polarity": p.polarity} if p.polarity else {}),
             "preview": {"positions": [round(c, 4) for v in verts for c in v], "indices": [i for t in tris for i in t]}}
