@@ -376,6 +376,26 @@ class Plan(Base):
         res_bev = self.s.auto_fridge({"job": r_bev["job"], "object": 0, "count": 1})
         self.assertEqual(res_bev["count"], 1)
 
+        # Hollow rectangular frame: centre (125, 125) is an open cutout, so count=1 snaps onto a solid arm without breaks_surface
+        # Outer: 0..50 x 0..50, inner cutout: 15..35 x 15..35, height: 12
+        ov = [(0, 0, 0), (50, 0, 0), (50, 50, 0), (0, 50, 0), (15, 15, 0), (35, 15, 0), (35, 35, 0), (15, 35, 0)]
+        fv = ov + [(x, y, 12) for x, y, _ in ov]
+        ft = [
+            # bottom ring (4 quads -> 8 tris, normal -Z)
+            (0, 4, 1), (1, 4, 5), (1, 5, 2), (2, 5, 6), (2, 6, 3), (3, 6, 7), (3, 7, 0), (0, 7, 4),
+            # top ring (normal +Z)
+            (8, 9, 12), (9, 13, 12), (9, 10, 13), (10, 14, 13), (10, 11, 14), (11, 15, 14), (11, 8, 15), (8, 12, 15),
+            # outer walls
+            (0, 1, 8), (1, 9, 8), (1, 2, 9), (2, 10, 9), (2, 3, 10), (3, 11, 10), (3, 0, 11), (0, 8, 11),
+            # inner cutout walls
+            (4, 12, 5), (5, 12, 13), (5, 13, 6), (6, 13, 14), (6, 14, 7), (7, 14, 15), (7, 15, 4), (4, 15, 12),
+        ]
+        r_frame = self.load(fixtures.build, objects=[{"name": "frame", "parts": [fixtures.part("frame", (fv, ft))]}])
+        res_frame = self.s.auto_fridge({"job": r_frame["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})
+        self.assertEqual(res_frame["count"], 1)
+        self.assertEqual(res_frame["items"][0]["args"]["mode"], "embedded")
+        self.assertNotIn("breaks_surface", res_frame["items"][0]["plan"]["warnings"])
+
         # Object with only upward-facing triangles (no bottom face) -> bad_part
         up_verts = [(0, 0, 0), (20, 0, 0), (0, 20, 0)]
         up_tris = [(0, 1, 2)]

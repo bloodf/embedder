@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 - Speed up `geometry.face_centre` (check plane coplanarity before computing triangle normals) and `pocket.breaks_surface` (precompute XY bounds on near triangles once per plan instead of repeating full coordinate unpacking across all 26 probe rays).
+### Improved
+- Perimeter-safe snapping in `auto_fridge`: `geometry.snap_to_bottom()` now pulls edge-snapped points inward by the pocket radius + wall margin, and `Session.auto_fridge()` nudges targets that trigger `breaks_surface` onto nearby solid interior regions before falling back to open mode.
 
 ## [0.8.0] - 2026-11-22
 

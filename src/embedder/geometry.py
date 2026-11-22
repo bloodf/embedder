@@ -307,8 +307,9 @@ def _closest_on_seg_2d(px, py, ax, ay, bx, by):
     return ax + t * dx, ay + t * dy
 
 
-def snap_to_bottom(tx, ty, down_tris):
-    """Snap a 2D target (tx, ty) onto the containing or nearest bottom triangle: (part_j, tri_t, [x, y, z])."""
+def snap_to_bottom(tx, ty, down_tris, margin=0.0):
+    """Snap a 2D target (tx, ty) onto the containing or nearest bottom triangle: (part_j, tri_t, [x, y, z]).
+    When outside all triangles, pulls edge projections inward toward the triangle centroid by at least `margin`."""
     for j, t, cs, _ in down_tris:
         if _pt_in_tri_2d(tx, ty, cs):
             z = sum(c[2] for c in cs) / 3.0
@@ -321,7 +322,12 @@ def snap_to_bottom(tx, ty, down_tris):
         for k in range(3):
             a, b = cs[k], cs[(k + 1) % 3]
             qx, qy = _closest_on_seg_2d(tx, ty, a[0], a[1], b[0], b[1])
-            cands.append((0.92 * qx + 0.08 * tcx, 0.92 * qy + 0.08 * tcy))
+            dist_c = math.hypot(tcx - qx, tcy - qy)
+            if dist_c > 1e-6:
+                pull = min(0.95, max(0.08, min(dist_c, margin) / dist_c))
+                cands.append((qx + pull * (tcx - qx), qy + pull * (tcy - qy)))
+            else:
+                cands.append((0.92 * qx + 0.08 * tcx, 0.92 * qy + 0.08 * tcy))
         for qx, qy in cands:
             d = math.hypot(qx - tx, qy - ty)
             if d < best_d:
