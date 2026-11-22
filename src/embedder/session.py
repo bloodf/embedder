@@ -367,6 +367,7 @@ class Session:
 
         cfg = self.settings_fn()
         targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread)
+        pocket_r = 0.5 * max(insert.l, insert.w) + cfg["xy_clearance"]
 
         mode = args.get("mode") if args.get("mode") in ("embedded", "open") else "embedded"
         if self._object_block(job, entry) and mode == "embedded":
@@ -390,14 +391,33 @@ class Session:
             return out
 
         planned_entries = []
+        nudge_dirs = ((1, 0), (-1, 0), (0, 1), (0, -1), (0.7, 0.7), (-0.7, 0.7), (0.7, -0.7), (-0.7, -0.7))
         for tx, ty in targets:
-            part_j, tri_t, pt = geometry.snap_to_bottom(tx, ty, down_tris)
+            part_j, tri_t, pt = geometry.snap_to_bottom(tx, ty, down_tris, margin=pocket_r + 1.2)
             p_args = build_args(part_j, tri_t, pt, mode)
             p, point = None, None
             try:
                 _, p, point = self._plan_at(job, p_args)
             except pocket.Blocked:
                 pass
+            if p is not None and p_args["mode"] == "embedded" and "breaks_surface" in p.warnings:
+                bx, by = pt[0], pt[1]
+                for step in (pocket_r * 0.85, pocket_r * 1.5):
+                    found_clean = False
+                    for dx, dy in nudge_dirs:
+                        cj, ct, cpt = geometry.snap_to_bottom(bx + dx * step, by + dy * step, down_tris, margin=pocket_r + 1.2)
+                        c_args = build_args(cj, ct, cpt, mode)
+                        try:
+                            _, cp, cpoint = self._plan_at(job, c_args)
+                        except pocket.Blocked:
+                            continue
+                        if "breaks_surface" not in cp.warnings:
+                            p_args, p, point = c_args, cp, cpoint
+                            part_j, tri_t, pt = cj, ct, cpt
+                            found_clean = True
+                            break
+                    if found_clean:
+                        break
             if p_args["mode"] == "embedded" and (
                 p is None or (args.get("cover") is None and "breaks_surface" in p.warnings)
             ):
