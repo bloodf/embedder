@@ -293,10 +293,10 @@ export function addStaged(): void {
   Object.assign(s, { staged, result: null });
 }
 
-export async function autoFridge(count: 'auto' | number = 'auto'): Promise<void> {
+export async function autoFridge(count: 'auto' | number = 'auto', allObjects = false): Promise<void> {
   const project = s.project;
-  if (!project || s.object == null) return;
-  const obj = s.object;
+  if (!project || (!allObjects && s.object == null)) return;
+  const obj = s.object ?? 0;
   const which = s.insert.custom ? { custom: customDims(s.insert.custom) } : s.insert.preset ? { preset: s.insert.preset } : { preset: 'magnet-disc-6x2' };
   const r = await tracker.run<{ items: { args: PlanArgs; plan: Plan }[]; count: number }>({
     key: 'auto-fridge',
@@ -304,7 +304,7 @@ export async function autoFridge(count: 'auto' | number = 'auto'): Promise<void>
     cmd: 'pocket.auto_fridge',
     args: {
       job: project.job,
-      object: obj,
+      object: allObjects ? 'all' : obj,
       count,
       mode: s.mode,
       spread: 0.28,
@@ -315,7 +315,9 @@ export async function autoFridge(count: 'auto' | number = 'auto'): Promise<void>
     },
   });
   if (!r.ok || !r.result.items.length) return;
-  let staged = s.staged.filter(x => x.args.object !== obj || x.plan.face !== 'bottom');
+  let staged = allObjects
+    ? s.staged.filter(x => x.plan.face !== 'bottom')
+    : s.staged.filter(x => x.args.object !== obj || x.plan.face !== 'bottom');
   for (const item of r.result.items) staged = stage(staged, item.args, item.plan);
   letGo();
   Object.assign(s, { staged, result: null });

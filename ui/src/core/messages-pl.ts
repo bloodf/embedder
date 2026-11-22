@@ -81,6 +81,7 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'form.autoFridge': 'Automatyczny magnes na lodówkę (spód)',
   'form.autoFridgeHelp': 'Rozmieszcza symetryczne kieszenie na magnesy na dolnej ściance wybranego obiektu.',
   'form.autoFridgeAuto': 'Auto',
+  'form.autoFridgeAll': 'Auto dla wszystkich obiektów',
   'obj.instance': '{name} (kopia {n})',
   'group.magnet': 'Magnesy',
   'group.nfc': 'NFC',

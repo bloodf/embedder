@@ -78,6 +78,7 @@ export const zhCN: Record<MessageKey, string> = {
   'form.autoFridge': '自动冰箱贴磁铁（底部）',
   'form.autoFridgeHelp': '在所选对象的底面上对称放置磁铁凹槽。',
   'form.autoFridgeAuto': '自动',
+  'form.autoFridgeAll': '自动应用于所有对象',
   'obj.instance': '{name}（实例 {n}）',
   'group.magnet': '磁铁',
   'group.nfc': 'NFC',

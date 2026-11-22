@@ -77,6 +77,7 @@ export const de: Record<MessageKey, string> = {
   'form.autoFridge': 'Automatischer Kühlschrankmagnet (Unterseite)',
   'form.autoFridgeHelp': 'Platziert symmetrische Magnet-Taschen auf der Unterseite des ausgewählten Objekts.',
   'form.autoFridgeAuto': 'Auto',
+  'form.autoFridgeAll': 'Auto für alle Objekte',
   'obj.instance': '{name} (Kopie {n})',
   'group.magnet': 'Magnete',
   'group.nfc': 'NFC',

@@ -77,6 +77,7 @@ export const es: Record<MessageKey, string> = {
   'form.autoFridge': 'Imán de nevera automático (base)',
   'form.autoFridgeHelp': 'Coloca alojamientos simétricos para imanes en la cara inferior del objeto seleccionado.',
   'form.autoFridgeAuto': 'Auto',
+  'form.autoFridgeAll': 'Auto en todos los objetos',
   'obj.instance': '{name} (copia {n})',
   'group.magnet': 'Imanes',
   'group.nfc': 'NFC',
