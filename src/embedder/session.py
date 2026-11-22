@@ -291,7 +291,7 @@ class Session:
         except presets.PresetError as e:
             raise SessionError(e.code, e.detail) from None
         cfg = self.settings_fn()
-        cover = cfg["cover_magnet"] if insert.kind == "magnet" else cfg["cover_nfc"]
+        cover = cfg["cover_nfc"] if insert.kind == "nfc" else cfg["cover_magnet"]
         if args.get("cover") is not None:
             cover = _number(args, "cover", low=0, high=10)
         spin = _number(args, "spin", 0)

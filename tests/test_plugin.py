@@ -90,7 +90,7 @@ class Bridge(Base):
 
     def test_presets(self):
         r = self.call("presets.list")
-        self.assertEqual(len(r["builtin"]), 15 + 4 + 7 + 2 + 1)
+        self.assertEqual(len(r["builtin"]), 15 + 4 + 7 + 2 + 1 + 4 + 3)
         self.assertEqual(r["user"], [])
         saved = self.call("presets.save", preset={"name": "Big", "kind": "magnet", "shape": "disc", "d": 25, "t": 5})
         self.assertEqual([u["name"] for u in saved["user"]], ["Big"])

@@ -130,13 +130,14 @@ export function splitLead(text: string): [string, string] {
   return m ? [m[1], m[2]] : [text, ''];
 }
 
-export interface PresetGroup { key: 'magnet' | 'nfc' | 'mine'; items: Preset[] }
+export interface PresetGroup { key: 'magnet' | 'nfc' | 'nut' | 'mine'; items: Preset[] }
 
-/** Built-ins split into magnets and NFC, the user's own presets last; empty groups dropped. */
+/** Built-ins split into magnets, NFC and nuts, the user's own presets last; empty groups dropped. */
 export function groupPresets(builtin: readonly Preset[], user: readonly Preset[]): PresetGroup[] {
   return ([
     { key: 'magnet', items: builtin.filter(p => p.kind === 'magnet') },
     { key: 'nfc', items: builtin.filter(p => p.kind === 'nfc') },
+    { key: 'nut', items: builtin.filter(p => p.kind === 'nut') },
     { key: 'mine', items: [...user] },
   ] as PresetGroup[]).filter(g => g.items.length);
 }

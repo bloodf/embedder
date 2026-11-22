@@ -22,6 +22,12 @@ class BuiltIn(unittest.TestCase):
         card = by_id["nfc-card"]
         self.assertEqual((card.shape, card.l, card.w, card.t), ("block", 85.6, 54.0, 0.9))
         self.assertEqual((by_id["nfc-coin-30x2"].d, by_id["nfc-coin-30x2"].t), (30.0, 2.0))
+        hex_nuts = sorted(p.id for p in presets.BUILTIN if p.id.startswith("nut-hex-"))
+        self.assertEqual(hex_nuts, ["nut-hex-m3", "nut-hex-m4", "nut-hex-m5", "nut-hex-m6"])
+        self.assertEqual((by_id["nut-hex-m3"].d, by_id["nut-hex-m3"].t), (5.5, 2.4))
+        sq_nuts = sorted(p.id for p in presets.BUILTIN if p.id.startswith("nut-square-"))
+        self.assertEqual(sq_nuts, ["nut-square-m3", "nut-square-m4", "nut-square-m5"])
+        self.assertEqual(presets.default_label("nut", "disc", 5.5, 5.5, 2.4), "5.5x2.4 nut")
 
     def test_stable_ids_and_labels(self):
         p = presets.find("magnet-disc-6x3")

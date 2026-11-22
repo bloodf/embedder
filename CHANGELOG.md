@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Captive **Hex & Square Nut** presets (`M3`–`M6` hex nuts, `M3`–`M5` square nuts, and `nut` custom insert kind) using vented hexagonal and square pockets.
+
 ## [0.8.0] - 2026-11-22
 
 ### Added

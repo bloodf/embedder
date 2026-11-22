@@ -13,7 +13,7 @@ import type { PartMesh } from './mesh';
 export interface Preview { positions: number[]; indices: number[] }
 /** The pocket in hand: its last planned shape, the face that was planned on, and how the plan came out. */
 export interface InHand { preview: Preview; base: Hit; tone: 'ok' | 'warn' | 'blocked' }
-export interface StagedMark extends Preview { kind: 'magnet' | 'nfc'; key: number; base: Hit }
+export interface StagedMark extends Preview { kind: 'magnet' | 'nfc' | 'nut'; key: number; base: Hit }
 export interface SceneEvents {
   /** A click on a face; `onHand`: on the pocket in hand. */
   pick(hit: Hit, onHand: boolean): void;
@@ -238,7 +238,7 @@ export function createScene(host: HTMLElement, events: SceneEvents): SceneApi {
     },
     setPockets(current, staged) {
       disposeAll(marks.map(m => m.mesh));
-      const kind = { magnet: css('--em-magnet', '#8c4b08'), nfc: css('--em-nfc', '#6541a6') };
+      const kind = { magnet: css('--em-magnet', '#8c4b08'), nfc: css('--em-nfc', '#6541a6'), nut: css('--em-nut', '#2b6cb0') };
       const tone = { ok: css('--oui-primary-mark', '#009688'), warn: css('--oui-warning', '#c08a00'), blocked: css('--oui-danger', '#b3261e') };
       marks = staged.map(p => ({ id: p.key, mesh: previewMesh(p, kind[p.kind], 0.85), at: anchorOf(p.positions, targets, p.base) }));
       inHand = null;

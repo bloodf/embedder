@@ -33,15 +33,19 @@ export function interpolate(text: string, params?: Record<string, unknown>): str
   return text.replace(/\{(\w+)\}/g, (_, k: string) => (k in params ? String(params[k]) : `{${k}}`));
 }
 
-export type InsertLabelKey = 'preset.disc' | 'preset.block' | 'preset.sticker' | 'preset.coin' | 'preset.card';
+export type InsertLabelKey = 'preset.disc' | 'preset.block' | 'preset.sticker' | 'preset.coin' | 'preset.card' | 'preset.hexNut' | 'preset.squareNut' | 'preset.nut';
 const NUM = String.raw`(\d+(?:\.\d+)?)`;
 const LABELS: [RegExp, InsertLabelKey, string[]][] = [
   [new RegExp(`^${NUM} mm NFC sticker$`), 'preset.sticker', ['d']],
   [new RegExp(`^${NUM}x${NUM} NFC coin$`), 'preset.coin', ['d', 't']],
   [/^NFC card$/, 'preset.card', []],
+  [/^M(\d+) hex nut$/, 'preset.hexNut', ['size']],
+  [/^M(\d+) square nut$/, 'preset.squareNut', ['size']],
   [new RegExp(`^${NUM}x${NUM}x${NUM} (?:magnet|NFC)$`), 'preset.block', ['l', 'w', 't']],
+  [new RegExp(`^${NUM}x${NUM}x${NUM} nut$`), 'preset.block', ['l', 'w', 't']],
   [new RegExp(`^${NUM}x${NUM} magnet$`), 'preset.disc', ['d', 't']],
   [new RegExp(`^${NUM}x${NUM} NFC$`), 'preset.coin', ['d', 't']],
+  [new RegExp(`^${NUM}x${NUM} nut$`), 'preset.nut', ['d', 't']],
 ];
 const CARD = { l: 85.6, w: 54, t: 0.9 };   // presets.py: the one card the table has
 
