@@ -228,11 +228,13 @@ def face_centre(pos, idx, tri, normal, dist=1e-3, cos_tol=1 - 1e-4):
     flat, by_edge = {}, {}
     for k in range(len(idx) // 3):
         cs = corners(k)
+        if any(abs(_dot(n, c) - plane) > dist for c in cs):
+            continue
         try:
             nk = triangle_normal(*cs)
         except ValueError:
             continue
-        if _dot(nk, n) < cos_tol or any(abs(_dot(n, c) - plane) > dist for c in cs):
+        if _dot(nk, n) < cos_tol:
             continue
         flat[k] = cs
         keys = [tuple(round(v, 4) for v in c) for c in cs]

@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Speed up `geometry.face_centre` (check plane coplanarity before computing triangle normals) and `pocket.breaks_surface` (precompute XY bounds on near triangles once per plan instead of repeating full coordinate unpacking across all 26 probe rays).
+
 ## [0.8.0] - 2026-11-22
 
 ### Added

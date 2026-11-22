@@ -334,25 +334,9 @@ def _probes(p):
     return [geometry.apply(p.transform, (x, y, 0.0))[:2] for x, y in [(0.0, 0.0)] + _rim(p)]
 
 
-def _crossings(x, y, pos, idx):
-    """Heights where the vertical line through (x, y) crosses the mesh."""
-    out = []
-    for k in range(0, len(idx), 3):
-        a, b, c = idx[k] * 3, idx[k + 1] * 3, idx[k + 2] * 3
-        ax, ay, bx, by, cx, cy = pos[a], pos[a + 1], pos[b], pos[b + 1], pos[c], pos[c + 1]
-        d = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
-        if abs(d) < 1e-12:
-            continue
-        u = ((bx - x) * (cy - y) - (cx - x) * (by - y)) / d
-        v = ((cx - x) * (ay - y) - (ax - x) * (cy - y)) / d
-        w = 1 - u - v
-        if u >= 0 and v >= 0 and w >= 0:
-            out.append(u * pos[a + 2] + v * pos[b + 2] + w * pos[c + 2])
-    return sorted(out)
-
-
-def _near(p, pos, idx):
-    """The triangles whose XY box overlaps the cavity's (one pass), so each probe tests only those.
+def _near_tris(p, pos, idx):
+    """Precomputed XY-bounded triangles whose XY box overlaps the cavity's (one pass),
+    so each probe only computes barycentric coordinates for triangles covering (x, y).
     ponytail: linear scan per plan; add a per-part grid index if very large meshes make placing slow."""
     corners = [geometry.apply(p.transform, (x, y, 0.0)) for x in (-p.size[0], p.size[0]) for y in (-p.size[1], p.size[1])]
     x0, x1 = min(c[0] for c in corners), max(c[0] for c in corners)
@@ -360,12 +344,31 @@ def _near(p, pos, idx):
     out = []
     for k in range(0, len(idx), 3):
         a, b, c = idx[k] * 3, idx[k + 1] * 3, idx[k + 2] * 3
-        if max(pos[a], pos[b], pos[c]) < x0 or min(pos[a], pos[b], pos[c]) > x1:
+        ax, bx, cx = pos[a], pos[b], pos[c]
+        if max(ax, bx, cx) < x0 or min(ax, bx, cx) > x1:
             continue
-        if max(pos[a + 1], pos[b + 1], pos[c + 1]) < y0 or min(pos[a + 1], pos[b + 1], pos[c + 1]) > y1:
+        ay, by, cy = pos[a + 1], pos[b + 1], pos[c + 1]
+        if max(ay, by, cy) < y0 or min(ay, by, cy) > y1:
             continue
-        out.extend((idx[k], idx[k + 1], idx[k + 2]))
+        d = (bx - ax) * (cy - ay) - (cx - ax) * (by - ay)
+        if abs(d) < 1e-12:
+            continue
+        out.append((ax, ay, pos[a + 2], bx, by, pos[b + 2], cx, cy, pos[c + 2], d,
+                    min(ax, bx, cx), max(ax, bx, cx), min(ay, by, cy), max(ay, by, cy)))
     return out
+
+
+def _crossings_near(x, y, tris):
+    """Heights where the vertical line through (x, y) crosses the prefiltered triangles."""
+    out = []
+    for ax, ay, az, bx, by, bz, cx, cy, cz, d, minx, maxx, miny, maxy in tris:
+        if x < minx or x > maxx or y < miny or y > maxy:
+            continue
+        u = ((bx - x) * (cy - y) - (cx - x) * (by - y)) / d
+        v = ((cx - x) * (ay - y) - (ax - x) * (cy - y)) / d
+        if u >= 0 and v >= 0 and (1 - u - v) >= 0:
+            out.append(u * az + v * bz + (1 - u - v) * cz)
+    return sorted(out)
 
 
 def _inside(z, crossings):
@@ -378,13 +381,13 @@ def breaks_surface(p, pos, idx):
     if p.mode != "embedded":
         return False
     jitter = 1.7e-4
-    idx = _near(p, pos, idx)
+    tris = _near_tris(p, pos, idx)
     if p.face == "side":     # a slot only has to stay inside the part; a flat cavity also needs its floor and its cover
         heights = (p.floor + INSET, p.top - INSET)
     else:
         heights = ((p.floor + p.top) / 2, p.top + INSET, p.floor - INSET)
     for x, y in _probes(p):
-        cross = _crossings(x + jitter, y + jitter, pos, idx)
+        cross = _crossings_near(x + jitter, y + jitter, tris)
         if not all(_inside(z, cross) for z in heights):
             return True
     return False
