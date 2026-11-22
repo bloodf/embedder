@@ -176,6 +176,14 @@ class RoundTrip(Base):
         self.load()
         self.assertEqual(self.error("mesh.chunk", job=first["job"], object=0, part=0, kind="pos", i=0), "stale_job")
 
+    def test_auto_fridge_bridge_command(self):
+        r = self.load()
+        auto = self.call("pocket.auto_fridge", job=r["job"], object=0, count="auto", preset="magnet-disc-6x2", mode="embedded")
+        self.assertEqual(auto["count"], 1)
+        self.assertEqual(auto["items"][0]["plan"]["face"], "bottom")
+        applied = self.call("project.apply", job=r["job"], pockets=[it["args"] for it in auto["items"]], remove=[])
+        self.assertEqual(len(applied["pauses"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

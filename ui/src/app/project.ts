@@ -315,7 +315,7 @@ export async function autoFridge(count: 'auto' | number = 'auto'): Promise<void>
     },
   });
   if (!r.ok || !r.result.items.length) return;
-  let staged = s.staged.filter(x => x.args.object !== obj);
+  let staged = s.staged.filter(x => x.args.object !== obj || x.plan.face !== 'bottom');
   for (const item of r.result.items) staged = stage(staged, item.args, item.plan);
   letGo();
   Object.assign(s, { staged, result: null });

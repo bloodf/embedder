@@ -251,18 +251,23 @@ class Session:
         except (TypeError, ValueError):
             return None
 
-    def _request(self, job, args):
-        entry = job.entries[_index(args, "object", len(job.entries))]
-        j = _index(args, "part", len(entry.meshes))
-        part = entry.obj.parts[j]
-        if part.subtype != "normal_part":
-            raise SessionError("bad_part", "pockets go on model parts only")
+    def _usable_entry(self, job, args):
+        obj_idx = _index(args, "object", len(job.entries))
+        entry = job.entries[obj_idx]
         if job.pkg.has_cut_connectors(entry.obj.id):
             raise SessionError("cut_object", entry.obj.name)   # the detail is the name: the page writes the sentence
         if not job.pkg.has_settings:
             raise SessionError("no_model_settings", "the project has no model_settings.config")
         if entry.obj.plain:
             raise SessionError("unsupported_object", entry.obj.name)
+        return obj_idx, entry
+
+    def _request(self, job, args):
+        _, entry = self._usable_entry(job, args)
+        j = _index(args, "part", len(entry.meshes))
+        part = entry.obj.parts[j]
+        if part.subtype != "normal_part":
+            raise SessionError("bad_part", "pockets go on model parts only")
         pos, idx = entry.meshes[j]
         t = _index(args, "tri", len(idx) // 3)
         corners = [tuple(pos[3 * idx[3 * t + c] + a] for a in range(3)) for c in range(3)]
@@ -335,14 +340,7 @@ class Session:
     def auto_fridge(self, args):
         """Plan 1, 2, 3, or 4 symmetric bottom-face fridge magnet pockets on the selected object."""
         job = self._current(args.get("job"))
-        obj_idx = _index(args, "object", len(job.entries))
-        entry = job.entries[obj_idx]
-        if job.pkg.has_cut_connectors(entry.obj.id):
-            raise SessionError("cut_object", entry.obj.name)
-        if not job.pkg.has_settings:
-            raise SessionError("no_model_settings", "the project has no model_settings.config")
-        if entry.obj.plain:
-            raise SessionError("unsupported_object", entry.obj.name)
+        obj_idx, entry = self._usable_entry(job, args)
 
         raw_count = args.get("count", "auto")
         if raw_count != "auto" and raw_count is not None:
@@ -350,146 +348,25 @@ class Session:
                 raise SessionError("bad_request", "count is auto or 1..8")
         spread = _number(args, "spread", 0.28, low=0.10, high=0.45)
 
-        normal_parts = [(j, p, entry.meshes[j][0], entry.meshes[j][1])
+        normal_parts = [(j, entry.meshes[j][0], entry.meshes[j][1])
                         for j, p in enumerate(entry.obj.parts)
                         if p.subtype == "normal_part" and len(entry.meshes[j][0]) >= 9]
         if not normal_parts:
             raise SessionError("bad_part", "object has no normal model parts")
-
-        global_min_z = min(min(pos[2::3]) for _, _, pos, _ in normal_parts)
-
-        down_tris = []
-        for j, _p, pos, idx in normal_parts:
-            n_tris = len(idx) // 3
-            for t in range(n_tris):
-                cs = [tuple(pos[3 * idx[3 * t + c] + a] for a in range(3)) for c in range(3)]
-                if all(abs(c[2] - global_min_z) <= 0.25 for c in cs):
-                    try:
-                        n = geometry.triangle_normal(*cs)
-                    except ValueError:
-                        continue
-                    if n[2] <= -0.92:
-                        e1 = (cs[1][0] - cs[0][0], cs[1][1] - cs[0][1])
-                        e2 = (cs[2][0] - cs[0][0], cs[2][1] - cs[0][1])
-                        area = 0.5 * abs(e1[0] * e2[1] - e1[1] * e2[0])
-                        if area > 1e-4:
-                            down_tris.append((j, t, cs, area))
-
-        if not down_tris:
-            for j, _p, pos, idx in normal_parts:
-                n_tris = len(idx) // 3
-                for t in range(n_tris):
-                    cs = [tuple(pos[3 * idx[3 * t + c] + a] for a in range(3)) for c in range(3)]
-                    if min(c[2] for c in cs) <= global_min_z + 1.5:
-                        try:
-                            n = geometry.triangle_normal(*cs)
-                        except ValueError:
-                            continue
-                        if n[2] <= -0.75:
-                            down_tris.append((j, t, cs, 1.0))
-
+        down_tris = geometry.bottom_triangles(normal_parts)
         if not down_tris:
             raise SessionError("bad_part", "no bottom face found on this object")
 
-        xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
-        ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        span_x = max(1.0, max_x - min_x)
-        span_y = max(1.0, max_y - min_y)
-        cx_sym = 0.5 * (min_x + max_x)
-        cy_sym = 0.5 * (min_y + max_y)
-        base_area = sum(a for _, _, _, a in down_tris)
-
+        resolve_args = dict(args)
+        if resolve_args.get("preset") is None and resolve_args.get("custom") is None:
+            resolve_args["preset"] = "magnet-disc-6x2"
         try:
-            insert = presets.resolve(args, self.settings_fn().get("user_presets"))
-        except presets.PresetError:
-            insert = presets.find("magnet-disc-6x2") or presets.BUILTIN[0]
+            insert = presets.resolve(resolve_args, self.settings_fn().get("user_presets"))
+        except presets.PresetError as e:
+            raise SessionError(e.code, e.detail) from None
 
         cfg = self.settings_fn()
-        cxy = cfg["xy_clearance"]
-        pocket_r = 0.5 * max(insert.l, insert.w) + cxy
-        min_wall = 1.2
-        req_margin = pocket_r + min_wall
-        min_sep = max(12.0, 2.2 * (2.0 * pocket_r))
-
-        if raw_count == "auto" or raw_count is None:
-            diag = math.hypot(span_x, span_y)
-            minor = min(span_x, span_y)
-            if base_area >= 2200.0 and diag >= 2.0 * min_sep and minor >= 1.2 * min_sep:
-                target_count = 4
-            elif (base_area >= 480.0 or max(span_x, span_y) >= 1.35 * min_sep) and max(span_x, span_y) >= min_sep + 2 * req_margin:
-                target_count = 2
-            else:
-                target_count = 1
-        else:
-            target_count = int(raw_count)
-
-        max_dx = max(0.0, 0.5 * span_x - req_margin)
-        max_dy = max(0.0, 0.5 * span_y - req_margin)
-        off_x = min(max_dx, max(0.5 * min_sep if max_dx >= 0.5 * min_sep else max_dx, spread * span_x))
-        off_y = min(max_dy, max(0.5 * min_sep if max_dy >= 0.5 * min_sep else max_dy, spread * span_y))
-
-        if target_count == 1:
-            targets = [(cx_sym, cy_sym)]
-        elif target_count == 2:
-            if span_x >= span_y:
-                targets = [(cx_sym - off_x, cy_sym), (cx_sym + off_x, cy_sym)]
-            else:
-                targets = [(cx_sym, cy_sym - off_y), (cx_sym, cy_sym + off_y)]
-        elif target_count == 3:
-            if span_x >= span_y:
-                targets = [(cx_sym - off_x, cy_sym - 0.85 * off_y),
-                           (cx_sym + off_x, cy_sym - 0.85 * off_y),
-                           (cx_sym, cy_sym + 0.90 * off_y)]
-            else:
-                targets = [(cx_sym - 0.85 * off_x, cy_sym - off_y),
-                           (cx_sym - 0.85 * off_x, cy_sym + off_y),
-                           (cx_sym + 0.90 * off_x, cy_sym)]
-        else:
-            targets = [
-                (cx_sym - off_x, cy_sym - off_y),
-                (cx_sym + off_x, cy_sym - off_y),
-                (cx_sym - off_x, cy_sym + off_y),
-                (cx_sym + off_x, cy_sym + off_y),
-            ]
-
-        def pt_in_tri_2d(px, py, cs):
-            (ax, ay, _), (bx, by, _), (cx, cy, _) = cs
-            d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by)
-            d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy)
-            d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay)
-            has_neg = (d1 < -1e-4) or (d2 < -1e-4) or (d3 < -1e-4)
-            has_pos = (d1 > 1e-4) or (d2 > 1e-4) or (d3 > 1e-4)
-            return not (has_neg and has_pos)
-
-        def closest_pt_on_seg_2d(px, py, ax, ay, bx, by):
-            dx, dy = bx - ax, by - ay
-            l2 = dx * dx + dy * dy
-            if l2 <= 1e-12:
-                return ax, ay
-            t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / l2))
-            return ax + t * dx, ay + t * dy
-
-        def snap_to_bottom_face(tx, ty):
-            for j, t, cs, _ in down_tris:
-                if pt_in_tri_2d(tx, ty, cs):
-                    z = sum(c[2] for c in cs) / 3.0
-                    return j, t, [round(tx, 6), round(ty, 6), round(z, 6)]
-            best_j, best_t, best_pt, best_d = down_tris[0][0], down_tris[0][1], [cx_sym, cy_sym, global_min_z], 1e18
-            for j, t, cs, _ in down_tris:
-                z = sum(c[2] for c in cs) / 3.0
-                cands = [(sum(c[0] for c in cs) / 3.0, sum(c[1] for c in cs) / 3.0)]
-                for k in range(3):
-                    a, b = cs[k], cs[(k + 1) % 3]
-                    qx, qy = closest_pt_on_seg_2d(tx, ty, a[0], a[1], b[0], b[1])
-                    tcx, tcy = cands[0]
-                    cands.append((0.92 * qx + 0.08 * tcx, 0.92 * qy + 0.08 * tcy))
-                for qx, qy in cands:
-                    d = math.hypot(qx - tx, qy - ty)
-                    if d < best_d:
-                        best_d, best_j, best_t, best_pt = d, j, t, [round(qx, 6), round(qy, 6), round(z, 6)]
-            return best_j, best_t, best_pt
+        targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread)
 
         mode = args.get("mode") if args.get("mode") in ("embedded", "open") else "embedded"
         if self._object_block(job, entry) and mode == "embedded":
@@ -498,37 +375,53 @@ class Session:
         if cover is None:
             cover = min(cfg["cover_magnet"], 0.4)
 
-        base_spec = {}
-        if isinstance(args.get("custom"), dict):
-            base_spec["custom"] = args["custom"]
-        else:
-            base_spec["preset"] = insert.id
-        if args.get("spin"):
-            base_spec["spin"] = args["spin"]
-        if args.get("pocket_shape"):
-            base_spec["pocket_shape"] = args["pocket_shape"]
+        def build_args(part_j, tri_t, pt, item_mode):
+            out = {"object": obj_idx, "part": part_j, "tri": tri_t, "point": pt, "mode": item_mode}
+            if isinstance(args.get("custom"), dict):
+                out["custom"] = args["custom"]
+            else:
+                out["preset"] = insert.id
+            if args.get("spin"):
+                out["spin"] = args["spin"]
+            if item_mode == "embedded" and cover is not None:
+                out["cover"] = float(cover)
+            if args.get("pocket_shape"):
+                out["pocket_shape"] = args["pocket_shape"]
+            return out
 
-        items_args = []
+        planned_entries = []
         for tx, ty in targets:
-            part_j, tri_t, pt = snap_to_bottom_face(tx, ty)
-            p_args = {
-                "object": obj_idx,
-                "part": part_j,
-                "tri": tri_t,
-                "point": pt,
-                "mode": mode,
-                **base_spec,
-            }
-            if mode == "embedded" and cover is not None:
-                p_args["cover"] = float(cover)
-            items_args.append(p_args)
+            part_j, tri_t, pt = geometry.snap_to_bottom(tx, ty, down_tris)
+            p_args = build_args(part_j, tri_t, pt, mode)
+            p, point = None, None
+            try:
+                _, p, point = self._plan_at(job, p_args)
+            except pocket.Blocked:
+                pass
+            if p_args["mode"] == "embedded" and (
+                p is None or (args.get("cover") is None and "breaks_surface" in p.warnings)
+            ):
+                open_args = build_args(part_j, tri_t, pt, "open")
+                try:
+                    _, open_p, open_pt = self._plan_at(job, open_args)
+                    if p is None or "breaks_surface" not in open_p.warnings:
+                        p_args, p, point = open_args, open_p, open_pt
+                except pocket.Blocked:
+                    pass
+            if p is not None:
+                planned_entries.append((p_args, p, point))
 
+        all_pockets = [p for _, p, _ in planned_entries]
+        prox = pocket.proximity_warnings(all_pockets) if len(all_pockets) > 1 else ()
+        user_layers = self._user_layers(job)
+        copies = job.copies(entry.obj.id)
         staged_out = []
-        for idx_i, p_args in enumerate(items_args):
-            others = [a for k, a in enumerate(items_args) if k != idx_i]
-            plan_res = self.plan({"job": job.id, **p_args, **({"others": others} if others else {})})
-            if not plan_res.get("blocked"):
-                staged_out.append({"args": p_args, "plan": plan_res})
+        for idx_i, (p_args, p, point) in enumerate(planned_entries):
+            warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], user_layers)[1]]
+            warnings += [w[0] for w in prox if idx_i in w[1:]]
+            plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
+                        "warnings": warnings, "blocked": None}
+            staged_out.append({"args": p_args, "plan": plan_res})
         return {"items": staged_out, "count": len(staged_out)}
 
     def _plan_quiet(self, job, many):

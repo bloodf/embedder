@@ -257,3 +257,71 @@ def face_centre(pos, idx, tri, normal, dist=1e-3, cos_tol=1 - 1e-4):
         acc = [s + area * (a[i] + b[i] + c[i]) / 3 for i, s in enumerate(acc)]
     centre = tuple(v / total for v in acc)
     return centre if any(_inside_triangle(centre, *flat[k], n) for k in face) else None
+
+
+def _scan_bottom_tris(parts, min_z, z_tol, max_nz, all_corners):
+    out = []
+    for part_j, pos, idx in parts:
+        for t in range(len(idx) // 3):
+            cs = [tuple(pos[3 * idx[3 * t + c] + a] for a in range(3)) for c in range(3)]
+            on_bottom = all(abs(c[2] - min_z) <= z_tol for c in cs) if all_corners else (min(c[2] for c in cs) <= min_z + z_tol)
+            if not on_bottom:
+                continue
+            try:
+                n = triangle_normal(*cs)
+            except ValueError:
+                continue
+            if n[2] <= max_nz:
+                area = 0.5 * abs((cs[1][0] - cs[0][0]) * (cs[2][1] - cs[0][1]) - (cs[1][1] - cs[0][1]) * (cs[2][0] - cs[0][0]))
+                if area > 1e-4 or not all_corners:
+                    out.append((part_j, t, cs, area if all_corners else 1.0))
+    return out
+
+
+def bottom_triangles(parts):
+    """Downward-facing bottom triangles `[(part_j, tri_t, corners, area_2d), ...]` across `(part_j, pos, idx)` tuples.
+    Prefers flat bed-contact facets within 0.25 mm of Z_min; falls back to beveled bottom facets within 1.5 mm."""
+    if not parts:
+        return []
+    min_z = min(min(pos[2::3]) for _, pos, _ in parts)
+    return (_scan_bottom_tris(parts, min_z, 0.25, -0.92, True)
+            or _scan_bottom_tris(parts, min_z, 1.5, -0.75, False))
+
+
+def _pt_in_tri_2d(px, py, cs):
+    (ax, ay, _), (bx, by, _), (cx, cy, _) = cs
+    d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by)
+    d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy)
+    d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay)
+    return not (((d1 < -1e-4) or (d2 < -1e-4) or (d3 < -1e-4)) and ((d1 > 1e-4) or (d2 > 1e-4) or (d3 > 1e-4)))
+
+
+def _closest_on_seg_2d(px, py, ax, ay, bx, by):
+    dx, dy = bx - ax, by - ay
+    l2 = dx * dx + dy * dy
+    if l2 <= 1e-12:
+        return ax, ay
+    t = max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / l2))
+    return ax + t * dx, ay + t * dy
+
+
+def snap_to_bottom(tx, ty, down_tris):
+    """Snap a 2D target (tx, ty) onto the containing or nearest bottom triangle: (part_j, tri_t, [x, y, z])."""
+    for j, t, cs, _ in down_tris:
+        if _pt_in_tri_2d(tx, ty, cs):
+            z = sum(c[2] for c in cs) / 3.0
+            return j, t, [round(tx, 6), round(ty, 6), round(z, 6)]
+    best_j, best_t, best_pt, best_d = down_tris[0][0], down_tris[0][1], [round(tx, 6), round(ty, 6), 0.0], 1e18
+    for j, t, cs, _ in down_tris:
+        z = sum(c[2] for c in cs) / 3.0
+        tcx, tcy = sum(c[0] for c in cs) / 3.0, sum(c[1] for c in cs) / 3.0
+        cands = [(tcx, tcy)]
+        for k in range(3):
+            a, b = cs[k], cs[(k + 1) % 3]
+            qx, qy = _closest_on_seg_2d(tx, ty, a[0], a[1], b[0], b[1])
+            cands.append((0.92 * qx + 0.08 * tcx, 0.92 * qy + 0.08 * tcy))
+        for qx, qy in cands:
+            d = math.hypot(qx - tx, qy - ty)
+            if d < best_d:
+                best_d, best_j, best_t, best_pt = d, j, t, [round(qx, 6), round(qy, 6), round(z, 6)]
+    return best_j, best_t, best_pt

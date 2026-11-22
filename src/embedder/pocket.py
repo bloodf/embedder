@@ -388,3 +388,58 @@ def breaks_surface(p, pos, idx):
         if not all(_inside(z, cross) for z in heights):
             return True
     return False
+
+
+def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.28):
+    """Symmetric 2D target centres `[(tx, ty), ...]` across the bottom footprint `down_tris`."""
+    xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
+    ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max(1.0, max_x - min_x)
+    span_y = max(1.0, max_y - min_y)
+    cx_sym = 0.5 * (min_x + max_x)
+    cy_sym = 0.5 * (min_y + max_y)
+    base_area = sum(a for _, _, _, a in down_tris)
+
+    pocket_r = 0.5 * max(insert.l, insert.w) + xy_clearance
+    req_margin = pocket_r + 1.2
+    min_sep = max(12.0, 4.4 * pocket_r)
+
+    if raw_count == "auto" or raw_count is None:
+        diag = math.hypot(span_x, span_y)
+        minor = min(span_x, span_y)
+        if base_area >= 2200.0 and diag >= 2.0 * min_sep and minor >= 1.2 * min_sep:
+            target_count = 4
+        elif (base_area >= 480.0 or max(span_x, span_y) >= 1.35 * min_sep) and max(span_x, span_y) >= min_sep + 2 * req_margin:
+            target_count = 2
+        else:
+            target_count = 1
+    else:
+        target_count = int(raw_count)
+
+    max_dx = max(0.0, 0.5 * span_x - req_margin)
+    max_dy = max(0.0, 0.5 * span_y - req_margin)
+    off_x = min(max_dx, max(0.5 * min_sep if max_dx >= 0.5 * min_sep else max_dx, spread * span_x))
+    off_y = min(max_dy, max(0.5 * min_sep if max_dy >= 0.5 * min_sep else max_dy, spread * span_y))
+
+    if target_count == 1:
+        return [(cx_sym, cy_sym)]
+    if target_count == 2:
+        if span_x >= span_y:
+            return [(cx_sym - off_x, cy_sym), (cx_sym + off_x, cy_sym)]
+        return [(cx_sym, cy_sym - off_y), (cx_sym, cy_sym + off_y)]
+    if target_count == 3:
+        if span_x >= span_y:
+            return [(cx_sym - off_x, cy_sym - 0.85 * off_y),
+                    (cx_sym + off_x, cy_sym - 0.85 * off_y),
+                    (cx_sym, cy_sym + 0.90 * off_y)]
+        return [(cx_sym - 0.85 * off_x, cy_sym - off_y),
+                (cx_sym - 0.85 * off_x, cy_sym + off_y),
+                (cx_sym + 0.90 * off_x, cy_sym)]
+    return [
+        (cx_sym - off_x, cy_sym - off_y),
+        (cx_sym + off_x, cy_sym - off_y),
+        (cx_sym - off_x, cy_sym + off_y),
+        (cx_sym + off_x, cy_sym + off_y),
+    ]

@@ -310,12 +310,91 @@ class Plan(Base):
         self.assertAlmostEqual(sum(xs2) / 2.0, 130.0)
         self.assertGreater(xs2[1] - xs2[0], 30.0)
 
+        three_x = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 3})
+        self.assertEqual(three_x["count"], 3)
+
         four = self.s.auto_fridge({"job": r["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2", "mode": "embedded"})
         self.assertEqual(four["count"], 4)
         pts4 = [it["plan"]["point"] for it in four["items"]]
         self.assertAlmostEqual(sum(p[0] for p in pts4) / 4.0, 130.0)
         self.assertAlmostEqual(sum(p[1] for p in pts4) / 4.0, 130.0)
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r["job"], "object": 0, "count": 99}), "bad_request")
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r["job"], "object": 0, "count": True}), "bad_request")
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r["job"], "object": 0, "preset": "nope"}), "unknown_preset")
+
+    def test_auto_fridge_sizing_orientations_and_fallbacks(self):
+        # Small 20x20 cube -> auto picks 1 magnet
+        r_small = self.load(fixtures.build, objects=[fixtures.cube_object(size=20)])
+        auto_1 = self.s.auto_fridge({"job": r_small["job"], "object": 0, "count": "auto"})
+        self.assertEqual(auto_1["count"], 1)
+
+        # Y-dominant 20x50x20 bar -> auto picks 2 magnets along Y; count=3 also uses Y-dominant layout
+        y_bar = {"name": "ybar", "parts": [fixtures.part("ybar", fixtures.box(20, 50, 20))]}
+        r_y = self.load(fixtures.build, objects=[y_bar])
+        auto_2y = self.s.auto_fridge({"job": r_y["job"], "object": 0, "count": "auto",
+                                      "custom": {"kind": "magnet", "shape": "block", "l": 8, "w": 4, "t": 2},
+                                      "spin": 15, "pocket_shape": "rectangle"})
+        self.assertEqual(auto_2y["count"], 2)
+        ys = [it["plan"]["point"][1] for it in auto_2y["items"]]
+        self.assertGreater(ys[1] - ys[0], 20.0)
+        self.assertEqual(auto_2y["items"][0]["args"]["spin"], 15)
+        self.assertEqual(auto_2y["items"][0]["args"]["pocket_shape"], "rectangle")
+        three_y = self.s.auto_fridge({"job": r_y["job"], "object": 0, "count": 3})
+        self.assertEqual(three_y["count"], 3)
+
+        # Thin 40x40x2.0 plaque -> embedded 6x2 magnet (2.6mm total) would break surface, so it falls back to open mode
+        thin = {"name": "thin", "parts": [fixtures.part("thin", fixtures.box(40, 40, 2.0))]}
+        r_thin = self.load(fixtures.build, objects=[thin])
+        thin_res = self.s.auto_fridge({"job": r_thin["job"], "object": 0, "count": 2, "preset": "magnet-disc-6x2"})
+        self.assertEqual(thin_res["count"], 2)
+        self.assertTrue(all(it["args"]["mode"] == "open" for it in thin_res["items"]))
+
+        # Object-blocked project (print_sequence="by object") -> automatically switches to open mode
+        r_blk = self.load(fixtures.build, settings=dict(fixtures.SETTINGS, print_sequence="by object"))
+        blk_res = self.s.auto_fridge({"job": r_blk["job"], "object": 0, "count": 1})
+        self.assertEqual(blk_res["count"], 1)
+        self.assertEqual(blk_res["items"][0]["args"]["mode"], "open")
+
+    def test_auto_fridge_non_convex_beveled_and_error_guards(self):
+        # L-shaped bottom where a corner target falls outside the bottom triangles and snaps to the nearest triangle edge
+        l_verts = [(0, 0, 0), (50, 0, 0), (50, 20, 0), (20, 20, 0), (20, 50, 0), (0, 50, 0),
+                   (0, 0, 15), (50, 0, 15), (50, 20, 15), (20, 20, 15), (20, 50, 15), (0, 50, 15)]
+        l_tris = [
+            (0, 2, 1), (0, 3, 2), (0, 4, 3), (0, 5, 4),   # bottom face (L-shape, missing top-right [20..50]x[20..50])
+            (6, 7, 8), (6, 8, 9), (6, 9, 10), (6, 10, 11),
+            (0, 1, 7), (0, 7, 6), (0, 6, 11), (0, 11, 5),
+        ]
+        r_l = self.load(fixtures.build, objects=[{"name": "L", "parts": [fixtures.part("L", (l_verts, l_tris))]}])
+        res_l = self.s.auto_fridge({"job": r_l["job"], "object": 0, "count": 4})
+        self.assertEqual(res_l["count"], 4)
+
+        # Beveled bottom where the lowest vertex is at z=0 but the flat-ish bottom facet sits at z=0.5..0.8 (exercising fallback)
+        bev_verts = [(0, 0, 0), (40, 0, 0.5), (40, 40, 0.5), (0, 40, 0.5),
+                     (0, 0, 20), (40, 0, 20), (40, 40, 20), (0, 40, 20)]
+        bev_tris = [(1, 3, 2), (4, 5, 6), (4, 6, 7), (0, 1, 5)]
+        r_bev = self.load(fixtures.build, objects=[{"name": "bev", "parts": [fixtures.part("bev", (bev_verts, bev_tris))]}])
+        res_bev = self.s.auto_fridge({"job": r_bev["job"], "object": 0, "count": 1})
+        self.assertEqual(res_bev["count"], 1)
+
+        # Object with only upward-facing triangles (no bottom face) -> bad_part
+        up_verts = [(0, 0, 0), (20, 0, 0), (0, 20, 0)]
+        up_tris = [(0, 1, 2)]
+        r_up = self.load(fixtures.build, objects=[{"name": "up", "parts": [fixtures.part("up", (up_verts, up_tris))]}])
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_up["job"], "object": 0}), "bad_part")
+
+        # Object with only negative_part -> bad_part
+        neg_only = {"name": "neg", "parts": [fixtures.part("neg", fixtures.box(20, 20, 20), "negative_part")]}
+        r_neg = self.load(fixtures.build, objects=[neg_only])
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_neg["job"], "object": 0}), "bad_part")
+
+        # Project/object error guards
+        cut = '<?xml version="1.0"?>\n<objects>\n <object id="1">\n  <cut_id id="5" check_sum="1" connectors_cnt="1"/>\n </object>\n</objects>\n'
+        r_cut = self.load(extra={"Metadata/cut_information.xml": cut})
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_cut["job"], "object": 0}), "cut_object")
+        r_no_ms = self.load(fixtures.no_model_settings)
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_no_ms["job"], "object": 0}), "no_model_settings")
+        r_plain = self.load(fixtures.plain_mesh)
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_plain["job"], "object": 0}), "unsupported_object")
 
 
 class Apply(Base):
