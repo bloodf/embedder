@@ -82,6 +82,7 @@ export const zhCN: Record<MessageKey, string> = {
   'polarity.none': '无',
   'polarity.N': 'N 极朝上',
   'polarity.S': 'S 极朝上',
+  'form.autoFridgeAll': '自动应用于所有对象',
   'obj.instance': '{name}（实例 {n}）',
   'group.magnet': '磁铁',
   'group.nfc': 'NFC',

@@ -340,17 +340,8 @@ class Session:
         return {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": job.copies(entry.obj.id),
                 "warnings": warnings, "blocked": None}
 
-    def auto_fridge(self, args):
-        """Plan 1, 2, 3, or 4 symmetric bottom-face fridge magnet pockets on the selected object."""
-        job = self._current(args.get("job"))
-        obj_idx, entry = self._usable_entry(job, args)
-
-        raw_count = args.get("count", "auto")
-        if raw_count != "auto" and raw_count is not None:
-            if isinstance(raw_count, bool) or not isinstance(raw_count, int) or not 1 <= raw_count <= 8:
-                raise SessionError("bad_request", "count is auto or 1..8")
-        spread = _number(args, "spread", 0.28, low=0.10, high=0.45)
-
+    def _auto_fridge_for_object(self, job, obj_idx, args, raw_count, spread, insert, cfg):
+        _, entry = self._usable_entry(job, {"object": obj_idx})
         normal_parts = [(j, entry.meshes[j][0], entry.meshes[j][1])
                         for j, p in enumerate(entry.obj.parts)
                         if p.subtype == "normal_part" and len(entry.meshes[j][0]) >= 9]
@@ -360,15 +351,6 @@ class Session:
         if not down_tris:
             raise SessionError("bad_part", "no bottom face found on this object")
 
-        resolve_args = dict(args)
-        if resolve_args.get("preset") is None and resolve_args.get("custom") is None:
-            resolve_args["preset"] = "magnet-disc-6x2"
-        try:
-            insert = presets.resolve(resolve_args, self.settings_fn().get("user_presets"))
-        except presets.PresetError as e:
-            raise SessionError(e.code, e.detail) from None
-
-        cfg = self.settings_fn()
         targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread)
         pocket_r = 0.5 * max(insert.l, insert.w) + cfg["xy_clearance"]
 
@@ -445,6 +427,42 @@ class Session:
             plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
                         "warnings": warnings, "blocked": None}
             staged_out.append({"args": p_args, "plan": plan_res})
+        return staged_out
+
+    def auto_fridge(self, args):
+        """Plan 1, 2, 3, or 4 symmetric bottom-face fridge magnet pockets on one or all objects."""
+        job = self._current(args.get("job"))
+        raw_count = args.get("count", "auto")
+        if raw_count != "auto" and raw_count is not None:
+            if isinstance(raw_count, bool) or not isinstance(raw_count, int) or not 1 <= raw_count <= 8:
+                raise SessionError("bad_request", "count is auto or 1..8")
+        spread = _number(args, "spread", 0.28, low=0.10, high=0.45)
+
+        resolve_args = dict(args)
+        if resolve_args.get("preset") is None and resolve_args.get("custom") is None:
+            resolve_args["preset"] = "magnet-disc-6x2"
+        try:
+            insert = presets.resolve(resolve_args, self.settings_fn().get("user_presets"))
+        except presets.PresetError as e:
+            raise SessionError(e.code, e.detail) from None
+
+        cfg = self.settings_fn()
+        if args.get("object") == "all":
+            if not job.entries:
+                raise SessionError("bad_request", "no objects in project")
+            staged_out, first_err = [], None
+            for obj_idx in range(len(job.entries)):
+                try:
+                    staged_out.extend(self._auto_fridge_for_object(job, obj_idx, args, raw_count, spread, insert, cfg))
+                except SessionError as e:
+                    if first_err is None:
+                        first_err = e
+            if not staged_out and first_err is not None:
+                raise first_err
+            return {"items": staged_out, "count": len(staged_out)}
+
+        obj_idx = _index(args, "object", len(job.entries))
+        staged_out = self._auto_fridge_for_object(job, obj_idx, args, raw_count, spread, insert, cfg)
         return {"items": staged_out, "count": len(staged_out)}
 
     def _plan_quiet(self, job, many):

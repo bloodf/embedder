@@ -434,6 +434,23 @@ class Plan(Base):
         r_plain = self.load(fixtures.plain_mesh)
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r_plain["job"], "object": 0}), "unsupported_object")
 
+    def test_auto_fridge_all_objects(self):
+        r = self.load(fixtures.build,
+                      objects=[fixtures.cube_object("a", size=20), fixtures.cube_object("b", size=60)],
+                      items=[(0, "1 0 0 0 1 0 0 0 1 50 100 0"), (1, "1 0 0 0 1 0 0 0 1 150 100 0")])
+        res = self.s.auto_fridge({"job": r["job"], "object": "all", "count": "auto"})
+        self.assertEqual(res["count"], 5)   # 1 on small 20mm object + 4 on 60mm object
+        self.assertEqual([it["args"]["object"] for it in res["items"]], [0, 1, 1, 1, 1])
+        # If one object is cut/invalid and another is valid, "all" skips the invalid one and stages the valid one
+        cut = '<?xml version="1.0"?>\n<objects>\n <object id="1">\n  <cut_id id="5" check_sum="1" connectors_cnt="1"/>\n </object>\n</objects>\n'
+        r2 = self.load(fixtures.build,
+                       objects=[fixtures.cube_object("cut_obj", size=20), fixtures.cube_object("ok_obj", size=20)],
+                       items=[(0, "1 0 0 0 1 0 0 0 1 50 100 0"), (1, "1 0 0 0 1 0 0 0 1 150 100 0")],
+                       extra={"Metadata/cut_information.xml": cut})
+        res2 = self.s.auto_fridge({"job": r2["job"], "object": "all", "count": "auto"})
+        self.assertEqual(res2["count"], 1)
+        self.assertEqual(res2["items"][0]["args"]["object"], 1)
+
 
 class Apply(Base):
     def apply(self, job, pockets=(), remove=()):

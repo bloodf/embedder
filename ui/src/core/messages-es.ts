@@ -81,6 +81,7 @@ export const es: Record<MessageKey, string> = {
   'polarity.none': 'Ninguna',
   'polarity.N': 'N arriba',
   'polarity.S': 'S arriba',
+  'form.autoFridgeAll': 'Auto en todos los objetos',
   'obj.instance': '{name} (copia {n})',
   'group.magnet': 'Imanes',
   'group.nfc': 'NFC',

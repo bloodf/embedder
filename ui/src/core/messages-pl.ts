@@ -85,6 +85,7 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'polarity.none': 'Brak',
   'polarity.N': 'N w górę',
   'polarity.S': 'S w górę',
+  'form.autoFridgeAll': 'Auto dla wszystkich obiektów',
   'obj.instance': '{name} (kopia {n})',
   'group.magnet': 'Magnesy',
   'group.nfc': 'NFC',

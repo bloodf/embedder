@@ -193,6 +193,7 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polar
           <Button label="2×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-2" @click="autoFridge(2)" />
           <Button label="4×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-4" @click="autoFridge(4)" />
         </div>
+        <Button v-if="objects.length > 1" :label="t('form.autoFridgeAll')" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-all" @click="autoFridge('auto', true)" />
       </div>
     </div>
 

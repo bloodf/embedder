@@ -14,6 +14,8 @@ All notable changes to this project are documented here. The format follows
 - Captive **Hex & Square Nut** presets (`M3`–`M6` hex nuts, `M3`–`M5` square nuts, and `nut` custom insert kind) using vented hexagonal and square pockets.
 ### Added
 - Optional **Polarity note** (`None`, `N up`, `S up`) for magnet pockets, shown in the staged list and included in the OrcaSlicer pause message (e.g. `Embedder: insert 1 x 6x3 magnet (N up)`).
+### Added
+- **Auto all objects** support in `auto_fridge`: passing `object="all"` (or clicking **Auto all objects** when a plate has multiple objects) places symmetric bottom magnet pockets across every usable object on the plate in one click.
 
 ## [0.8.0] - 2026-11-22
 
