@@ -516,17 +516,29 @@ class Plan(Base):
         self.assertEqual(res2["items"][0]["args"]["object"], 1)
 
     def test_auto_fridge_physics_sizing_and_weak_hold_warning(self):
-        # Tall heavy column (30x30x120 mm) has a small 900mm^2 footprint -> footprint alone would pick 2,
-        # but physics requires 4 (or warns if 2 max fit). On a 45x45x120 column, 4 fit and physics scales up to 4!
+        # Moderate tall column (45x45x60 mm, 15% infill) -> scales up to 2x2 = 4 magnets
+        mid = {"name": "mid", "parts": [fixtures.part("mid", fixtures.box(45, 45, 60))]}
+        r_mid = self.load(fixtures.build, objects=[mid], settings=dict(fixtures.SETTINGS, sparse_infill_density="15%"))
+        res_mid = self.s.auto_fridge({"job": r_mid["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
+        self.assertEqual(res_mid["count"], 4)
+
+        # Heavy tall column (45x45x120 mm, 25% infill) -> scales beyond 4 into a 3x3 = 9 grid
         tall = {"name": "tall", "parts": [fixtures.part("tall", fixtures.box(45, 45, 120))]}
         r_tall = self.load(fixtures.build, objects=[tall], settings=dict(fixtures.SETTINGS, sparse_infill_density="25%"))
         res_tall = self.s.auto_fridge({"job": r_tall["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
-        self.assertEqual(res_tall["count"], 4)
+        self.assertEqual(res_tall["count"], 9)
 
-        # On a ferrite/stainless setting with a heavy block where 4 magnets cannot meet the 2.5x safety factor, warn!
+        # On a ferrite/stainless setting with a heavy block where even the full grid cannot meet the 2.5x safety factor, warn!
         self.store.update({"magnet_grade": "ferrite", "fridge_surface": "stainless"})
         res_weak = self.s.auto_fridge({"job": r_tall["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
         self.assertIn("weak_magnet_hold", res_weak["items"][0]["plan"]["warnings"])
+
+        # Large heavy plate (100x80x100) needing >4 magnets (and odd/prime -> n+1) scales up to a symmetric grid!
+        self.store.update({"magnet_grade": "N35", "fridge_surface": "steel"})
+        heavy = {"name": "heavy", "parts": [fixtures.part("heavy", fixtures.box(100, 80, 100))]}
+        r_heavy = self.load(fixtures.build, objects=[heavy], settings=dict(fixtures.SETTINGS, sparse_infill_density="40%"))
+        res_heavy = self.s.auto_fridge({"job": r_heavy["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
+        self.assertGreater(res_heavy["count"], 4)
         # Two instances of one object share its pockets: "all" plans that object once, not once per instance
         r3 = self.load(fixtures.two_instances)
         one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})
