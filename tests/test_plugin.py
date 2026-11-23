@@ -227,8 +227,42 @@ class RoundTrip(Base):
         applied = self.call("project.apply", job=r_ok["job"], pockets=[], remove=[])
         with mock.patch.object(plugin, "_open_in_orca", side_effect=OSError("cannot launch")):
             self.assertEqual(self.error("project.open", path=applied["path"]), "open_failed")
+        # get_icon() second call hits existing identical file, then directory blocks write -> ""
+        self.assertTrue(self.page.get_icon().endswith("embedder-icon.png"))
+        self.assertTrue(self.page.get_icon().endswith("embedder-icon.png"))
+        os.remove(os.path.join(self.storage, "embedder-icon.png"))
         os.makedirs(os.path.join(self.storage, "embedder-icon.png"), exist_ok=True)
         self.assertEqual(self.page.get_icon(), "")
+
+        # _asset in packaged (__package__) mode, _host_language error, _live_values skip, worker SessionError & reply fail
+        import types
+        with mock.patch.object(plugin, "__package__", "embedder"), \
+             mock.patch.object(plugin, "_assets", types.SimpleNamespace(ICON_PNG=b"png"), create=True), \
+             mock.patch("pkgutil.get_data", side_effect=[b"<html>", None]):
+            self.assertEqual(plugin._asset("icon.png"), b"png")
+            self.assertEqual(plugin._asset("app.html"), "<html>")
+            with self.assertRaises(FileNotFoundError):
+                plugin._asset("missing.html")
+        with mock.patch.object(plugin.orca.host, "app_language", side_effect=RuntimeError("no lang")):
+            self.assertIsNone(plugin._host_language())
+        with mock.patch.object(plugin.orca.host, "preset_bundle", return_value=types.SimpleNamespace(
+            full_config_value=mock.MagicMock(side_effect=RuntimeError("bad key"))
+        )):
+            self.assertEqual(plugin._live_values(), {})
+        with mock.patch.object(self.page, "reply", side_effect=RuntimeError("gone")), \
+             mock.patch.object(plugin, "get_session", side_effect=RuntimeError("boom")):
+            self.send("pocket.plan", job="j1")
+            time.sleep(0.05)
+        with mock.patch.object(plugin, "get_session", side_effect=plugin.session.SessionError("bad_request", "bad")):
+            self.assertEqual(self.error("pocket.plan", job="j1"), "bad_request")
+        # Direct _worker SessionError path
+        done_err = []
+        fake_page = mock.MagicMock(reply=lambda mid, result=None, error=None: done_err.append(error))
+        def raise_sess():
+            raise plugin.session.SessionError("stale_job", "old")
+        plugin._worker(fake_page, 1, raise_sess)
+        time.sleep(0.05)
+        self.assertEqual(done_err[0]["code"], "stale_job")
 
         # open_in_orca platform branches
         with mock.patch("subprocess.Popen") as popen:
@@ -238,7 +272,15 @@ class RoundTrip(Base):
                 self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
             with mock.patch("sys.platform", "win32"):
                 self.assertFalse(plugin.open_in_orca("/tmp/a.3mf"))
-            self.assertEqual(popen.call_count, 2)
+                orca_exe = os.path.join(self.storage, "orca-slicer.exe")
+                with open(orca_exe, "wb") as f:
+                    f.write(b"")
+                with mock.patch("sys.executable", orca_exe):
+                    self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
+            self.assertEqual(popen.call_count, 3)
+
+        with mock.patch.object(plugin.orca.host.plater(), "export_3mf_copy", side_effect=RuntimeError("export err")):
+            self.assertEqual(self.error("project.load"), "export_failed")
 
 
 if __name__ == "__main__":
