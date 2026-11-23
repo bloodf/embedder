@@ -5,7 +5,7 @@ import Select from 'primevue/select';
 import InputNumber from 'primevue/inputnumber';
 import { OuiEmpty, OuiFormRow, OuiFormSection, OuiIcon, OuiStatus } from '@orca-plugins/ui-foundation/src/components';
 import SettingsPages from './SettingsPages.vue';
-import { files, info, insert, languages, rfid, ruler, save as saveIcon, tag, trash } from '@orca-plugins/ui-foundation/src/icons';
+import { files, info, insert, languages, magnet, rfid, ruler, save as saveIcon, tag, trash } from '@orca-plugins/ui-foundation/src/icons';
 import { s, saveSettings, deletePreset, tracker } from '../app/store';
 import { replanStaged } from '../app/project';
 import { ask } from '../core/dialog';
@@ -41,6 +41,7 @@ const valid = computed(() => knobs.every(k => form[k.key] != null));
 
 const sections = computed(() => [
   { id: 'set-fit', label: t('settings.title'), icon: ruler, state: valid.value ? undefined : 'error' as const },
+  { id: 'set-fridge', label: t('settings.fridge'), icon: magnet },
   { id: 'set-presets', label: t('settings.presets'), icon: tag },
   { id: 'set-copies', label: t('copies.title'), icon: files },
   { id: 'set-language', label: t('lang.title'), icon: languages },
@@ -91,13 +92,18 @@ async function remove(p: Preset) {
           <OuiFormRow v-for="k in knobs" :key="k.key" :label="t(`settings.${k.key}`)" :for="'set-' + k.key">
             <InputNumber v-decimal :locale="locale" v-model="form[k.key]" :input-id="'set-' + k.key" :min="0" :max="k.max" :min-fraction-digits="1" :max-fraction-digits="2" :step="0.1" suffix=" mm" />
           </OuiFormRow>
+        </form>
+      </OuiFormSection>
+
+      <OuiFormSection id="set-fridge" :icon="magnet" :title="t('settings.fridge')" :description="t('settings.fridgeHelp')">
+        <div class="em-setform">
           <OuiFormRow :label="t('settings.magnet_grade')" for="set-magnet_grade">
             <Select v-model="form.magnet_grade" input-id="set-magnet_grade" :options="gradeOptions" option-label="label" option-value="value" data-test="magnet-grade" />
           </OuiFormRow>
           <OuiFormRow :label="t('settings.fridge_surface')" for="set-fridge_surface">
             <Select v-model="form.fridge_surface" input-id="set-fridge_surface" :options="surfaceOptions" option-label="label" option-value="value" data-test="fridge-surface" />
           </OuiFormRow>
-        </form>
+        </div>
       </OuiFormSection>
 
       <OuiFormSection id="set-presets" :icon="tag" :title="t('settings.presets')">

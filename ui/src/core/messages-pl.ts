@@ -260,6 +260,8 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'settings.z_clearance': 'Luz w pionie',
   'settings.cover_magnet': 'Przykrycie magnesów',
   'settings.cover_nfc': 'Przykrycie tagów NFC',
+  'settings.fridge': 'Magnesy na lodówkę',
+  'settings.fridgeHelp': 'Używane przez Automatyczny magnes na lodówkę do oszacowania, ile magnesów utrzyma wydruk.',
   'settings.magnet_grade': 'Klasa magnesu',
   'settings.fridge_surface': 'Powierzchnia lodówki',
   'grade.N35': 'N35 (standardowy neodymowy)',
