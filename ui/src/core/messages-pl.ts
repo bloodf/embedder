@@ -252,6 +252,7 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'err.bad_item': 'Projekt zmienił się w trakcie pracy Embeddera; wczytaj go ponownie',
   'err.no_model_settings': 'Projekt nie ma listy części OrcaSlicer (model_settings.config). Otwórz go w OrcaSlicer, zapisz i wczytaj ponownie',
   'err.exists': 'Plik wynikowy już istnieje',
+  'err.path_too_long': 'Ścieżka folderu danych jest zbyt długa, aby zapisać kopię',
 
   'settings.title': 'Pasowanie i przykrycia',
   'settings.help': 'Luz jest dodawany wokół i nad każdą wkładką. Przykrycie to materiał drukowany nad osadzoną wkładką.',

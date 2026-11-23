@@ -244,6 +244,7 @@ export const en = {
   'err.bad_item': 'The project changed under Embedder; load it again',
   'err.no_model_settings': 'The project has no OrcaSlicer part list (model_settings.config). Open it in OrcaSlicer, save it, and load it again',
   'err.exists': 'The output file already exists',
+  'err.path_too_long': 'The storage folder path is too long to save a copy',
 
   'settings.title': 'Fit and covers',
   'settings.help': 'Clearance is added around and above each insert. The cover is the material printed over an embedded insert.',
@@ -545,6 +546,7 @@ export const ptBR: Record<MessageKey, string> = {
   'err.bad_item': 'O projeto mudou sem o Embedder saber; carregue-o de novo',
   'err.no_model_settings': 'O projeto não tem a lista de partes do OrcaSlicer (model_settings.config). Abra-o no OrcaSlicer, salve e carregue de novo',
   'err.exists': 'O arquivo de saída já existe',
+  'err.path_too_long': 'O caminho da pasta de armazenamento é longo demais para salvar uma cópia',
 
   'settings.title': 'Folgas e coberturas',
   'settings.help': 'A folga é somada ao redor e acima de cada inserto. A cobertura é o material impresso sobre um inserto embutido.',

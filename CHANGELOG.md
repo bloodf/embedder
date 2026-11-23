@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Fixed
-- Re-applying on an already-applied copy on Windows no longer exceeds the 260-character `MAX_PATH` limit (`Errno 2` on `.tmp`): `_stem()` now strips previous `-embedder-YYYYMMDD-HHMMSS-...` suffixes and caps the stem at 48 characters.
+- Re-applying on an already-applied copy on Windows no longer exceeds the 260-character `MAX_PATH` limit (`Errno 2` on `.tmp`): `_stem()` strips every previous `-embedder-YYYYMMDD-HHMMSS-id-n` suffix, and the saved name is cut to fit the real budget (the storage path, the longest `-99.3mf` collision name and the temporary file; UTF-16 units on Windows, 255 bytes per name on POSIX). When even `untitled` cannot fit, Apply reports `path_too_long` instead of an OS error.
 
 ## [0.9.0] - 2026-11-22
 
