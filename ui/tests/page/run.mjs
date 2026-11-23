@@ -847,7 +847,7 @@ test('unsaved settings are named in the save bar and can be discarded', `
   eq(q('#set-cover_nfc').value, '0.6 mm', 'value back');
   assert(byTest('settings-save').disabled && !text(q('.oui-settings-foot')).includes('Unsaved'), 'bar quiet again');
   assert(!last('cmd', 'settings.save'), 'nothing was sent');
-  eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
+  eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'Fridge magnets', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
 `);
 
 test('settings pages: wide, the list beside one page; a pick moves focus to its heading and is kept for next time', `
