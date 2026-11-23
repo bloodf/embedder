@@ -12,15 +12,30 @@ import { ask } from '../core/dialog';
 import { t, tn, langPref, setLangPref, autoLocale, fmt, locale } from '../core/i18n';
 import { vDecimal } from '../core/decimal';
 import { LOCALES, type LangPref } from '../core/i18n-core';
-import type { CopiesCleared, CopiesStatus, Preset } from '../app/types';
+import type { CopiesCleared, CopiesStatus, FridgeSurface, MagnetGrade, Preset } from '../app/types';
 
 type Knob = 'xy_clearance' | 'z_clearance' | 'cover_magnet' | 'cover_nfc';
 const knobs: { key: Knob; max: number }[] = [
   { key: 'xy_clearance', max: 1 }, { key: 'z_clearance', max: 1 }, { key: 'cover_magnet', max: 10 }, { key: 'cover_nfc', max: 10 }];
-const form = reactive<Record<Knob, number | null>>({ xy_clearance: null, z_clearance: null, cover_magnet: null, cover_nfc: null });
-function reset() { const v = s.settings; if (v) knobs.forEach(k => { form[k.key] = v[k.key]; }); }
+const form = reactive<{ xy_clearance: number | null; z_clearance: number | null; cover_magnet: number | null; cover_nfc: number | null; magnet_grade: MagnetGrade; fridge_surface: FridgeSurface }>({
+  xy_clearance: null, z_clearance: null, cover_magnet: null, cover_nfc: null, magnet_grade: 'N35', fridge_surface: 'steel' });
+const gradeOptions = computed(() => (['N35', 'N42', 'N52', 'ferrite'] as MagnetGrade[]).map(value => ({ value, label: t(`grade.${value}`) })));
+const surfaceOptions = computed(() => (['steel', 'stainless', 'board'] as FridgeSurface[]).map(value => ({ value, label: t(`surface.${value}`) })));
+function reset() {
+  const v = s.settings;
+  if (!v) return;
+  knobs.forEach(k => { form[k.key] = v[k.key]; });
+  form.magnet_grade = v.magnet_grade ?? 'N35';
+  form.fridge_surface = v.fridge_surface ?? 'steel';
+}
 watch(() => s.settings, reset, { immediate: true });
-const changed = computed(() => (s.settings ? knobs.filter(k => form[k.key] !== s.settings?.[k.key]) : []));
+const changed = computed(() => {
+  if (!s.settings) return [];
+  const out: (Knob | 'magnet_grade' | 'fridge_surface')[] = knobs.filter(k => form[k.key] !== s.settings?.[k.key]).map(k => k.key);
+  if (form.magnet_grade !== (s.settings.magnet_grade ?? 'N35')) out.push('magnet_grade');
+  if (form.fridge_surface !== (s.settings.fridge_surface ?? 'steel')) out.push('fridge_surface');
+  return out;
+});
 const dirty = computed(() => changed.value.length > 0);
 const valid = computed(() => knobs.every(k => form[k.key] != null));
 
@@ -37,7 +52,8 @@ const langOptions = computed(() => [
 
 async function save() {
   if (!valid.value) return;
-  if (await saveSettings(Object.fromEntries(knobs.map(k => [k.key, form[k.key]])))) await replanStaged();
+  const payload = { ...Object.fromEntries(knobs.map(k => [k.key, form[k.key]])), magnet_grade: form.magnet_grade, fridge_surface: form.fridge_surface };
+  if (await saveSettings(payload)) await replanStaged();
 }
 const dims = (p: Preset) => [p.d ?? p.l, ...(p.shape === 'block' ? [p.w] : []), p.t].map(v => fmt.number(v ?? 0, 2)).join(' × ');
 // Old applied copies in the plugin folder: asked each time the tab opens, since an Apply may have pruned some.
@@ -74,6 +90,12 @@ async function remove(p: Preset) {
         <form id="em-settings-form" class="em-setform" data-test="settings-form" @submit.prevent="save">
           <OuiFormRow v-for="k in knobs" :key="k.key" :label="t(`settings.${k.key}`)" :for="'set-' + k.key">
             <InputNumber v-decimal :locale="locale" v-model="form[k.key]" :input-id="'set-' + k.key" :min="0" :max="k.max" :min-fraction-digits="1" :max-fraction-digits="2" :step="0.1" suffix=" mm" />
+          </OuiFormRow>
+          <OuiFormRow :label="t('settings.magnet_grade')" for="set-magnet_grade">
+            <Select v-model="form.magnet_grade" input-id="set-magnet_grade" :options="gradeOptions" option-label="label" option-value="value" data-test="magnet-grade" />
+          </OuiFormRow>
+          <OuiFormRow :label="t('settings.fridge_surface')" for="set-fridge_surface">
+            <Select v-model="form.fridge_surface" input-id="set-fridge_surface" :options="surfaceOptions" option-label="label" option-value="value" data-test="fridge-surface" />
           </OuiFormRow>
         </form>
       </OuiFormSection>
@@ -114,7 +136,7 @@ async function remove(p: Preset) {
 
     <template #footer>
       <span role="status" class="em-unsaved"><OuiStatus v-if="dirty" state="pending">{{ t('settings.unsaved') }}</OuiStatus></span>
-      <span v-if="dirty" class="oui-meta oui-truncate">{{ changed.map(k => t(`settings.${k.key}`)).join(', ') }}</span>
+      <span v-if="dirty" class="oui-meta oui-truncate">{{ changed.map(k => t(`settings.${k}`)).join(', ') }}</span>
       <span class="oui-spacer" />
       <Button :label="t('settings.discard')" severity="secondary" text :disabled="!dirty" data-test="settings-discard" @click="reset" />
       <Button :label="t('common.save')" type="submit" form="em-settings-form" :disabled="!s.settings || !dirty || !valid" :loading="tracker.isBusy('settings')" data-test="settings-save">

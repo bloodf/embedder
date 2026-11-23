@@ -18,12 +18,17 @@ export interface Preset {
   builtin: boolean;
 }
 
+export type MagnetGrade = 'N35' | 'N42' | 'N52' | 'ferrite';
+export type FridgeSurface = 'steel' | 'stainless' | 'board';
+
 export interface Settings {
   ui_language: 'auto' | 'en' | 'pt-BR';
   xy_clearance: number;
   z_clearance: number;
   cover_magnet: number;
   cover_nfc: number;
+  magnet_grade: MagnetGrade;
+  fridge_surface: FridgeSurface;
   user_presets: Preset[];
   pocket_shapes: Record<string, PocketShape>;   // preset id -> the shape picked for it
 }

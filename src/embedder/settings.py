@@ -9,12 +9,16 @@ import pocket
 import presets
 
 UI_LANGUAGES = ("auto", "en", "pt-BR", "es", "de", "zh-CN", "pl")   # "auto": OrcaSlicer's language, then the system's
+MAGNET_GRADES = ("N35", "N42", "N52", "ferrite")
+FRIDGE_SURFACES = ("steel", "stainless", "board")
 DEFAULTS = {
     "ui_language": "auto",
     "xy_clearance": 0.2,     # mm added to the insert's width/diameter on each side
     "z_clearance": 0.2,      # mm added to the insert's thickness
     "cover_magnet": 1.0,     # mm of material sealed over an embedded magnet
     "cover_nfc": 0.6,        # mm of material sealed over an embedded NFC tag
+    "magnet_grade": "N35",   # N35 | N42 | N52 | ferrite
+    "fridge_surface": "steel",  # steel | stainless | board
     "user_presets": [],      # the user's own insert presets, validated by presets.clean_user_presets
     "pocket_shapes": {},     # preset id -> the pocket shape the user picked for it (pocket.SHAPES), oldest first
 }
@@ -26,6 +30,10 @@ def _clean(key, value):
     """The value to store for key, or None when it is not valid."""
     if key == "ui_language":
         return value if value in UI_LANGUAGES else None
+    if key == "magnet_grade":
+        return value if value in MAGNET_GRADES else None
+    if key == "fridge_surface":
+        return value if value in FRIDGE_SURFACES else None
     if key == "user_presets":
         return presets.clean_user_presets(value)
     if key == "pocket_shapes":

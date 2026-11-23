@@ -397,7 +397,32 @@ def breaks_surface(p, pos, idx):
     return False
 
 
-def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.28):
+MAGNET_GRADE_FACTORS = {"N35": 1.0, "N42": 1.18, "N52": 1.42, "ferrite": 0.16}
+FRIDGE_SURFACE_FACTORS = {"steel": 1.0, "stainless": 0.45, "board": 0.30}
+
+
+def magnet_shear_hold_n(insert, cover_mm, grade="N35", surface="steel"):
+    """Estimated vertical shear hold (Newtons) for one magnet against a vertical steel/stainless/board surface."""
+    area = math.pi * (insert.l * 0.5) ** 2 if insert.shape == "disc" else insert.l * insert.w
+    r = math.sqrt(area / math.pi)
+    t = insert.t
+    g = max(0.0, float(cover_mm)) + 0.15   # 0.15 mm typical paint/coating gap
+    b_rel = (g + t) / math.hypot(g + t, r) - g / math.hypot(g, r)
+    f_pull = 0.58 * area * (b_rel * b_rel) * MAGNET_GRADE_FACTORS.get(grade, 1.0) * FRIDGE_SURFACE_FACTORS.get(surface, 1.0)
+    return 0.22 * f_pull
+
+
+def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, infill_pct=15.0, grade="N35", surface="steel"):
+    """Minimum magnet count for a 2.5x safety factor against sliding and peeling on a vertical fridge door."""
+    fill = min(1.0, max(0.15, infill_pct / 100.0 + 0.20))
+    mass_kg = (max(0.0, volume_mm3) / 1000.0) * 1.24 * fill / 1000.0
+    peel = 1.0 + 0.5 * max(0.0, z_com_mm) / max(10.0, span_mm)
+    req_n = 2.5 * (mass_kg * 9.81) * peel
+    hold_n = max(1e-6, magnet_shear_hold_n(insert, cover_mm, grade, surface))
+    return max(1, math.ceil(req_n / hold_n)), hold_n, req_n
+
+
+def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.28, needed_count=1):
     """Symmetric 2D target centres `[(tx, ty), ...]` across the bottom footprint `down_tris`."""
     xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
     ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
@@ -416,12 +441,16 @@ def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.2
     if raw_count == "auto" or raw_count is None:
         diag = math.hypot(span_x, span_y)
         minor = min(span_x, span_y)
-        if base_area >= 2200.0 and diag >= 2.0 * min_sep and minor >= 1.2 * min_sep:
-            target_count = 4
-        elif (base_area >= 480.0 or max(span_x, span_y) >= 1.35 * min_sep) and max(span_x, span_y) >= min_sep + 2 * req_margin:
-            target_count = 2
+        can_4 = diag >= 2.0 * min_sep and minor >= 1.2 * min_sep
+        can_2 = max(span_x, span_y) >= min_sep + 2 * req_margin
+        max_fit = 4 if can_4 else (2 if can_2 else 1)
+        if base_area >= 2200.0 and can_4:
+            footprint_count = 4
+        elif (base_area >= 480.0 or max(span_x, span_y) >= 1.35 * min_sep) and can_2:
+            footprint_count = 2
         else:
-            target_count = 1
+            footprint_count = 1
+        target_count = min(max_fit, max(footprint_count, int(needed_count)))
     else:
         target_count = int(raw_count)
 

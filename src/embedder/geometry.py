@@ -333,3 +333,28 @@ def snap_to_bottom(tx, ty, down_tris, margin=0.0):
             if d < best_d:
                 best_d, best_j, best_t, best_pt = d, j, t, [round(qx, 6), round(qy, 6), round(z, 6)]
     return best_j, best_t, best_pt
+
+
+def mesh_mass_props(parts):
+    """Total enclosed volume (mm^3) and Z-centroid height above Z_min (mm) across `[(part_j, pos, idx), ...]`."""
+    if not parts:
+        return 0.0, 0.0
+    min_z = min(min(pos[2::3]) for _, pos, _ in parts)
+    total_vol, acc_z = 0.0, 0.0
+    for _, pos, idx in parts:
+        part_vol, part_z = 0.0, 0.0
+        for t in range(0, len(idx), 3):
+            a, b, c = idx[t] * 3, idx[t + 1] * 3, idx[t + 2] * 3
+            ax, ay, az = pos[a], pos[a + 1], pos[a + 2] - min_z
+            bx, by, bz = pos[b], pos[b + 1], pos[b + 2] - min_z
+            cx, cy, cz = pos[c], pos[c + 1], pos[c + 2] - min_z
+            v6 = ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)
+            part_vol += v6
+            part_z += v6 * (az + bz + cz) / 4.0
+        if part_vol < 0:
+            part_vol, part_z = -part_vol, -part_z
+        total_vol += part_vol / 6.0
+        acc_z += part_z / 6.0
+    if total_vol <= 1e-9:
+        return 0.0, 0.0
+    return total_vol, max(0.0, acc_z / total_vol)
