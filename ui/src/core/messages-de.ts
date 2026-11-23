@@ -244,6 +244,7 @@ export const de: Record<MessageKey, string> = {
   'err.bad_item': 'Das Projekt hat sich ohne Embedder geändert; laden Sie es erneut',
   'err.no_model_settings': 'Dem Projekt fehlt die Teileliste von OrcaSlicer (model_settings.config). Öffnen Sie es in OrcaSlicer, speichern Sie es und laden Sie es erneut',
   'err.exists': 'Die Ausgabedatei existiert bereits',
+  'err.path_too_long': 'Der Pfad des Speicherordners ist zu lang, um eine Kopie zu speichern',
 
   'settings.title': 'Spiel und Abdeckungen',
   'settings.help': 'Das Spiel wird rund um und über jedem Einlegeteil hinzugefügt. Die Abdeckung ist das Material, das über ein eingebettetes Einlegeteil gedruckt wird.',

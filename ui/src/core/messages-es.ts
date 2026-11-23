@@ -244,6 +244,7 @@ export const es: Record<MessageKey, string> = {
   'err.bad_item': 'El proyecto cambió sin que Embedder lo supiera; cárguelo de nuevo',
   'err.no_model_settings': 'El proyecto no tiene la lista de piezas de OrcaSlicer (model_settings.config). Ábralo en OrcaSlicer, guárdelo y cárguelo de nuevo',
   'err.exists': 'El archivo de salida ya existe',
+  'err.path_too_long': 'La ruta de la carpeta de almacenamiento es demasiado larga para guardar una copia',
 
   'settings.title': 'Holguras y cubiertas',
   'settings.help': 'La holgura se suma alrededor y por encima de cada inserto. La cubierta es el material impreso sobre un inserto incrustado.',

@@ -170,17 +170,76 @@ class Load(Base):
             f.write(b"junk")
         self.assertEqual(self.error(self.s.load, job_id, "", 1, {}), "bad_package")
 
-    def test_long_names_fit_a_file_name(self):
-        """A file name is at most 255 bytes on Linux: the stem leaves room for the suffix and the temporary name."""
-        for name in ("日" * 200, "a" * 300, "🧲" * 90):
-            stem = session._stem("/p/%s.3mf" % name)
-            self.assertLessEqual(len(stem.encode("utf-8")), 150, name[:3])
-            self.assertLessEqual(len(stem), 48)
-            self.assertTrue(stem and name.startswith(stem))
+    def test_stem_drops_every_copy_suffix_including_collision_number(self):
+        self.assertEqual(session._stem("/p/Box-embedder-20261121-180757-ff2484-2.3mf"), "Box")
         self.assertEqual(
             session._stem(r"C:\work\03-buecherregal-embedder-20261121-180757-ff2484-embedder-20261122-1748.3mf"),
             "03-buecherregal",
         )
+
+    def test_long_names_fit_the_real_budget(self):
+        """The stem is cut to the room left by the path, the longest collision name and the temporary file."""
+        tail = "-embedder-20261121-180757-ff2484-99.3mf"
+        for windows, storage in ((False, "/s"), (True, "C:\\" + "d" * 100), (True, "C:\\" + "é" * 120)):
+            for name in ("日" * 200, "a" * 300, "🧲" * 90):
+                stem = session._fit_stem(name, storage, tail, windows)
+                self.assertTrue(stem and name.startswith(stem))
+                full = os.path.join(storage, stem + tail) if not windows else storage + "\\" + stem + tail
+                self.assertLessEqual(session._units(stem + tail, windows) + threemf.TMP_SUFFIX_LEN, 255)
+                if windows:
+                    self.assertLessEqual(session._units(full, windows) + threemf.TMP_SUFFIX_LEN, 259)
+        self.assertEqual(session._fit_stem("a" * 300, "/s", tail, False), "a" * (255 - len(tail) - threemf.TMP_SUFFIX_LEN))
+
+    def test_no_room_for_a_minimal_name_is_a_domain_error(self):
+        tail = "-embedder-20261121-180757-ff2484-99.3mf"
+        self.assertEqual(self.error(session._fit_stem, "Box", "C:\\" + "d" * 230, tail, True), "path_too_long")
+
+    def test_real_files_deep_directory_emoji_and_repeated_copies(self):
+        """Apply for real in a deep folder with a very long emoji name: copies of copies and a taken name still write."""
+        deep = os.path.join(self.storage, *["d" * 20] * 4)
+        os.makedirs(deep)
+        self.s = session.Session(deep, self.store.effective)
+        pocket = {"object": 0, "part": 0, "tri": TOP_TRI, "point": [110, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded"}
+        job_id, source = self.s.new_job()
+        fixtures.cube(source)
+        self.s.load(job_id, "/p/%s.3mf" % ("🧲" * 90), 1, {})
+        with mock.patch.object(session.time, "strftime", return_value="20261121-180757"):
+            first = self.s.apply({"job": job_id, "pockets": [pocket]})
+            paths = [first["path"]]
+            for _ in range(2):   # a copy of a copy: the project name stays, no suffix stacks up
+                job_id, source = self.s.new_job()
+                shutil.copyfile(paths[-1], source)
+                self.s.load(job_id, paths[-1], 1, {})
+                self.assertEqual(self.s.job.stem, first["name"].split("-embedder-")[0])
+                paths.append(self.s.apply({"job": job_id, "pockets": [pocket]})["path"])
+            # the same second and job id again: the name is taken, so -2 is tried and fits
+            self.s.job = replace_job(self.s.job, applied=False)
+            again = self.s.apply({"job": self.s.job.id, "pockets": [pocket]})["path"]
+        self.assertEqual(len(set(paths + [again])), 4)
+        for path in paths + [again]:
+            self.assertLessEqual(len(os.path.basename(path).encode("utf-8")), 255 - threemf.TMP_SUFFIX_LEN, path)
+            self.assertTrue(os.path.isfile(path))
+
+    @unittest.skipUnless(os.name == "nt", "the MAX_PATH budget applies to a real Windows file system")
+    def test_windows_real_paths_at_the_budget_edge(self):
+        """On Windows, apply in a folder that leaves room for only a short name, then in one that leaves none."""
+        pocket = {"object": 0, "part": 0, "tri": TOP_TRI, "point": [110, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded"}
+        tail = len("-embedder-20261121-180757-ff2484-99.3mf") + threemf.TMP_SUFFIX_LEN
+        for room, code in ((10, None), (1, "path_too_long")):   # units left for the name: "untitled" needs 8, an emoji 2
+            length = 258 - tail - room   # folder length: the separator and the name make up the rest of the 259
+            folder = os.path.join(self.storage, "p" * (length - len(self.storage) - 1))
+            os.makedirs(folder)
+            job_id, source = self.s.new_job()   # loaded from the short storage: its jobs folder is not what is measured
+            fixtures.cube(source)
+            self.s.load(job_id, "/p/" + "🧲" * 40 + ".3mf", 1, {})
+            self.s.storage = folder
+            if code:
+                self.assertEqual(self.error(self.s.apply, {"job": job_id, "pockets": [pocket]}), code)
+            else:
+                out = self.s.apply({"job": job_id, "pockets": [pocket]})["path"]
+                self.assertTrue(os.path.isfile(out))
+                self.assertLessEqual(session._units(out, True) + threemf.TMP_SUFFIX_LEN, 259)
+                self.s.storage = self.storage
 
 
 class Plan(Base):

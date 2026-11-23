@@ -4,6 +4,7 @@ values plugin.py passes in)."""
 
 import base64
 import math
+import ntpath
 import os
 import re
 import shutil
@@ -94,11 +95,31 @@ def _index(args, key, size):
 def _stem(project_path):
     name = os.path.basename(str(project_path or "").replace("\\", "/"))
     stem = os.path.splitext(name)[0].strip()
-    # Strip previous -embedder-YYYYMMDD-HHMMSS-... suffixes so re-applying doesn't stack toward Windows MAX_PATH (260).
-    stem = re.sub(r"(?:-embedder-\d{8}-\d{4,6}(?:-[0-9a-f]+)?)+$", "", stem)
-    stem = re.sub(r"[\x00-\x1f]", "", stem)[:48]
-    # a file name is at most 255 bytes on Linux (and storage + name + .tmp <= 260 on Windows)
-    return stem.encode("utf-8")[:150].decode("utf-8", "ignore").strip() or "untitled"
+    # a copy of a copy keeps the first project name: drop every -embedder-<date>-<time>[-id6][-n] suffix
+    stem = re.sub(r"(?:-embedder-\d{8}-\d{4,6}(?:-[0-9a-f]+)?(?:-\d+)?)+$", "", stem)
+    return re.sub(r"[\x00-\x1f]", "", stem).strip() or "untitled"
+
+
+def _units(text, windows):
+    """What the file system counts: UTF-16 units on Windows, UTF-8 bytes elsewhere."""
+    return len(text.encode("utf-16-le")) // 2 if windows else len(text.encode("utf-8"))
+
+
+def _fit_stem(stem, storage, tail, windows=os.name == "nt"):
+    """The start of `stem` that keeps <storage>/<stem><tail> and its temporary file within the limits: a name of 255
+    bytes (POSIX) or UTF-16 units (Windows), and on Windows a whole path of 259 units (MAX_PATH less the NUL)."""
+    room = 255 - _units(tail, windows) - threemf.TMP_SUFFIX_LEN
+    if windows:
+        nt = ntpath if os.name != "nt" else os.path   # a Windows path is measured as one even when tested elsewhere
+        folder = nt.join(nt.abspath(storage), "")
+        room = min(room, 259 - _units(folder, windows) - _units(tail, windows) - threemf.TMP_SUFFIX_LEN)
+    cut = stem[:max(room, 0)]   # a code point takes at least one unit: the loop below never meets a huge name
+    while cut and _units(cut, windows) > room:
+        cut = cut[:-1]
+    cut = cut.strip() or ("untitled" if _units("untitled", windows) <= room else "")
+    if not cut:
+        raise SessionError("path_too_long", storage)
+    return cut
 
 
 class Session:
@@ -506,7 +527,9 @@ class Session:
     def _write(self, job, adds, remove, pauses):
         """Write <storage>/<stem>-embedder-<YYYYmmdd-HHMMSS>-<id6>.3mf; a name taken in the meantime gets -2, -3...
         threemf.write never replaces a file, so the name is claimed atomically."""
-        base = os.path.join(self.storage, "%s-embedder-%s-%s" % (job.stem, time.strftime("%Y%m%d-%H%M%S"), job.id[:6]))
+        tail = "-embedder-%s-%s" % (time.strftime("%Y%m%d-%H%M%S"), job.id[:6])
+        # budget for the longest name tried (-99.3mf) and its temporary file, so every collision retry fits
+        base = os.path.join(self.storage, _fit_stem(job.stem, self.storage, tail + "-99.3mf") + tail)
         for n in range(1, 100):
             out = base + (".3mf" if n == 1 else "-%d.3mf" % n)
             try:

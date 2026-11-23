@@ -245,6 +245,7 @@ export const zhCN: Record<MessageKey, string> = {
   'err.bad_item': '项目在 Embedder 不知情时发生了变化；请重新加载',
   'err.no_model_settings': '项目没有 OrcaSlicer 零件列表（model_settings.config）。请在 OrcaSlicer 中打开并保存，然后重新加载',
   'err.exists': '输出文件已存在',
+  'err.path_too_long': '存储文件夹路径太长，无法保存副本',
 
   'settings.title': '间隙与覆盖层',
   'settings.help': '间隙加在每个嵌件的四周和上方。覆盖层是打印在内嵌嵌件上方的材料。',

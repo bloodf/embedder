@@ -675,12 +675,20 @@ def _publish(tmp, out):
         raise
 
 
+TMP_SUFFIX_LEN = len(".12345678.tmp")
+
+
+def tmp_name(out):
+    """The temporary file write() builds next to `out`; TMP_SUFFIX_LEN is what it adds."""
+    return "%s.%s.tmp" % (out, uuid.uuid4().hex[:8])
+
+
 def write(pkg, out, plate, additions=(), removals=(), pauses=()):
     """Write a copy of pkg to `out` (never overwritten) through a temporary file next to it."""
     out = str(out)
     if os.path.exists(out):
         raise ThreeMFError("exists", out)
-    tmp = "%s.%s.tmp" % (out, uuid.uuid4().hex[:8])
+    tmp = tmp_name(out)
     try:
         with zipfile.ZipFile(pkg.path) as zin:
             ed = _Edit(zin)
