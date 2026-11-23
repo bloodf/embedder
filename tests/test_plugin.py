@@ -184,6 +184,62 @@ class RoundTrip(Base):
         applied = self.call("project.apply", job=r["job"], pockets=[it["args"] for it in auto["items"]], remove=[])
         self.assertEqual(len(applied["pauses"]), 1)
 
+    def test_plugin_fallbacks_lifecycle_and_open_in_orca(self):
+        from unittest import mock
+        # Lifecycle & default config
+        self.assertEqual(self.page.get_default_config(), {})
+        self.page.on_load()
+        self.page.on_unload()
+
+        # UnicodeEncodeError fallback in log()
+        bad_out = mock.MagicMock()
+        bad_out.encoding = "ascii"
+        bad_out.write.side_effect = [UnicodeEncodeError("ascii", "\u2603", 0, 1, "bad"), None, None, None]
+        with mock.patch("sys.stdout", bad_out):
+            plugin.log("snow \u2603")
+
+        # Fallback to cap.get_config / cap.save_config when storage() is unavailable
+        plugin._storage_dir, plugin._store = None, None
+        cap = mock.MagicMock()
+        saved_cfg = ['{"embedder_settings": {"xy_clearance": 0.25}}']
+        cap.get_config.side_effect = lambda: saved_cfg[0]
+        cap.save_config.side_effect = lambda txt: saved_cfg.__setitem__(0, txt)
+        with mock.patch.object(plugin.orca.host.plugin, "storage", side_effect=RuntimeError("no dir")):
+            store = plugin.get_store(cap)
+            self.assertEqual(store.effective()["xy_clearance"], 0.25)
+            store.update({"xy_clearance": 0.35})
+            self.assertIn("0.35", saved_cfg[0])
+            self.assertEqual(plugin._cap_config(mock.MagicMock(get_config=lambda: "not-json")), {})
+            plugin._store = None
+            self.assertEqual(plugin.get_store(None).effective()["xy_clearance"], 0.2)
+
+        # Worker unexpected exception -> internal error reply; SessionError -> error code; open_failed
+        with mock.patch.object(plugin, "get_session", side_effect=RuntimeError("boom")):
+            self.assertEqual(self.error("pocket.plan", job="j1"), "internal")
+        with mock.patch.object(plugin, "get_session", side_effect=plugin.session.SessionError("stale_job", "old")):
+            self.assertEqual(self.error("pocket.plan", job="j1"), "stale_job")
+        self.page.on_message({"type": "other"})
+        with mock.patch.object(plugin.orca.host, "model", side_effect=RuntimeError("no model")):
+            self.assertEqual(plugin._current_plate(), 1)
+        with mock.patch.object(plugin.orca.host, "preset_bundle", side_effect=RuntimeError("no bundle")):
+            self.assertEqual(plugin._live_values(), {})
+        r_ok = self.load()
+        applied = self.call("project.apply", job=r_ok["job"], pockets=[], remove=[])
+        with mock.patch.object(plugin, "_open_in_orca", side_effect=OSError("cannot launch")):
+            self.assertEqual(self.error("project.open", path=applied["path"]), "open_failed")
+        os.makedirs(os.path.join(self.storage, "embedder-icon.png"), exist_ok=True)
+        self.assertEqual(self.page.get_icon(), "")
+
+        # open_in_orca platform branches
+        with mock.patch("subprocess.Popen") as popen:
+            with mock.patch("sys.platform", "darwin"):
+                self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
+            with mock.patch("sys.platform", "linux"):
+                self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
+            with mock.patch("sys.platform", "win32"):
+                self.assertFalse(plugin.open_in_orca("/tmp/a.3mf"))
+            self.assertEqual(popen.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
