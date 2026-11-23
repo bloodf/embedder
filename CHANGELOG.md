@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Physics-based magnet count sizing in `auto_fridge`: estimates part mass (from 3D mesh volume, center-of-mass height, and slicer infill) and per-magnet shear hold (from magnet dimensions, cover air-gap, **Magnet grade** `N35`/`N42`/`N52`/`ferrite`, and **Fridge surface** `steel`/`stainless`/`board` in Settings), automatically scaling up magnet count or warning (`weak_magnet_hold`) when even the maximum that fit cannot safely hold the model.
+
 ## [0.9.0] - 2026-11-22
 
 ### Added

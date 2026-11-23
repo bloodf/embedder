@@ -351,15 +351,26 @@ class Session:
         if not down_tris:
             raise SessionError("bad_part", "no bottom face found on this object")
 
-        targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread)
-        pocket_r = 0.5 * max(insert.l, insert.w) + cfg["xy_clearance"]
-
         mode = args.get("mode") if args.get("mode") in ("embedded", "open") else "embedded"
         if self._object_block(job, entry) and mode == "embedded":
             mode = "open"
         cover = args.get("cover")
         if cover is None:
             cover = min(cfg["cover_magnet"], 0.4)
+
+        grade = args.get("magnet_grade") if args.get("magnet_grade") in pocket.MAGNET_GRADE_FACTORS else cfg.get("magnet_grade", "N35")
+        surface = args.get("fridge_surface") if args.get("fridge_surface") in pocket.FRIDGE_SURFACE_FACTORS else cfg.get("fridge_surface", "steel")
+        raw_infill = str(job.pkg.project.get("sparse_infill_density") or "15").rstrip("%").strip()
+        infill_pct = _float(raw_infill) if _float(raw_infill) is not None else 15.0
+        vol_mm3, z_com_mm = geometry.mesh_mass_props(normal_parts)
+        xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
+        ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
+        span_mm = max(1.0, max(xs) - min(xs), max(ys) - min(ys))
+        cover_eff = 0.0 if mode == "open" else float(cover)
+        needed_count, _, _ = pocket.required_fridge_magnets(vol_mm3, z_com_mm, span_mm, insert, cover_eff, infill_pct, grade, surface)
+
+        targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread, needed_count=needed_count)
+        pocket_r = 0.5 * max(insert.l, insert.w) + cfg["xy_clearance"]
 
         def build_args(part_j, tri_t, pt, item_mode):
             out = {"object": obj_idx, "part": part_j, "tri": tri_t, "point": pt, "mode": item_mode}
@@ -420,10 +431,13 @@ class Session:
         prox = pocket.proximity_warnings(all_pockets) if len(all_pockets) > 1 else ()
         user_layers = self._user_layers(job)
         copies = job.copies(entry.obj.id)
+        weak_hold = needed_count > len(planned_entries)
         staged_out = []
         for idx_i, (p_args, p, point) in enumerate(planned_entries):
             warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], user_layers)[1]]
             warnings += [w[0] for w in prox if idx_i in w[1:]]
+            if weak_hold and "weak_magnet_hold" not in warnings:
+                warnings.append("weak_magnet_hold")
             plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
                         "warnings": warnings, "blocked": None}
             staged_out.append({"args": p_args, "plan": plan_res})
