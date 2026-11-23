@@ -502,6 +502,20 @@ class Plan(Base):
         self.s.job = replace(cur, entries=())
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r_all_cut["job"], "object": "all"}), "bad_request")
         self.assertFalse(pocket._is_prime(1))
+        # _bytes big-endian path, load progress callback, no_layer_height, and _delete OSError handling
+        from unittest import mock
+        import array as _arr
+        with mock.patch("sys.byteorder", "big"):
+            self.assertEqual(len(session._bytes(_arr.array("f", [1.0, 2.0]))), 8)
+        ticks = []
+        jid, src = self.s.new_job()
+        fixtures.cube(src)
+        self.s.load(jid, "/work/cube.3mf", 1, {}, progress=lambda d, t: ticks.append((d, t)))
+        self.assertTrue(ticks)
+        r_no_lh = self.load(fixtures.build, settings={k: v for k, v in fixtures.SETTINGS.items() if k != "layer_height"})
+        self.assertEqual(self.plan(r_no_lh["job"])["blocked"]["code"], "no_layer_height")
+        with mock.patch("os.remove", side_effect=OSError("locked")):
+            self.assertEqual(self.s._delete([(os.path.join(self.storage, "x.3mf"), 0, 100)]), (0, 0, 1))
         # Two instances of one object share its pockets: "all" plans that object once, not once per instance
         r3 = self.load(fixtures.two_instances)
         one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})

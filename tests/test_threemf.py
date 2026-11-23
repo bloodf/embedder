@@ -491,6 +491,35 @@ class Write(Base):
             threemf.write(threemf.read(src), out, 1, (), (), ())
         self.assertEqual(cm.exception.code, "exists")
 
+    def test_bed_project_json_and_publish_fallbacks(self):
+        from unittest import mock
+        self.assertEqual(threemf._bed("0x0,256x0,256x256,0x256"), ((0.0, 0.0), (256.0, 256.0)))
+        self.assertIsNone(threemf._bed(["0xbad", "1x1", "2x2"]))
+        src_no_proj = os.path.join(self.tmp, "noproj.3mf")
+        fixtures.build(src_no_proj)
+        with zipfile.ZipFile(src_no_proj) as z:
+            entries = [(i.filename, z.read(i)) for i in z.infolist() if i.filename != threemf.PROJECT]
+        with zipfile.ZipFile(src_no_proj, "w") as z:
+            for n, d in entries:
+                z.writestr(n, d)
+        self.assertEqual(threemf.read(src_no_proj).project, {})
+        src_bad_proj = self.make(fixtures.cube, name="badproj.3mf", extra={threemf.PROJECT: "{not json"})
+        self.assertEqual(threemf.read(src_bad_proj).project, {})
+
+        # _publish fallback when os.link raises FileExistsError -> exists, and when os.link raises OSError -> shutil.copyfile
+        tmp_f = os.path.join(self.tmp, "tmp.txt")
+        dst_f = os.path.join(self.tmp, "dst.txt")
+        with open(tmp_f, "w") as f:
+            f.write("ok")
+        with mock.patch("os.link", side_effect=OSError("no hardlink")):
+            threemf._publish(tmp_f, dst_f)
+        self.assertTrue(os.path.isfile(dst_f))
+        with open(tmp_f, "w") as f:
+            f.write("ok2")
+        with self.assertRaises(threemf.ThreeMFError) as cm:
+            threemf._publish(tmp_f, dst_f)
+        self.assertEqual(cm.exception.code, "exists")
+
 
 if __name__ == "__main__":
     unittest.main()
