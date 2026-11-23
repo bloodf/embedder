@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.9.0] - 2026-11-22
 
 ### Added
 - **Hex and square nut presets** (M3 to M6 hex nuts, M3 to M5 square nuts) and a "Nut" kind for your own sizes, so a nut can be trapped inside a print. Thanks @plbogen2 (#49).
@@ -12,6 +12,7 @@ All notable changes to this project are documented here. The format follows
 - **Auto all objects** next to the auto fridge magnet buttons: places the bottom magnet pockets on every object of the plate in one click. An object printed more than once is planned once, since its pockets go into every copy. Thanks @plbogen2 (#51).
 
 ### Changed
+- Shared UI 5.10.0.
 - Auto fridge magnet keeps pockets away from the edge of the bottom face and, when a pocket would break through the surface, tries nearby solid spots before falling back to an open pocket. Thanks @plbogen2 (#48).
 - Placing a pocket on large models is faster: finding the middle of a flat face and checking whether a pocket breaks the surface do less work. Thanks @plbogen2 (#47).
 
