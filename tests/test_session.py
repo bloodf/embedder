@@ -475,6 +475,14 @@ class Plan(Base):
         r_heavy = self.load(fixtures.build, objects=[heavy], settings=dict(fixtures.SETTINGS, sparse_infill_density="40%"))
         res_heavy = self.s.auto_fridge({"job": r_heavy["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
         self.assertGreater(res_heavy["count"], 4)
+
+        # Filament density lookup: explicit filament_density and fallback by filament_type (ABS/ASA/PC/TPU/PLA)
+        self.assertAlmostEqual(pocket.filament_density(["1.35"], ["PLA"]), 1.35)
+        self.assertAlmostEqual(pocket.filament_density(None, ["ABS"]), 1.04)
+        self.assertAlmostEqual(pocket.filament_density(None, ["ASA"]), 1.07)
+        self.assertAlmostEqual(pocket.filament_density(None, ["PC"]), 1.20)
+        self.assertAlmostEqual(pocket.filament_density(None, ["TPU"]), 1.21)
+        self.assertAlmostEqual(pocket.filament_density(None, ["UNKNOWN"]), 1.24)
         # Two instances of one object share its pockets: "all" plans that object once, not once per instance
         r3 = self.load(fixtures.two_instances)
         one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})
