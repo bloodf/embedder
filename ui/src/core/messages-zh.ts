@@ -254,6 +254,8 @@ export const zhCN: Record<MessageKey, string> = {
   'settings.z_clearance': '高度间隙',
   'settings.cover_magnet': '磁铁上方覆盖层',
   'settings.cover_nfc': 'NFC 标签上方覆盖层',
+  'settings.fridge': '冰箱贴磁铁',
+  'settings.fridgeHelp': '用于“自动冰箱贴磁铁”估算需要多少颗磁铁才能稳固吸住打印件。',
   'settings.magnet_grade': '磁铁等级',
   'settings.fridge_surface': '冰箱表面类型',
   'grade.N35': 'N35（标准钕磁铁）',

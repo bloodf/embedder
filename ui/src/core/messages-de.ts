@@ -253,6 +253,8 @@ export const de: Record<MessageKey, string> = {
   'settings.z_clearance': 'Spiel in der Höhe',
   'settings.cover_magnet': 'Abdeckung über Magneten',
   'settings.cover_nfc': 'Abdeckung über NFC-Tags',
+  'settings.fridge': 'Kühlschrankmagnete',
+  'settings.fridgeHelp': 'Wird von Automatischer Kühlschrankmagnet verwendet, um zu schätzen, wie viele Magnete das Teil halten.',
   'settings.magnet_grade': 'Magnetgüte',
   'settings.fridge_surface': 'Kühlschrankoberfläche',
   'grade.N35': 'N35 (Standard-Neodym)',

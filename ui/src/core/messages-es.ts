@@ -253,6 +253,8 @@ export const es: Record<MessageKey, string> = {
   'settings.z_clearance': 'Holgura en altura',
   'settings.cover_magnet': 'Cubierta sobre imanes',
   'settings.cover_nfc': 'Cubierta sobre etiquetas NFC',
+  'settings.fridge': 'Imanes de nevera',
+  'settings.fridgeHelp': 'Usado por Imán de nevera automático para estimar cuántos imanes hacen falta para sujetar la pieza.',
   'settings.magnet_grade': 'Grado del imán',
   'settings.fridge_surface': 'Superficie del frigorífico',
   'grade.N35': 'N35 (neodimio estándar)',
