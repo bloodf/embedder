@@ -422,6 +422,28 @@ def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, inf
     return max(1, math.ceil(req_n / hold_n)), hold_n, req_n
 
 
+def _is_prime(n):
+    if n < 2:
+        return False
+    return all(n % d != 0 for d in range(2, math.isqrt(n) + 1))
+
+
+def _grid_dims(count, max_cols, max_rows, span_x, span_y):
+    """Factor pair (cols, rows) for `count` that fits in (max_cols, max_rows) and best matches span_x / span_y."""
+    best, best_score = None, 1e18
+    aspect = span_x / max(1.0, span_y)
+    for rows in range(1, min(count, max_rows) + 1):
+        if count % rows != 0:
+            continue
+        cols = count // rows
+        if cols > max_cols:
+            continue
+        score = abs(math.log((cols / rows) / aspect))
+        if score < best_score:
+            best, best_score = (cols, rows), score
+    return best
+
+
 def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.28, needed_count=1):
     """Symmetric 2D target centres `[(tx, ty), ...]` across the bottom footprint `down_tris`."""
     xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
@@ -437,35 +459,39 @@ def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.2
     pocket_r = 0.5 * max(insert.l, insert.w) + xy_clearance
     req_margin = pocket_r + 1.2
     min_sep = max(12.0, 4.4 * pocket_r)
+    max_cols = 1 if span_x < min_sep + 2 * req_margin else 1 + int((span_x - 2 * req_margin) // min_sep)
+    max_rows = 1 if span_y < min_sep + 2 * req_margin else 1 + int((span_y - 2 * req_margin) // min_sep)
+    max_fit = max_cols * max_rows
 
     if raw_count == "auto" or raw_count is None:
-        diag = math.hypot(span_x, span_y)
-        minor = min(span_x, span_y)
-        can_4 = diag >= 2.0 * min_sep and minor >= 1.2 * min_sep
-        can_2 = max(span_x, span_y) >= min_sep + 2 * req_margin
-        max_fit = 4 if can_4 else (2 if can_2 else 1)
-        if base_area >= 2200.0 and can_4:
+        if base_area >= 2200.0 and max_cols >= 2 and max_rows >= 2:
             footprint_count = 4
-        elif (base_area >= 480.0 or max(span_x, span_y) >= 1.35 * min_sep) and can_2:
+        elif (base_area >= 480.0 or max(span_x, span_y) >= 1.35 * min_sep) and max(max_cols, max_rows) >= 2:
             footprint_count = 2
         else:
             footprint_count = 1
-        target_count = min(max_fit, max(footprint_count, int(needed_count)))
+        n = max(footprint_count, int(needed_count))
+        if n >= 3 and _is_prime(n):
+            n += 1
+        target_count = min(max_fit, n)
+        dims = _grid_dims(target_count, max_cols, max_rows, span_x, span_y)
+        while dims is None and target_count < max_fit:
+            target_count += 1
+            if target_count >= 3 and _is_prime(target_count):
+                continue
+            dims = _grid_dims(target_count, max_cols, max_rows, span_x, span_y)
+        if dims is None:
+            dims = (max_cols, max_rows)
+            target_count = max_fit
     else:
         target_count = int(raw_count)
+        dims = None if target_count == 3 else _grid_dims(target_count, max(target_count, max_cols), max(target_count, max_rows), span_x, span_y)
 
     max_dx = max(0.0, 0.5 * span_x - req_margin)
     max_dy = max(0.0, 0.5 * span_y - req_margin)
-    off_x = min(max_dx, max(0.5 * min_sep if max_dx >= 0.5 * min_sep else max_dx, spread * span_x))
-    off_y = min(max_dy, max(0.5 * min_sep if max_dy >= 0.5 * min_sep else max_dy, spread * span_y))
-
-    if target_count == 1:
-        return [(cx_sym, cy_sym)]
-    if target_count == 2:
-        if span_x >= span_y:
-            return [(cx_sym - off_x, cy_sym), (cx_sym + off_x, cy_sym)]
-        return [(cx_sym, cy_sym - off_y), (cx_sym, cy_sym + off_y)]
-    if target_count == 3:
+    if target_count == 3 and dims is None:
+        off_x = min(max_dx, max(0.5 * min_sep if max_dx >= 0.5 * min_sep else max_dx, spread * span_x))
+        off_y = min(max_dy, max(0.5 * min_sep if max_dy >= 0.5 * min_sep else max_dy, spread * span_y))
         if span_x >= span_y:
             return [(cx_sym - off_x, cy_sym - 0.85 * off_y),
                     (cx_sym + off_x, cy_sym - 0.85 * off_y),
@@ -473,9 +499,18 @@ def fridge_targets(down_tris, insert, xy_clearance, raw_count="auto", spread=0.2
         return [(cx_sym - 0.85 * off_x, cy_sym - off_y),
                 (cx_sym - 0.85 * off_x, cy_sym + off_y),
                 (cx_sym + 0.90 * off_x, cy_sym)]
-    return [
-        (cx_sym - off_x, cy_sym - off_y),
-        (cx_sym + off_x, cy_sym - off_y),
-        (cx_sym - off_x, cy_sym + off_y),
-        (cx_sym + off_x, cy_sym + off_y),
-    ]
+
+    cols, rows = dims or (1, 1)
+    if cols <= 1:
+        gx = [cx_sym]
+    else:
+        min_half_x = 0.5 * (cols - 1) * min_sep
+        off_x = min(max_dx, max(min_half_x if max_dx >= min_half_x else max_dx, spread * span_x))
+        gx = [cx_sym - off_x + (2.0 * off_x * i) / (cols - 1) for i in range(cols)]
+    if rows <= 1:
+        gy = [cy_sym]
+    else:
+        min_half_y = 0.5 * (rows - 1) * min_sep
+        off_y = min(max_dy, max(min_half_y if max_dy >= min_half_y else max_dy, spread * span_y))
+        gy = [cy_sym - off_y + (2.0 * off_y * j) / (rows - 1) for j in range(rows)]
+    return [(x, y) for y in gy for x in gx]
