@@ -601,6 +601,14 @@ test('warnings are shown in words', `
   assert(w[0].includes('thinner than two layers') && w[1].includes('within 10 mm'), 'texts: ' + w);
 `);
 
+test('hold warnings say advisory estimate, not a guarantee', `
+  await loaded();
+  await place({...PLAN, warnings: ['weak_magnet_hold', 'hold_uncertain']});
+  const w = qa('[data-test=plan-warning]').map(text);
+  eq(w.length, 2, 'two warnings');
+  assert(w[0].includes('not a guarantee') && w[1].includes('no safety guarantee'), 'texts: ' + w);
+`);
+
 test('apply writes a copy with the staged and removed pockets; open asks OrcaSlicer', `
   await loaded();
   const m = await place(PLAN);

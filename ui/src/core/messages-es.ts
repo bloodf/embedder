@@ -207,7 +207,8 @@ export const es: Record<MessageKey, string> = {
   'warn.nfc_near_magnet': 'Una etiqueta NFC está a menos de 10 mm de un imán; puede que no se lea.',
   'warn.breaks_surface': 'El alojamiento sale de la pieza; el inserto puede verse o caerse.',
   'warn.existing_gcode_at_layer': 'Ya hay G-Code personalizado suyo en esta capa de pausa; Embedder lo deja y no añade ninguna pausa ahí.',
-  'warn.weak_magnet_hold': 'Este modelo puede ser demasiado pesado para los imanes que caben; considere imanes más grandes, modo abierto o un grado más fuerte.',
+  'warn.weak_magnet_hold': 'Solo una estimación, sin garantía: los imanes que caben pueden no sujetar este modelo. Considere imanes más grandes, modo abierto o un grado más fuerte, y pruebe la sujeción.',
+  'warn.hold_uncertain': 'La estimación de sujeción es incierta (malla abierta o vacía, o falta el relleno o la densidad del filamento y se usaron valores por defecto). Pruebe la sujeción; Embedder no da garantía de seguridad.',
   'warn.excessive_magnet_hold': 'La fuerza magnética es muy alta; el plástico fino puede agrietarse o romperse al quitarlo de la nevera, o rayar la puerta.',
 
   'err.bad_request': 'El plugin rechazó la petición',

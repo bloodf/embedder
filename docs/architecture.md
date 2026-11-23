@@ -277,6 +277,8 @@ corner vent), `nfc_near_magnet` (NFC pocket within 10 mm of a magnet pocket, mea
 furthest corner of any other pocket, vents included), `existing_gcode_at_layer` (someone else's custom G-code already on
 the pause layer; no Embedder pause is added there).
 
+**Hold advisories** (pockets from `pocket.auto_fridge` carry `fridge: true`, and optionally `magnet_grade` and `fridge_surface`; `pocket.plan` and `project.apply` re-check them): `weak_magnet_hold`, `excessive_magnet_hold` and `hold_uncertain` (open or empty mesh, or no infill or filament density in the project). All grade and surface factors are uncalibrated estimates; none is a safety guarantee.
+
 **Face classes.** A face within 5 degrees of horizontal is flat (top or bottom), within 5 degrees of
 vertical is a side face, anything else is tilted.
 

@@ -360,14 +360,84 @@ class Session:
         if others:
             planned = [p] + [q for _, q in self._plan_quiet(job, others)]
             warnings += [w[0] for w in pocket.proximity_warnings(planned) if 0 in w[1:]]
+        if args.get("fridge") is True:
+            marked = [(args, p)]
+            for o in others:
+                if isinstance(o, dict) and o.get("fridge") is True:
+                    try:
+                        marked.append((o, self._plan_at(job, o)[1]))
+                    except (pocket.Blocked, SessionError):
+                        pass
+            warnings += self._fridge_warnings(job, marked)[0]
         return {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": job.copies(entry.obj.id),
                 "warnings": warnings, "blocked": None}
 
+    @staticmethod
+    def _normal_parts(entry):
+        return [(j, entry.meshes[j][0], entry.meshes[j][1]) for j, p in enumerate(entry.obj.parts)
+                if p.subtype == "normal_part" and len(entry.meshes[j][0]) >= 9]
+
+    @staticmethod
+    def _hold_choice(args, cfg):
+        """(grade, surface): the request's own when valid, else Settings."""
+        for key, table in (("magnet_grade", pocket.MAGNET_GRADE_FACTORS), ("fridge_surface", pocket.FRIDGE_SURFACE_FACTORS)):
+            if args.get(key) is not None and args[key] not in table:   # never swap in the Settings value silently
+                raise SessionError("bad_request", "%s is one of %s" % (key, ", ".join(table)))
+        return args.get("magnet_grade") or cfg.get("magnet_grade", "N35"), args.get("fridge_surface") or cfg.get("fridge_surface", "steel")
+
+    def _hold_inputs(self, job, normal_parts, down_tris):
+        """(volume mm3, centre height mm, span mm, infill %, density g/cm3, uncertain). `uncertain`: the mesh is open or
+        has no volume, or the infill or filament density was not in the project and a default stood in."""
+        first = lambda v: v[0] if isinstance(v, list) and v else v
+        project = job.pkg.project
+        raw_infill = first(project.get("sparse_infill_density"))
+        infill = _float(str(raw_infill).rstrip("%").strip()) if raw_infill is not None else None
+        raw_density, kind = first(project.get("filament_density")), first(project.get("filament_type"))
+        known_density = pocket.filament_density(raw_density, kind, None) is not None
+        vol_mm3, z_com_mm = geometry.mesh_mass_props(normal_parts)
+        xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
+        ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
+        span_mm = max(1.0, max(xs) - min(xs), max(ys) - min(ys))
+        uncertain = vol_mm3 <= 1e-9 or geometry.open_edge_count(normal_parts) > 0 or infill is None or not known_density
+        return vol_mm3, z_com_mm, span_mm, 15.0 if infill is None else infill, pocket.filament_density(raw_density, kind), uncertain
+
+    def _fridge_warnings(self, job, marked):
+        """One list of hold advisories per `(args, Pocket)` of `marked`, which are the pockets auto_fridge placed
+        (args carry fridge: true). Pockets on one object count together: advisory only, the estimate is uncalibrated."""
+        cfg = self.settings_fn()
+        out = [[] for _ in marked]
+        groups = {}
+        for i, (a, _) in enumerate(marked):
+            groups.setdefault(a["object"], []).append(i)
+        for obj, ids in groups.items():
+            parts = self._normal_parts(job.entries[obj])
+            down = geometry.bottom_triangles(parts)
+            if not down:   # no bottom face to size against: say so rather than stay silent
+                for i in ids:
+                    out[i] = ["hold_uncertain"]
+                continue
+            vol, z_com, span, infill, density, uncertain = self._hold_inputs(job, parts, down)
+            shear = pull = 0.0   # each pocket counts with its own insert, cover, grade and surface
+            req_n = pocket.required_hold_n(vol, z_com, span, infill, density)
+            for i in ids:
+                a, p = marked[i]
+                grade, surface = self._hold_choice(a, cfg)
+                cover = 0.0 if p.mode == "open" else float(p.cover or 0.0)
+                shear += pocket.magnet_shear_hold_n(p.insert, cover, grade, surface)
+                one = pocket.magnet_pull_n(p.insert, cover, grade, surface)
+                pull += one
+                if p.mode == "embedded" and cover <= 0.45 and one > 25.0:
+                    pull += 1e9   # a single very strong thin-cover magnet is enough to warn
+            ws = (["hold_uncertain"] if uncertain else []) + (["weak_magnet_hold"] if shear < req_n else [])
+            if pull > 60.0:
+                ws.append("excessive_magnet_hold")
+            for i in ids:
+                out[i] = ws
+        return out
+
     def _auto_fridge_for_object(self, job, obj_idx, args, raw_count, spread, insert, cfg):
         _, entry = self._usable_entry(job, {"object": obj_idx})
-        normal_parts = [(j, entry.meshes[j][0], entry.meshes[j][1])
-                        for j, p in enumerate(entry.obj.parts)
-                        if p.subtype == "normal_part" and len(entry.meshes[j][0]) >= 9]
+        normal_parts = self._normal_parts(entry)
         if not normal_parts:
             raise SessionError("bad_part", "object has no normal model parts")
         down_tris = geometry.bottom_triangles(normal_parts)
@@ -381,16 +451,8 @@ class Session:
         if cover is None:
             cover = min(cfg["cover_magnet"], 0.4)
 
-        grade = args.get("magnet_grade") if args.get("magnet_grade") in pocket.MAGNET_GRADE_FACTORS else cfg.get("magnet_grade", "N35")
-        surface = args.get("fridge_surface") if args.get("fridge_surface") in pocket.FRIDGE_SURFACE_FACTORS else cfg.get("fridge_surface", "steel")
-        first = lambda v: v[0] if isinstance(v, list) and v else v
-        raw_infill = str(first(job.pkg.project.get("sparse_infill_density")) or "15").rstrip("%").strip()
-        infill_pct = _float(raw_infill) if _float(raw_infill) is not None else 15.0
-        density = pocket.filament_density(first(job.pkg.project.get("filament_density")), first(job.pkg.project.get("filament_type")))
-        vol_mm3, z_com_mm = geometry.mesh_mass_props(normal_parts)
-        xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
-        ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
-        span_mm = max(1.0, max(xs) - min(xs), max(ys) - min(ys))
+        grade, surface = self._hold_choice(args, cfg)
+        vol_mm3, z_com_mm, span_mm, infill_pct, density, _ = self._hold_inputs(job, normal_parts, down_tris)
         cover_eff = 0.0 if mode == "open" else float(cover)
         needed_count, _, _ = pocket.required_fridge_magnets(vol_mm3, z_com_mm, span_mm, insert, cover_eff, infill_pct, grade, surface, density)
 
@@ -409,6 +471,11 @@ class Session:
                 out["cover"] = float(cover)
             if args.get("pocket_shape"):
                 out["pocket_shape"] = args["pocket_shape"]
+            out["fridge"] = True   # the page and apply group these pockets to re-check the hold advisory
+            if args.get("magnet_grade") in pocket.MAGNET_GRADE_FACTORS:
+                out["magnet_grade"] = args["magnet_grade"]
+            if args.get("fridge_surface") in pocket.FRIDGE_SURFACE_FACTORS:
+                out["fridge_surface"] = args["fridge_surface"]
             return out
 
         planned_entries = []
@@ -456,18 +523,12 @@ class Session:
         prox = pocket.proximity_warnings(all_pockets) if len(all_pockets) > 1 else ()
         user_layers = self._user_layers(job)
         copies = job.copies(entry.obj.id)
-        weak_hold = needed_count > len(planned_entries)
-        per_pull_n = pocket.magnet_pull_n(insert, cover_eff, grade, surface)
-        total_pull_n = per_pull_n * len(planned_entries)
-        excessive_hold = total_pull_n > 60.0 or (mode == "embedded" and cover_eff <= 0.45 and per_pull_n > 25.0)
+        hold = self._fridge_warnings(job, [(a, p) for a, p, _ in planned_entries])
         staged_out = []
         for idx_i, (p_args, p, point) in enumerate(planned_entries):
             warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], user_layers)[1]]
             warnings += [w[0] for w in prox if idx_i in w[1:]]
-            if weak_hold and "weak_magnet_hold" not in warnings:
-                warnings.append("weak_magnet_hold")
-            if excessive_hold and "excessive_magnet_hold" not in warnings:
-                warnings.append("excessive_magnet_hold")
+            warnings += hold[idx_i]
             plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
                         "warnings": warnings, "blocked": None}
             staged_out.append({"args": p_args, "plan": plan_res})
@@ -490,6 +551,9 @@ class Session:
         except presets.PresetError as e:
             raise SessionError(e.code, e.detail) from None
 
+        for key, table in (("magnet_grade", pocket.MAGNET_GRADE_FACTORS), ("fridge_surface", pocket.FRIDGE_SURFACE_FACTORS)):
+            if args.get(key) is not None and args[key] not in table:   # never swap in the Settings value silently
+                raise SessionError("bad_request", "%s is one of %s" % (key, ", ".join(table)))
         cfg = self.settings_fn()
         if args.get("object") == "all":
             if not job.entries:
@@ -588,7 +652,9 @@ class Session:
             if self.job is not None and self.job.id == job.id:
                 self.job = replace(self.job, applied=True)
         pruned = self._prune()
-        warnings = sorted({w for p in pockets for w in p.warnings} | {w[0] for w in pause_warnings}
+        marked = [(a, p) for a, (_, p) in zip(many, planned) if isinstance(a, dict) and a.get("fridge") is True]
+        hold = {w for ws in self._fridge_warnings(job, marked) for w in ws}
+        warnings = sorted({w for p in pockets for w in p.warnings} | hold | {w[0] for w in pause_warnings}
                           | {w[0] for w in pocket.proximity_warnings(pockets)})
         return {"path": out, "name": os.path.basename(out), "pockets": len(pockets), "removed": len(remove),
                 "pauses": [{"top_z": z, "extra": x} for z, x in pauses], "warnings": warnings,

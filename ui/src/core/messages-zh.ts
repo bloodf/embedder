@@ -208,7 +208,8 @@ export const zhCN: Record<MessageKey, string> = {
   'warn.nfc_near_magnet': '有 NFC 标签距磁铁不到 10 mm，可能无法读取。',
   'warn.breaks_surface': '凹槽超出零件外部；嵌件可能外露或掉出。',
   'warn.existing_gcode_at_layer': '你自己的自定义 G-code 已在此暂停层；Embedder 保留它，不在此添加暂停。',
-  'warn.weak_magnet_hold': '此模型对底面可容纳的磁铁而言可能过重；建议改用更大磁铁、开放模式或更高等级磁铁。',
+  'warn.weak_magnet_hold': '仅为估算，不作保证：可容纳的磁铁可能无法吸住此模型。建议改用更大磁铁、开放模式或更高等级磁铁，并实际测试吸附。',
+  'warn.hold_uncertain': '吸附力估算不确定（网格不封闭或为空，或缺少填充率或耗材密度而使用了默认值）。请自行测试吸附；Embedder 不提供安全保证。',
   'warn.excessive_magnet_hold': '磁吸力过高；从冰箱取下时薄壁塑料可能开裂或撕裂，或刮伤门板。',
 
   'err.bad_request': '插件拒绝了该请求',

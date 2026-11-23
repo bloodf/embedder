@@ -498,6 +498,50 @@ class Plan(Base):
         r_plain = self.load(fixtures.plain_mesh)
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r_plain["job"], "object": 0}), "unsupported_object")
 
+    def test_hold_advisory_uncertain_and_persistent(self):
+        from dataclasses import replace as _r
+        # known closed solid, full inputs: no uncertainty
+        ok = {"name": "ok", "parts": [fixtures.part("ok", fixtures.box(30, 30, 10))]}
+        full = dict(fixtures.SETTINGS, sparse_infill_density="15%", filament_type="PLA")
+        r = self.load(fixtures.build, objects=[ok], settings=full)
+        res = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})
+        item = res["items"][0]
+        self.assertTrue(item["args"]["fridge"])
+        self.assertNotIn("hold_uncertain", item["plan"]["warnings"])
+        # missing infill/density: advisory, and it survives a plain re-plan and apply
+        r2 = self.load(fixtures.build, objects=[ok])
+        item2 = self.s.auto_fridge({"job": r2["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})["items"][0]
+        self.assertIn("hold_uncertain", item2["plan"]["warnings"])
+        self.store.update({"magnet_grade": "N52"})
+        again = self.s.plan({"job": r2["job"], **item2["args"]})
+        self.assertIn("hold_uncertain", again["warnings"])
+        self.assertIn("hold_uncertain", self.s.apply({"job": r2["job"], "pockets": [item2["args"]]})["warnings"])
+        # a manual bottom magnet (no fridge marker) gets no hold advisory
+        r3 = self.load(fixtures.build, objects=[ok])
+        manual = {k: v for k, v in item2["args"].items() if k != "fridge"}
+        self.assertNotIn("hold_uncertain", self.s.plan({"job": r3["job"], **manual})["warnings"])
+        # explicit override is kept, an invalid one is refused
+        r4 = self.load(fixtures.build, objects=[ok])
+        it = self.s.auto_fridge({"job": r4["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2", "magnet_grade": "ferrite", "fridge_surface": "board"})["items"][0]
+        self.assertEqual((it["args"]["magnet_grade"], it["args"]["fridge_surface"]), ("ferrite", "board"))
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r4["job"], "object": 0, "fridge_surface": "wood"}), "bad_request")
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r4["job"], "object": 0, "magnet_grade": "N99"}), "bad_request")
+        self.assertEqual(self.error(self.s.plan, {"job": r4["job"], **it["args"], "fridge_surface": "wood"}), "bad_request")
+        self.assertEqual(self.error(self.s.apply, {"job": r4["job"], "pockets": [{**it["args"], "magnet_grade": "N99"}]}), "bad_request")
+        # mixed strengths: one strong magnet does not stand in for a weak one edited later
+        heavy = {"name": "hv", "parts": [fixtures.part("hv", fixtures.box(45, 45, 120))]}
+        r7 = self.load(fixtures.build, objects=[heavy], settings=dict(full, sparse_infill_density="25%"))
+        base = {"job": r7["job"], "object": 0, "count": 4, "preset": "magnet-disc-6x2"}
+        strong = self.s.auto_fridge({**base, "magnet_grade": "N52", "fridge_surface": "steel", "preset": "magnet-disc-20x3"})["items"]
+        weak = self.s.auto_fridge({**base, "magnet_grade": "ferrite", "preset": "magnet-disc-3x1"})["items"]
+        mixed = [strong[0]["args"]] + [w["args"] for w in weak[1:]]
+        self.assertIn("weak_magnet_hold", self.s.plan({"job": r7["job"], **mixed[0], "others": mixed[1:]})["warnings"])
+        # open mesh (one triangle missing) and reversed winding
+        v, t = fixtures.box(30, 30, 10)
+        holey = {"name": "h", "parts": [fixtures.part("h", (v, t[:-1]))]}
+        r5 = self.load(fixtures.build, objects=[holey], settings=full)
+        self.assertIn("hold_uncertain", self.s.auto_fridge({"job": r5["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})["items"][0]["plan"]["warnings"])
+
     def test_auto_fridge_all_objects(self):
         r = self.load(fixtures.build,
                       objects=[fixtures.cube_object("a", size=20), fixtures.cube_object("b", size=60)],

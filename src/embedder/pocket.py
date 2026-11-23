@@ -405,8 +405,8 @@ FILAMENT_DENSITIES = {
 }
 
 
-def filament_density(raw_density=None, filament_type=None):
-    """Density in g/cm^3 from project_settings `filament_density`, else standard table by `filament_type`, else PLA (1.24)."""
+def filament_density(raw_density=None, filament_type=None, default=1.24):
+    """Density in g/cm^3 from project_settings `filament_density`, else standard table by `filament_type`, else `default` (PLA, 1.24)."""
     if isinstance(raw_density, list):
         raw_density = raw_density[0] if raw_density else None
     if isinstance(filament_type, list):
@@ -422,7 +422,7 @@ def filament_density(raw_density=None, filament_type=None):
     for key, val in FILAMENT_DENSITIES.items():
         if ft == key or ft.startswith(key + "-") or ft.startswith(key + " "):
             return val
-    return 1.24
+    return default
 
 
 def magnet_pull_n(insert, cover_mm, grade="N35", surface="steel"):
@@ -440,12 +440,18 @@ def magnet_shear_hold_n(insert, cover_mm, grade="N35", surface="steel"):
     return 0.22 * magnet_pull_n(insert, cover_mm, grade, surface)
 
 
-def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, infill_pct=15.0, grade="N35", surface="steel", density_g_cm3=1.24):
-    """Minimum magnet count for a 2.5x safety factor against sliding and peeling on a vertical fridge door."""
+def required_hold_n(volume_mm3, z_com_mm, span_mm, infill_pct=15.0, density_g_cm3=1.24):
+    """Shear force (Newtons) the magnets together should resist: an estimated 2.5x margin on weight and peel. Not
+    calibrated and not a guarantee; it does not depend on the magnets."""
     fill = min(1.0, max(0.15, infill_pct / 100.0 + 0.20))
     mass_kg = (max(0.0, volume_mm3) / 1000.0) * max(0.2, float(density_g_cm3)) * fill / 1000.0
     peel = 1.0 + 0.5 * max(0.0, z_com_mm) / max(10.0, span_mm)
-    req_n = 2.5 * (mass_kg * 9.81) * peel
+    return 2.5 * (mass_kg * 9.81) * peel
+
+
+def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, infill_pct=15.0, grade="N35", surface="steel", density_g_cm3=1.24):
+    """Minimum count of one insert type for the estimated required hold (see required_hold_n)."""
+    req_n = required_hold_n(volume_mm3, z_com_mm, span_mm, infill_pct, density_g_cm3)
     hold_n = max(1e-6, magnet_shear_hold_n(insert, cover_mm, grade, surface))
     return max(1, math.ceil(req_n / hold_n)), hold_n, req_n
 

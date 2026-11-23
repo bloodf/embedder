@@ -207,7 +207,8 @@ export const en = {
   'warn.nfc_near_magnet': 'An NFC tag is within 10 mm of a magnet; it may not read.',
   'warn.breaks_surface': 'The pocket reaches outside the part; the insert may show or fall out.',
   'warn.existing_gcode_at_layer': 'Your own custom G-code already sits at this pause layer; Embedder leaves it and adds no pause there.',
-  'warn.weak_magnet_hold': 'This model may be too heavy for the magnets that fit; consider larger magnets, open mode, or a stronger grade.',
+  'warn.weak_magnet_hold': 'Advisory estimate only, not a guarantee: the magnets that fit may not hold this model. Consider larger magnets, open mode, or a stronger grade, and test the hold.',
+  'warn.hold_uncertain': 'The hold estimate is uncertain (open or empty mesh, or infill or filament density missing, so defaults were used). Test the hold yourself; Embedder gives no safety guarantee.',
   'warn.excessive_magnet_hold': 'Magnetic pull is very high; thin plastic may crack or tear when removing from the fridge, or scratch the door.',
 
   'err.bad_request': 'The plugin refused the request',
@@ -522,7 +523,8 @@ export const ptBR: Record<MessageKey, string> = {
   'warn.nfc_near_magnet': 'Uma etiqueta NFC está a menos de 10 mm de um ímã; ela pode não ser lida.',
   'warn.breaks_surface': 'O bolso sai para fora da peça; o inserto pode aparecer ou cair.',
   'warn.existing_gcode_at_layer': 'Um G-code seu já está nesta camada de pausa; o Embedder o mantém e não adiciona pausa ali.',
-  'warn.weak_magnet_hold': 'Este modelo pode ser pesado demais para os ímãs que cabem na base; considere ímãs maiores, modo aberto ou grau mais forte.',
+  'warn.weak_magnet_hold': 'Apenas uma estimativa, sem garantia: os ímãs que cabem podem não segurar este modelo. Considere ímãs maiores, modo aberto ou grau mais forte, e teste a fixação.',
+  'warn.hold_uncertain': 'A estimativa de fixação é incerta (malha aberta ou vazia, ou preenchimento ou densidade do filamento ausentes, com valores padrão). Teste a fixação; o Embedder não dá garantia de segurança.',
   'warn.excessive_magnet_hold': 'A força magnética é muito alta; plástico fino pode rachar ou rasgar ao tirar da geladeira, ou riscar a porta.',
 
   'err.bad_request': 'O plugin recusou o pedido',
