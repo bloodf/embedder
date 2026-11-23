@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 ## [Unreleased]
 
 ### Added
-- Physics-based magnet count sizing in `auto_fridge`: estimates part mass (from 3D mesh volume, center-of-mass height, and slicer infill) and per-magnet shear hold (from magnet dimensions, cover air-gap, **Magnet grade** `N35`/`N42`/`N52`/`ferrite`, and **Fridge surface** `steel`/`stainless`/`board` in Settings), automatically scaling up magnet count or warning (`weak_magnet_hold`) when even the maximum that fit cannot safely hold the model.
+- Physics-based magnet count sizing in `auto_fridge`: estimates part mass (from 3D mesh volume, center-of-mass height, and slicer infill) and per-magnet shear hold (from magnet dimensions, cover air-gap, **Magnet grade** `N35`/`N42`/`N52`/`ferrite`, and **Fridge surface** `steel`/`stainless`/`board` in Settings), scaling up the magnet count. The result is an uncalibrated estimate, not a safety guarantee: `weak_magnet_hold` warns when the magnets that fit may not hold the model, and `hold_uncertain` warns when the mesh is open or empty or infill or filament density is missing. These warnings are kept when the pockets are re-planned or applied.
 
 ## [0.9.0] - 2026-11-22
 

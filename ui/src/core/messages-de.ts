@@ -207,7 +207,8 @@ export const de: Record<MessageKey, string> = {
   'warn.nfc_near_magnet': 'Ein NFC-Tag liegt weniger als 10 mm neben einem Magneten; es wird eventuell nicht gelesen.',
   'warn.breaks_surface': 'Die Tasche reicht aus dem Teil heraus; das Einlegeteil kann sichtbar sein oder herausfallen.',
   'warn.existing_gcode_at_layer': 'In dieser Pausenschicht steht schon Ihr eigener benutzerdefinierter G-Code; Embedder lässt ihn stehen und fügt dort keine Pause hinzu.',
-  'warn.weak_magnet_hold': 'Dieses Modell ist möglicherweise zu schwer für die passenden Magnete; erwägen Sie größere Magnete, den offenen Modus oder eine stärkere Güte.',
+  'warn.weak_magnet_hold': 'Nur eine Schätzung, ohne Garantie: Die passenden Magnete halten dieses Modell möglicherweise nicht. Erwägen Sie größere Magnete, den offenen Modus oder eine stärkere Güte, und testen Sie den Halt.',
+  'warn.hold_uncertain': 'Die Haltekraft-Schätzung ist unsicher (offenes oder leeres Netz, oder Infill oder Filamentdichte fehlen, Standardwerte wurden genutzt). Testen Sie den Halt; Embedder gibt keine Sicherheitsgarantie.',
   'warn.excessive_magnet_hold': 'Die Magnetkraft ist sehr hoch; dünner Kunststoff kann beim Abnehmen reißen oder brechen oder die Tür zerkratzen.',
 
   'err.bad_request': 'Das Plugin hat die Anfrage abgelehnt',

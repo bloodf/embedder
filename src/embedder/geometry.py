@@ -358,3 +358,23 @@ def mesh_mass_props(parts):
     if total_vol <= 1e-9:
         return 0.0, 0.0
     return total_vol, max(0.0, acc_z / total_vol)
+
+
+def open_edge_count(parts):
+    """Edges of `[(part_j, pos, idx), ...]` that no opposite-direction edge cancels: 0 for a closed, consistently wound
+    mesh, whichever way it is wound. Corners match by position, so split vertices still count as closed."""
+    open_edges = 0
+    for _, pos, idx in parts:
+        seen = {}
+        for t in range(0, len(idx), 3):
+            keys = [tuple(round(pos[3 * idx[t + c] + a], 4) for a in range(3)) for c in range(3)]
+            for k in range(3):
+                a, b = keys[k], keys[(k + 1) % 3]
+                if a == b:
+                    continue
+                if seen.get((b, a), 0) > 0:
+                    seen[(b, a)] -= 1
+                else:
+                    seen[(a, b)] = seen.get((a, b), 0) + 1
+        open_edges += sum(seen.values())
+    return open_edges

@@ -89,6 +89,9 @@ export interface PlanArgs {
   center?: boolean;
   pocket_shape?: PocketShape;
   polarity?: Polarity;
+  fridge?: true;              // placed by auto fridge: Python re-checks its hold advisory when it plans or applies
+  magnet_grade?: MagnetGrade;   // auto fridge's own grade and surface, when the request named them
+  fridge_surface?: FridgeSurface;
 }
 
 export interface Plan {

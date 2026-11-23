@@ -215,7 +215,8 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'warn.nfc_near_magnet': 'Tag NFC jest bliżej niż 10 mm od magnesu; może się nie odczytywać.',
   'warn.breaks_surface': 'Kieszeń wychodzi poza część; wkładka może być widoczna lub wypaść.',
   'warn.existing_gcode_at_layer': 'Na tej warstwie pauzy jest już twój własny G-code; Embedder go zostawia i nie dodaje tam pauzy.',
-  'warn.weak_magnet_hold': 'Ten model może być zbyt ciężki dla mieszczących się magnesów; rozważ większe magnesy, tryb otwarty lub mocniejszą klasę.',
+  'warn.weak_magnet_hold': 'Tylko szacunek, bez gwarancji: mieszczące się magnesy mogą nie utrzymać tego modelu. Rozważ większe magnesy, tryb otwarty lub mocniejszą klasę i sprawdź przyczepność.',
+  'warn.hold_uncertain': 'Szacunek przyczepności jest niepewny (otwarta lub pusta siatka albo brak wypełnienia lub gęstości filamentu, użyto wartości domyślnych). Sprawdź przyczepność; Embedder nie daje gwarancji bezpieczeństwa.',
   'warn.excessive_magnet_hold': 'Siła przyciągania jest bardzo duża; cienki plastik może pęknąć lub rozerwać się przy zdejmowaniu z lodówki albo porysować drzwi.',
 
   'err.bad_request': 'Wtyczka odrzuciła żądanie',
