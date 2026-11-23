@@ -622,14 +622,14 @@ class Session:
                                                [job.copies(e.obj.id) for e, _ in planned] + [n for _, n in kept])
         adds = [threemf.Addition(e.obj.id, e.item.index, "Embedder %s (%s)" % (p.insert.label, p.mode), *p.mesh(), p.transform)
                 for e, p in planned]
+        marked = [(a, p) for a, (_, p) in zip(many, planned) if isinstance(a, dict) and a.get("fridge") is True]
+        hold = {w for ws in self._fridge_warnings(job, marked) for w in ws}   # before the write: a bad override must leave no copy
         out = self._write(job, adds, remove, pauses)
         with self.lock:
             self.written.add(out)
             if self.job is not None and self.job.id == job.id:
                 self.job = replace(self.job, applied=True)
         pruned = self._prune()
-        marked = [(a, p) for a, (_, p) in zip(many, planned) if isinstance(a, dict) and a.get("fridge") is True]
-        hold = {w for ws in self._fridge_warnings(job, marked) for w in ws}
         warnings = sorted({w for p in pockets for w in p.warnings} | hold | {w[0] for w in pause_warnings}
                           | {w[0] for w in pocket.proximity_warnings(pockets)})
         return {"path": out, "name": os.path.basename(out), "pockets": len(pockets), "removed": len(remove),

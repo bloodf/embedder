@@ -119,7 +119,10 @@ function keepMove(): void {
   bridge.command('pocket.plan', { job: project.job, ...args, ...(others.length ? { others } : {}) }).then((plan: Plan) => {
     if (!current() || s.selected === x.key || !s.staged.includes(x)) return;
     if (plan.blocked) tracker.notify('info', t('edit.back', { reason: tMaybe(`block.${plan.blocked.code}`, plan.blocked.detail || plan.blocked.code) }));
-    else s.staged = restage(s.staged, x.key, args, plan);
+    else {
+      s.staged = restage(s.staged, x.key, args, plan);
+      if (args.fridge) void refreshFridge(args.object, x.key);
+    }
   }, e => { if (current()) tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) })); });
 }
 
