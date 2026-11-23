@@ -94,8 +94,10 @@ def _index(args, key, size):
 def _stem(project_path):
     name = os.path.basename(str(project_path or "").replace("\\", "/"))
     stem = os.path.splitext(name)[0].strip()
-    stem = re.sub(r"[\x00-\x1f]", "", stem)[:80]
-    # a file name is at most 255 bytes on Linux: keep room for the suffix and the temporary name
+    # Strip previous -embedder-YYYYMMDD-HHMMSS-... suffixes so re-applying doesn't stack toward Windows MAX_PATH (260).
+    stem = re.sub(r"(?:-embedder-\d{8}-\d{4,6}(?:-[0-9a-f]+)?)+$", "", stem)
+    stem = re.sub(r"[\x00-\x1f]", "", stem)[:48]
+    # a file name is at most 255 bytes on Linux (and storage + name + .tmp <= 260 on Windows)
     return stem.encode("utf-8")[:150].decode("utf-8", "ignore").strip() or "untitled"
 
 
