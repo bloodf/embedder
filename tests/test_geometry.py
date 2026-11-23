@@ -92,6 +92,14 @@ class FaceCentre(unittest.TestCase):
         pos, idx = pos + up, idx + [i + 6 for i in upi]
         self.assertTrue(close(g.face_centre(pos, idx, 0, (0, 0, 1)), (0.5, 0.5, 0)))
 
+    def test_transform_and_mass_edge_cases(self):
+        with self.assertRaises(ValueError):
+            g.from_3mf("1 2 3")
+        with self.assertRaises(ValueError):
+            g.from_config("1 2 3")
+        self.assertEqual(g.mesh_mass_props([]), (0.0, 0.0))
+        self.assertEqual(g.mesh_mass_props([(0, [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])]), (0.0, 0.0))
+
 
 class Meshes(unittest.TestCase):
     def test_cylinder_is_circumscribed_and_closed(self):

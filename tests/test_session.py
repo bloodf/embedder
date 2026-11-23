@@ -490,6 +490,18 @@ class Plan(Base):
         r_big = self.load(fixtures.build, objects=[big_plate])
         res_excess = self.s.auto_fridge({"job": r_big["job"], "object": 0, "count": 4, "preset": "magnet-block-20x10x5"})
         self.assertIn("excessive_magnet_hold", res_excess["items"][0]["plan"]["warnings"])
+        # Invalid density string falls back to PLA, and invalid non-dict pocket plan arg raises bad_request
+        self.assertAlmostEqual(pocket.filament_density("not-a-number", "PLA"), 1.24)
+        self.assertEqual(self.error(self.s._plan_at, self.s._current(r_big["job"]), "not-a-dict"), "bad_request")
+        # All-objects mode when all objects are cut/unsupported raises the underlying SessionError, and empty entries -> bad_request
+        cut = '<?xml version="1.0"?>\n<objects>\n <object id="1">\n  <cut_id id="5" check_sum="1" connectors_cnt="1"/>\n </object>\n</objects>\n'
+        r_all_cut = self.load(extra={"Metadata/cut_information.xml": cut})
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_all_cut["job"], "object": "all"}), "cut_object")
+        from dataclasses import replace
+        cur = self.s._current(r_all_cut["job"])
+        self.s.job = replace(cur, entries=())
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_all_cut["job"], "object": "all"}), "bad_request")
+        self.assertFalse(pocket._is_prime(1))
         # Two instances of one object share its pockets: "all" plans that object once, not once per instance
         r3 = self.load(fixtures.two_instances)
         one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})
