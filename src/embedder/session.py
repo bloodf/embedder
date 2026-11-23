@@ -383,14 +383,16 @@ class Session:
 
         grade = args.get("magnet_grade") if args.get("magnet_grade") in pocket.MAGNET_GRADE_FACTORS else cfg.get("magnet_grade", "N35")
         surface = args.get("fridge_surface") if args.get("fridge_surface") in pocket.FRIDGE_SURFACE_FACTORS else cfg.get("fridge_surface", "steel")
-        raw_infill = str(job.pkg.project.get("sparse_infill_density") or "15").rstrip("%").strip()
+        first = lambda v: v[0] if isinstance(v, list) and v else v
+        raw_infill = str(first(job.pkg.project.get("sparse_infill_density")) or "15").rstrip("%").strip()
         infill_pct = _float(raw_infill) if _float(raw_infill) is not None else 15.0
+        density = pocket.filament_density(first(job.pkg.project.get("filament_density")), first(job.pkg.project.get("filament_type")))
         vol_mm3, z_com_mm = geometry.mesh_mass_props(normal_parts)
         xs = [c[0] for _, _, cs, _ in down_tris for c in cs]
         ys = [c[1] for _, _, cs, _ in down_tris for c in cs]
         span_mm = max(1.0, max(xs) - min(xs), max(ys) - min(ys))
         cover_eff = 0.0 if mode == "open" else float(cover)
-        needed_count, _, _ = pocket.required_fridge_magnets(vol_mm3, z_com_mm, span_mm, insert, cover_eff, infill_pct, grade, surface)
+        needed_count, _, _ = pocket.required_fridge_magnets(vol_mm3, z_com_mm, span_mm, insert, cover_eff, infill_pct, grade, surface, density)
 
         targets = pocket.fridge_targets(down_tris, insert, cfg["xy_clearance"], raw_count, spread, needed_count=needed_count)
         pocket_r = 0.5 * max(insert.l, insert.w) + cfg["xy_clearance"]

@@ -399,6 +399,30 @@ def breaks_surface(p, pos, idx):
 
 MAGNET_GRADE_FACTORS = {"N35": 1.0, "N42": 1.18, "N52": 1.42, "ferrite": 0.16}
 FRIDGE_SURFACE_FACTORS = {"steel": 1.0, "stainless": 0.45, "board": 0.30}
+FILAMENT_DENSITIES = {
+    "PLA": 1.24, "PETG": 1.27, "ABS": 1.04, "ASA": 1.07, "PC": 1.20,
+    "TPU": 1.21, "PA": 1.14, "NYLON": 1.14, "PET": 1.38, "HIPS": 1.04, "PVA": 1.23,
+}
+
+
+def filament_density(raw_density=None, filament_type=None):
+    """Density in g/cm^3 from project_settings `filament_density`, else standard table by `filament_type`, else PLA (1.24)."""
+    if isinstance(raw_density, list):
+        raw_density = raw_density[0] if raw_density else None
+    if isinstance(filament_type, list):
+        filament_type = filament_type[0] if filament_type else None
+    if raw_density is not None:
+        try:
+            d = float(str(raw_density).strip())
+            if 0.2 <= d <= 10.0:
+                return d
+        except (ValueError, TypeError):
+            pass
+    ft = str(filament_type or "").strip().upper()
+    for key, val in FILAMENT_DENSITIES.items():
+        if ft == key or ft.startswith(key + "-") or ft.startswith(key + " "):
+            return val
+    return 1.24
 
 
 def magnet_shear_hold_n(insert, cover_mm, grade="N35", surface="steel"):
@@ -412,10 +436,10 @@ def magnet_shear_hold_n(insert, cover_mm, grade="N35", surface="steel"):
     return 0.22 * f_pull
 
 
-def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, infill_pct=15.0, grade="N35", surface="steel"):
+def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, infill_pct=15.0, grade="N35", surface="steel", density_g_cm3=1.24):
     """Minimum magnet count for a 2.5x safety factor against sliding and peeling on a vertical fridge door."""
     fill = min(1.0, max(0.15, infill_pct / 100.0 + 0.20))
-    mass_kg = (max(0.0, volume_mm3) / 1000.0) * 1.24 * fill / 1000.0
+    mass_kg = (max(0.0, volume_mm3) / 1000.0) * max(0.2, float(density_g_cm3)) * fill / 1000.0
     peel = 1.0 + 0.5 * max(0.0, z_com_mm) / max(10.0, span_mm)
     req_n = 2.5 * (mass_kg * 9.81) * peel
     hold_n = max(1e-6, magnet_shear_hold_n(insert, cover_mm, grade, surface))
