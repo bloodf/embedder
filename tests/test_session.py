@@ -472,6 +472,15 @@ class Plan(Base):
         weak = self.s.auto_fridge({**base, "magnet_grade": "ferrite", "preset": "magnet-disc-3x1"})["items"]
         mixed = [strong[0]["args"]] + [w["args"] for w in weak[1:]]
         self.assertIn("weak_magnet_hold", self.s.plan({"job": r7["job"], **mixed[0], "others": mixed[1:]})["warnings"])
+        # an NFC tag edited into a marked pocket gets no fridge advisory; the magnets left still do
+        rn = self.load(fixtures.build, objects=[ok])
+        nfc = {**item2["args"], "preset": "nfc-sticker-25"}
+        self.assertNotIn("hold_uncertain", self.s.plan({"job": rn["job"], **nfc})["warnings"])
+        self.assertIn("hold_uncertain", self.s.plan({"job": rn["job"], **item2["args"], "others": [nfc]})["warnings"])
+        # a malformed override of any type is a bad_request, not a TypeError
+        for bad in ({"a": 1}, ["N52"], 7):
+            self.assertEqual(self.error(self.s.plan, {"job": rn["job"], **item2["args"], "magnet_grade": bad}), "bad_request")
+            self.assertEqual(self.error(self.s.auto_fridge, {"job": rn["job"], "object": 0, "fridge_surface": bad}), "bad_request")
         # open mesh (one triangle missing) and reversed winding
         v, t = fixtures.box(30, 30, 10)
         holey = {"name": "h", "parts": [fixtures.part("h", (v, t[:-1]))]}

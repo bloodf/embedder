@@ -725,6 +725,41 @@ test('Auto fridge magnet stages symmetric bottom pockets in one click', `
   eq(rows('staged')[0][1], 'Cube · bottom · embedded · pause at Z 3.80 mm', 'bottom row');
 `);
 
+test('removing one auto fridge pocket plans the rest of that object again', `
+  await loaded();
+  await click(byTest('auto-fridge-2'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'auto_fridge sent');
+  const mk = x => ({object: 0, part: 0, tri: 0, point: [x, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded', fridge: true});
+  const weak = {...PLAN, face: 'bottom', pause_z: 3.8, warnings: []};
+  await reply(last('cmd', 'pocket.auto_fridge'), {count: 2, items: [{args: mk(104), plan: weak}, {args: mk(116), plan: weak}]});
+  await settle();
+  eq(rows('staged').length, 2, 'two staged');
+  const before = cmds('pocket.plan').length;
+  await click(qa('[data-test=staged] button[aria-label]')[0]);
+  await until(() => cmds('pocket.plan').length > before, 'the remaining fridge pocket is planned again');
+  const m = last('cmd', 'pocket.plan');
+  eq(m.args.fridge, true, 'with its fridge marker');
+  await reply(m, {...weak, warnings: ['weak_magnet_hold']});
+  await settle();
+  assert(text(byTest('staged')).includes('not a guarantee'), 'the advisory shows on the pocket left: ' + text(byTest('staged')));
+`);
+
+test('a failed re-plan of the fridge pockets left never keeps the old plan as enough', `
+  await loaded();
+  await click(byTest('auto-fridge-2'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'auto_fridge sent');
+  const mk = x => ({object: 0, part: 0, tri: 0, point: [x, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded', fridge: true});
+  const ok = {...PLAN, face: 'bottom', pause_z: 3.8, warnings: []};
+  await reply(last('cmd', 'pocket.auto_fridge'), {count: 2, items: [{args: mk(104), plan: ok}, {args: mk(116), plan: ok}]});
+  await settle();
+  const before = cmds('pocket.plan').length;
+  await click(qa('[data-test=staged] button[aria-label]')[0]);
+  await until(() => cmds('pocket.plan').length > before, 'the remaining fridge pocket is planned again');
+  await fail(last('cmd', 'pocket.plan'), {code: 'internal', detail: 'boom'});
+  await settle();
+  assert(text(byTest('staged')).includes('no safety guarantee'), 'the row says the hold is unknown: ' + text(byTest('staged')));
+`);
+
 test('the list says which inserts to have ready, open pockets and copies included', `
   await loaded();
   await place({...PLAN, copies: 2});
