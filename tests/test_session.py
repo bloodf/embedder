@@ -527,7 +527,11 @@ class Plan(Base):
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r4["job"], "object": 0, "fridge_surface": "wood"}), "bad_request")
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r4["job"], "object": 0, "magnet_grade": "N99"}), "bad_request")
         self.assertEqual(self.error(self.s.plan, {"job": r4["job"], **it["args"], "fridge_surface": "wood"}), "bad_request")
+        written, files = set(self.s.written), sorted(n for n in os.listdir(self.storage) if n.endswith(".3mf"))
         self.assertEqual(self.error(self.s.apply, {"job": r4["job"], "pockets": [{**it["args"], "magnet_grade": "N99"}]}), "bad_request")
+        self.assertFalse(self.s.job.applied, "a refused apply leaves the project loaded and unapplied")
+        self.assertEqual(self.s.written, written, "and writes no copy")
+        self.assertEqual(sorted(n for n in os.listdir(self.storage) if n.endswith(".3mf")), files)
         # mixed strengths: one strong magnet does not stand in for a weak one edited later
         heavy = {"name": "hv", "parts": [fixtures.part("hv", fixtures.box(45, 45, 120))]}
         r7 = self.load(fixtures.build, objects=[heavy], settings=dict(full, sparse_infill_density="25%"))
