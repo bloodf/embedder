@@ -425,15 +425,19 @@ def filament_density(raw_density=None, filament_type=None):
     return 1.24
 
 
-def magnet_shear_hold_n(insert, cover_mm, grade="N35", surface="steel"):
-    """Estimated vertical shear hold (Newtons) for one magnet against a vertical steel/stainless/board surface."""
+def magnet_pull_n(insert, cover_mm, grade="N35", surface="steel"):
+    """Estimated normal pull force (Newtons) for one magnet against a steel/stainless/board surface."""
     area = math.pi * (insert.l * 0.5) ** 2 if insert.shape == "disc" else insert.l * insert.w
     r = math.sqrt(area / math.pi)
     t = insert.t
     g = max(0.0, float(cover_mm)) + 0.15   # 0.15 mm typical paint/coating gap
     b_rel = (g + t) / math.hypot(g + t, r) - g / math.hypot(g, r)
-    f_pull = 0.58 * area * (b_rel * b_rel) * MAGNET_GRADE_FACTORS.get(grade, 1.0) * FRIDGE_SURFACE_FACTORS.get(surface, 1.0)
-    return 0.22 * f_pull
+    return 0.58 * area * (b_rel * b_rel) * MAGNET_GRADE_FACTORS.get(grade, 1.0) * FRIDGE_SURFACE_FACTORS.get(surface, 1.0)
+
+
+def magnet_shear_hold_n(insert, cover_mm, grade="N35", surface="steel"):
+    """Estimated vertical shear hold (Newtons) for one magnet against a vertical steel/stainless/board surface."""
+    return 0.22 * magnet_pull_n(insert, cover_mm, grade, surface)
 
 
 def required_fridge_magnets(volume_mm3, z_com_mm, span_mm, insert, cover_mm, infill_pct=15.0, grade="N35", surface="steel", density_g_cm3=1.24):

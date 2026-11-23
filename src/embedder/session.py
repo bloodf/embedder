@@ -457,12 +457,17 @@ class Session:
         user_layers = self._user_layers(job)
         copies = job.copies(entry.obj.id)
         weak_hold = needed_count > len(planned_entries)
+        per_pull_n = pocket.magnet_pull_n(insert, cover_eff, grade, surface)
+        total_pull_n = per_pull_n * len(planned_entries)
+        excessive_hold = total_pull_n > 60.0 or (mode == "embedded" and cover_eff <= 0.45 and per_pull_n > 25.0)
         staged_out = []
         for idx_i, (p_args, p, point) in enumerate(planned_entries):
             warnings = list(p.warnings) + [w[0] for w in pocket.pauses([p], user_layers)[1]]
             warnings += [w[0] for w in prox if idx_i in w[1:]]
             if weak_hold and "weak_magnet_hold" not in warnings:
                 warnings.append("weak_magnet_hold")
+            if excessive_hold and "excessive_magnet_hold" not in warnings:
+                warnings.append("excessive_magnet_hold")
             plan_res = {**_describe_pocket(p), "point": [round(v, 6) for v in point], "copies": copies,
                         "warnings": warnings, "blocked": None}
             staged_out.append({"args": p_args, "plan": plan_res})

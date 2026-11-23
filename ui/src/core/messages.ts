@@ -208,6 +208,7 @@ export const en = {
   'warn.breaks_surface': 'The pocket reaches outside the part; the insert may show or fall out.',
   'warn.existing_gcode_at_layer': 'Your own custom G-code already sits at this pause layer; Embedder leaves it and adds no pause there.',
   'warn.weak_magnet_hold': 'This model may be too heavy for the magnets that fit; consider larger magnets, open mode, or a stronger grade.',
+  'warn.excessive_magnet_hold': 'Magnetic pull is very high; thin plastic may crack or tear when removing from the fridge, or scratch the door.',
 
   'err.bad_request': 'The plugin refused the request',
   'err.stale_job': 'The project was loaded again. Load it once more',
@@ -522,6 +523,7 @@ export const ptBR: Record<MessageKey, string> = {
   'warn.breaks_surface': 'O bolso sai para fora da peça; o inserto pode aparecer ou cair.',
   'warn.existing_gcode_at_layer': 'Um G-code seu já está nesta camada de pausa; o Embedder o mantém e não adiciona pausa ali.',
   'warn.weak_magnet_hold': 'Este modelo pode ser pesado demais para os ímãs que cabem na base; considere ímãs maiores, modo aberto ou grau mais forte.',
+  'warn.excessive_magnet_hold': 'A força magnética é muito alta; plástico fino pode rachar ou rasgar ao tirar da geladeira, ou riscar a porta.',
 
   'err.bad_request': 'O plugin recusou o pedido',
   'err.stale_job': 'O projeto foi carregado de novo. Carregue-o mais uma vez',

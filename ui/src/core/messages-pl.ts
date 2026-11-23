@@ -216,6 +216,7 @@ export const pl: Record<MessageKey | `${PluralBase}_few`, string> = {
   'warn.breaks_surface': 'Kieszeń wychodzi poza część; wkładka może być widoczna lub wypaść.',
   'warn.existing_gcode_at_layer': 'Na tej warstwie pauzy jest już twój własny G-code; Embedder go zostawia i nie dodaje tam pauzy.',
   'warn.weak_magnet_hold': 'Ten model może być zbyt ciężki dla mieszczących się magnesów; rozważ większe magnesy, tryb otwarty lub mocniejszą klasę.',
+  'warn.excessive_magnet_hold': 'Siła przyciągania jest bardzo duża; cienki plastik może pęknąć lub rozerwać się przy zdejmowaniu z lodówki albo porysować drzwi.',
 
   'err.bad_request': 'Wtyczka odrzuciła żądanie',
   'err.stale_job': 'Projekt został wczytany ponownie. Wczytaj go jeszcze raz',
