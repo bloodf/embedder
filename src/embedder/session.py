@@ -381,7 +381,8 @@ class Session:
     def _hold_choice(args, cfg):
         """(grade, surface): the request's own when valid, else Settings."""
         for key, table in (("magnet_grade", pocket.MAGNET_GRADE_FACTORS), ("fridge_surface", pocket.FRIDGE_SURFACE_FACTORS)):
-            if args.get(key) is not None and args[key] not in table:   # never swap in the Settings value silently
+            v = args.get(key)
+            if v is not None and not (isinstance(v, str) and v in table):   # never swap in the Settings value silently
                 raise SessionError("bad_request", "%s is one of %s" % (key, ", ".join(table)))
         return args.get("magnet_grade") or cfg.get("magnet_grade", "N35"), args.get("fridge_surface") or cfg.get("fridge_surface", "steel")
 
@@ -407,8 +408,10 @@ class Session:
         cfg = self.settings_fn()
         out = [[] for _ in marked]
         groups = {}
-        for i, (a, _) in enumerate(marked):
-            groups.setdefault(a["object"], []).append(i)
+        for i, (a, p) in enumerate(marked):
+            self._hold_choice(a, cfg)
+            if p.insert.kind == "magnet":   # an NFC tag or nut edited in has no pull to judge
+                groups.setdefault(a["object"], []).append(i)
         for obj, ids in groups.items():
             parts = self._normal_parts(job.entries[obj])
             down = geometry.bottom_triangles(parts)
@@ -418,6 +421,7 @@ class Session:
                 continue
             vol, z_com, span, infill, density, uncertain = self._hold_inputs(job, parts, down)
             shear = pull = 0.0   # each pocket counts with its own insert, cover, grade and surface
+            thin_strong = False
             req_n = pocket.required_hold_n(vol, z_com, span, infill, density)
             for i in ids:
                 a, p = marked[i]
@@ -426,10 +430,9 @@ class Session:
                 shear += pocket.magnet_shear_hold_n(p.insert, cover, grade, surface)
                 one = pocket.magnet_pull_n(p.insert, cover, grade, surface)
                 pull += one
-                if p.mode == "embedded" and cover <= 0.45 and one > 25.0:
-                    pull += 1e9   # a single very strong thin-cover magnet is enough to warn
+                thin_strong = thin_strong or (p.mode == "embedded" and cover <= 0.45 and one > 25.0)
             ws = (["hold_uncertain"] if uncertain else []) + (["weak_magnet_hold"] if shear < req_n else [])
-            if pull > 60.0:
+            if pull > 60.0 or thin_strong:
                 ws.append("excessive_magnet_hold")
             for i in ids:
                 out[i] = ws
@@ -551,9 +554,7 @@ class Session:
         except presets.PresetError as e:
             raise SessionError(e.code, e.detail) from None
 
-        for key, table in (("magnet_grade", pocket.MAGNET_GRADE_FACTORS), ("fridge_surface", pocket.FRIDGE_SURFACE_FACTORS)):
-            if args.get(key) is not None and args[key] not in table:   # never swap in the Settings value silently
-                raise SessionError("bad_request", "%s is one of %s" % (key, ", ".join(table)))
+        self._hold_choice(args, {})   # a named grade or surface that is not one of ours is refused, not replaced
         cfg = self.settings_fn()
         if args.get("object") == "all":
             if not job.entries:
