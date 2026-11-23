@@ -483,6 +483,13 @@ class Plan(Base):
         self.assertAlmostEqual(pocket.filament_density(None, ["PC"]), 1.20)
         self.assertAlmostEqual(pocket.filament_density(None, ["TPU"]), 1.21)
         self.assertAlmostEqual(pocket.filament_density(None, ["UNKNOWN"]), 1.24)
+
+        # Excessive pull warning when strong N52 block magnets are used on a steel door
+        self.store.update({"magnet_grade": "N52", "fridge_surface": "steel"})
+        big_plate = {"name": "big", "parts": [fixtures.part("big", fixtures.box(80, 80, 15))]}
+        r_big = self.load(fixtures.build, objects=[big_plate])
+        res_excess = self.s.auto_fridge({"job": r_big["job"], "object": 0, "count": 4, "preset": "magnet-block-20x10x5"})
+        self.assertIn("excessive_magnet_hold", res_excess["items"][0]["plan"]["warnings"])
         # Two instances of one object share its pockets: "all" plans that object once, not once per instance
         r3 = self.load(fixtures.two_instances)
         one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})

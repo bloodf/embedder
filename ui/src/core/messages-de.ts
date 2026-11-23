@@ -208,6 +208,7 @@ export const de: Record<MessageKey, string> = {
   'warn.breaks_surface': 'Die Tasche reicht aus dem Teil heraus; das Einlegeteil kann sichtbar sein oder herausfallen.',
   'warn.existing_gcode_at_layer': 'In dieser Pausenschicht steht schon Ihr eigener benutzerdefinierter G-Code; Embedder lässt ihn stehen und fügt dort keine Pause hinzu.',
   'warn.weak_magnet_hold': 'Dieses Modell ist möglicherweise zu schwer für die passenden Magnete; erwägen Sie größere Magnete, den offenen Modus oder eine stärkere Güte.',
+  'warn.excessive_magnet_hold': 'Die Magnetkraft ist sehr hoch; dünner Kunststoff kann beim Abnehmen reißen oder brechen oder die Tür zerkratzen.',
 
   'err.bad_request': 'Das Plugin hat die Anfrage abgelehnt',
   'err.stale_job': 'Das Projekt wurde erneut geladen. Laden Sie es noch einmal',

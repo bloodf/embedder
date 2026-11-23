@@ -208,6 +208,7 @@ export const es: Record<MessageKey, string> = {
   'warn.breaks_surface': 'El alojamiento sale de la pieza; el inserto puede verse o caerse.',
   'warn.existing_gcode_at_layer': 'Ya hay G-Code personalizado suyo en esta capa de pausa; Embedder lo deja y no añade ninguna pausa ahí.',
   'warn.weak_magnet_hold': 'Este modelo puede ser demasiado pesado para los imanes que caben; considere imanes más grandes, modo abierto o un grado más fuerte.',
+  'warn.excessive_magnet_hold': 'La fuerza magnética es muy alta; el plástico fino puede agrietarse o romperse al quitarlo de la nevera, o rayar la puerta.',
 
   'err.bad_request': 'El plugin rechazó la petición',
   'err.stale_job': 'El proyecto se cargó de nuevo. Cárguelo una vez más',
