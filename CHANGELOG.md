@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Re-applying on an already-applied copy on Windows no longer exceeds the 260-character `MAX_PATH` limit (`Errno 2` on `.tmp`): `_stem()` now strips previous `-embedder-YYYYMMDD-HHMMSS-...` suffixes and caps the stem at 48 characters.
+
 ## [0.9.0] - 2026-11-22
 
 ### Added

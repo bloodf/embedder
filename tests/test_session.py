@@ -175,7 +175,12 @@ class Load(Base):
         for name in ("日" * 200, "a" * 300, "🧲" * 90):
             stem = session._stem("/p/%s.3mf" % name)
             self.assertLessEqual(len(stem.encode("utf-8")), 150, name[:3])
+            self.assertLessEqual(len(stem), 48)
             self.assertTrue(stem and name.startswith(stem))
+        self.assertEqual(
+            session._stem(r"C:\work\03-buecherregal-embedder-20261121-180757-ff2484-embedder-20261122-1748.3mf"),
+            "03-buecherregal",
+        )
 
 
 class Plan(Base):
