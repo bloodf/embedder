@@ -119,7 +119,10 @@ function keepMove(): void {
   bridge.command('pocket.plan', { job: project.job, ...args, ...(others.length ? { others } : {}) }).then((plan: Plan) => {
     if (!current() || s.selected === x.key || !s.staged.includes(x)) return;
     if (plan.blocked) tracker.notify('info', t('edit.back', { reason: tMaybe(`block.${plan.blocked.code}`, plan.blocked.detail || plan.blocked.code) }));
-    else s.staged = restage(s.staged, x.key, args, plan);
+    else {
+      s.staged = restage(s.staged, x.key, args, plan);
+      if (args.fridge) void refreshFridge(args.object, x.key);
+    }
   }, e => { if (current()) tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) })); });
 }
 
@@ -188,7 +191,9 @@ export function removeInHand(): void {
 /** The pocket.plan arguments of the pocket in hand as the form stands; null with nothing in hand. */
 function argsInHand(): PlanArgs | null {
   if (s.object == null || !s.hit) return null;
-  return planArgs(s.object, s.hit, s.insert, { mode: s.mode, spin: s.spin, cover: s.cover, center: s.center, pocketShape: s.pocketShape, polarity: s.polarity });
+  const args = planArgs(s.object, s.hit, s.insert, { mode: s.mode, spin: s.spin, cover: s.cover, center: s.center, pocketShape: s.pocketShape, polarity: s.polarity });
+  const old = s.staged.find(x => x.key === s.selected)?.args;   // an auto fridge pocket stays one while it is edited
+  return args && old?.fridge ? { ...args, fridge: true, ...(old.magnet_grade ? { magnet_grade: old.magnet_grade } : {}), ...(old.fridge_surface ? { fridge_surface: old.fridge_surface } : {}) } : args;
 }
 
 /** Plan the pocket in hand again: after a click, a move, or a change of insert, mode, rotation or cover. A drag or a
@@ -254,6 +259,7 @@ function settle(plan: Plan | null, args: PlanArgs, error: unknown, said: string)
   }
   if (s.note === said) note(null);
   Object.assign(s, { plan, planArgs: args, ...(mine ? { staged: restage(s.staged, mine.key, args, plan) } : {}) });
+  if (mine?.args.fridge) void refreshFridge(mine.args.object, mine.key);   // its insert, cover or mode changed the hold of the other fridge pockets
 }
 
 /** After a settings change or a deleted preset: plan the staged pockets again, so the list, the previews and the
@@ -323,9 +329,32 @@ export async function autoFridge(count: 'auto' | number = 'auto', allObjects = f
   Object.assign(s, { staged, result: null });
 }
 
+/** The other auto fridge pockets plan again after one of them changed or went: their hold advisory covers the group.
+ *  Only their rows change (no live replan), so this cannot start another round. `except`: the row just planned. */
+async function refreshFridge(object: number, except: number | null): Promise<void> {
+  const project = s.project, before = s.staged;
+  if (!project || s.result) return;
+  const rows = before.filter(x => x.args.fridge && x.args.object === object && x.key !== except);
+  if (!rows.length) return;
+  const fresh = new Map<number, Plan>();
+  for (const x of rows) {
+    const others = before.filter(o => o !== x).map(o => o.args);
+    try {
+      const plan: Plan = await bridge.command('pocket.plan', { job: project.job, ...x.args, ...(others.length ? { others } : {}) });
+      if (!plan.blocked) fresh.set(x.key, plan);
+    } catch {   // never leave the old "enough" plan standing: say the hold is unknown
+      fresh.set(x.key, { ...x.plan, warnings: [...new Set([...(x.plan.warnings ?? []), 'hold_uncertain'])] });
+    }
+  }
+  if (s.project !== project || s.staged !== before) return;   // edited or removed meanwhile: that change refreshes the group itself
+  s.staged = before.map(x => (fresh.has(x.key) ? { ...x, plan: fresh.get(x.key) as Plan } : x));
+}
+
 export function removeStaged(key: number): void {
+  const gone = s.staged.find(x => x.key === key);
   s.staged = unstage(s.staged, key);   // first: a pocket that goes is not planned into its row again
   if (key === s.selected) letGo();
+  if (gone?.args.fridge) void refreshFridge(gone.args.object, null);
 }
 export function markRemove(id: string, on: boolean): void { s.remove = toggle(s.remove, id, on); }
 

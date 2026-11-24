@@ -184,6 +184,104 @@ class RoundTrip(Base):
         applied = self.call("project.apply", job=r["job"], pockets=[it["args"] for it in auto["items"]], remove=[])
         self.assertEqual(len(applied["pauses"]), 1)
 
+    def test_plugin_fallbacks_lifecycle_and_open_in_orca(self):
+        from unittest import mock
+        # Lifecycle & default config
+        self.assertEqual(self.page.get_default_config(), {})
+        self.page.on_load()
+        self.page.on_unload()
+
+        # UnicodeEncodeError fallback in log()
+        bad_out = mock.MagicMock()
+        bad_out.encoding = "ascii"
+        bad_out.write.side_effect = [UnicodeEncodeError("ascii", "\u2603", 0, 1, "bad"), None, None, None]
+        with mock.patch("sys.stdout", bad_out):
+            plugin.log("snow \u2603")
+
+        # Fallback to cap.get_config / cap.save_config when storage() is unavailable
+        plugin._storage_dir, plugin._store = None, None
+        cap = mock.MagicMock()
+        saved_cfg = ['{"embedder_settings": {"xy_clearance": 0.25}}']
+        cap.get_config.side_effect = lambda: saved_cfg[0]
+        cap.save_config.side_effect = lambda txt: saved_cfg.__setitem__(0, txt)
+        with mock.patch.object(plugin.orca.host.plugin, "storage", side_effect=RuntimeError("no dir")):
+            store = plugin.get_store(cap)
+            self.assertEqual(store.effective()["xy_clearance"], 0.25)
+            store.update({"xy_clearance": 0.35})
+            self.assertIn("0.35", saved_cfg[0])
+            self.assertEqual(plugin._cap_config(mock.MagicMock(get_config=lambda: "not-json")), {})
+            plugin._store = None
+            self.assertEqual(plugin.get_store(None).effective()["xy_clearance"], 0.2)
+
+        # Worker unexpected exception -> internal error reply; SessionError -> error code; open_failed
+        with mock.patch.object(plugin, "get_session", side_effect=RuntimeError("boom")):
+            self.assertEqual(self.error("pocket.plan", job="j1"), "internal")
+        with mock.patch.object(plugin, "get_session", side_effect=plugin.session.SessionError("stale_job", "old")):
+            self.assertEqual(self.error("pocket.plan", job="j1"), "stale_job")
+        self.page.on_message({"type": "other"})
+        with mock.patch.object(plugin.orca.host, "model", side_effect=RuntimeError("no model")):
+            self.assertEqual(plugin._current_plate(), 1)
+        with mock.patch.object(plugin.orca.host, "preset_bundle", side_effect=RuntimeError("no bundle")):
+            self.assertEqual(plugin._live_values(), {})
+        r_ok = self.load()
+        applied = self.call("project.apply", job=r_ok["job"], pockets=[], remove=[])
+        with mock.patch.object(plugin, "_open_in_orca", side_effect=OSError("cannot launch")):
+            self.assertEqual(self.error("project.open", path=applied["path"]), "open_failed")
+        # get_icon() second call hits existing identical file, then directory blocks write -> ""
+        self.assertTrue(self.page.get_icon().endswith("embedder-icon.png"))
+        self.assertTrue(self.page.get_icon().endswith("embedder-icon.png"))
+        os.remove(os.path.join(self.storage, "embedder-icon.png"))
+        os.makedirs(os.path.join(self.storage, "embedder-icon.png"), exist_ok=True)
+        self.assertEqual(self.page.get_icon(), "")
+
+        # _asset in packaged (__package__) mode, _host_language error, _live_values skip, worker SessionError & reply fail
+        import types
+        with mock.patch.object(plugin, "__package__", "embedder"), \
+             mock.patch.object(plugin, "_assets", types.SimpleNamespace(ICON_PNG=b"png"), create=True), \
+             mock.patch("pkgutil.get_data", side_effect=[b"<html>", None]):
+            self.assertEqual(plugin._asset("icon.png"), b"png")
+            self.assertEqual(plugin._asset("app.html"), "<html>")
+            with self.assertRaises(FileNotFoundError):
+                plugin._asset("missing.html")
+        with mock.patch.object(plugin.orca.host, "app_language", side_effect=RuntimeError("no lang")):
+            self.assertIsNone(plugin._host_language())
+        with mock.patch.object(plugin.orca.host, "preset_bundle", return_value=types.SimpleNamespace(
+            full_config_value=mock.MagicMock(side_effect=RuntimeError("bad key"))
+        )):
+            self.assertEqual(plugin._live_values(), {})
+        with mock.patch.object(self.page, "reply", side_effect=RuntimeError("gone")), \
+             mock.patch.object(plugin, "get_session", side_effect=RuntimeError("boom")):
+            self.send("pocket.plan", job="j1")
+            time.sleep(0.05)
+        with mock.patch.object(plugin, "get_session", side_effect=plugin.session.SessionError("bad_request", "bad")):
+            self.assertEqual(self.error("pocket.plan", job="j1"), "bad_request")
+        # Direct _worker SessionError path
+        done_err = []
+        fake_page = mock.MagicMock(reply=lambda mid, result=None, error=None: done_err.append(error))
+        def raise_sess():
+            raise plugin.session.SessionError("stale_job", "old")
+        plugin._worker(fake_page, 1, raise_sess)
+        time.sleep(0.05)
+        self.assertEqual(done_err[0]["code"], "stale_job")
+
+        # open_in_orca platform branches
+        with mock.patch("subprocess.Popen") as popen:
+            with mock.patch("sys.platform", "darwin"):
+                self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
+            with mock.patch("sys.platform", "linux"):
+                self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
+            with mock.patch("sys.platform", "win32"):
+                self.assertFalse(plugin.open_in_orca("/tmp/a.3mf"))
+                orca_exe = os.path.join(self.storage, "orca-slicer.exe")
+                with open(orca_exe, "wb") as f:
+                    f.write(b"")
+                with mock.patch("sys.executable", orca_exe):
+                    self.assertTrue(plugin.open_in_orca("/tmp/a.3mf"))
+            self.assertEqual(popen.call_count, 3)
+
+        with mock.patch.object(plugin.orca.host.plater(), "export_3mf_copy", side_effect=RuntimeError("export err")):
+            self.assertEqual(self.error("project.load"), "export_failed")
+
 
 if __name__ == "__main__":
     unittest.main()

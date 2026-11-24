@@ -170,12 +170,76 @@ class Load(Base):
             f.write(b"junk")
         self.assertEqual(self.error(self.s.load, job_id, "", 1, {}), "bad_package")
 
-    def test_long_names_fit_a_file_name(self):
-        """A file name is at most 255 bytes on Linux: the stem leaves room for the suffix and the temporary name."""
-        for name in ("日" * 200, "a" * 300, "🧲" * 90):
-            stem = session._stem("/p/%s.3mf" % name)
-            self.assertLessEqual(len(stem.encode("utf-8")), 150, name[:3])
-            self.assertTrue(stem and name.startswith(stem))
+    def test_stem_drops_every_copy_suffix_including_collision_number(self):
+        self.assertEqual(session._stem("/p/Box-embedder-20261121-180757-ff2484-2.3mf"), "Box")
+        self.assertEqual(
+            session._stem(r"C:\work\03-buecherregal-embedder-20261121-180757-ff2484-embedder-20261122-1748.3mf"),
+            "03-buecherregal",
+        )
+
+    def test_long_names_fit_the_real_budget(self):
+        """The stem is cut to the room left by the path, the longest collision name and the temporary file."""
+        tail = "-embedder-20261121-180757-ff2484-99.3mf"
+        for windows, storage in ((False, "/s"), (True, "C:\\" + "d" * 100), (True, "C:\\" + "é" * 120)):
+            for name in ("日" * 200, "a" * 300, "🧲" * 90):
+                stem = session._fit_stem(name, storage, tail, windows)
+                self.assertTrue(stem and name.startswith(stem))
+                full = os.path.join(storage, stem + tail) if not windows else storage + "\\" + stem + tail
+                self.assertLessEqual(session._units(stem + tail, windows) + threemf.TMP_SUFFIX_LEN, 255)
+                if windows:
+                    self.assertLessEqual(session._units(full, windows) + threemf.TMP_SUFFIX_LEN, 259)
+        self.assertEqual(session._fit_stem("a" * 300, "/s", tail, False), "a" * (255 - len(tail) - threemf.TMP_SUFFIX_LEN))
+
+    def test_no_room_for_a_minimal_name_is_a_domain_error(self):
+        tail = "-embedder-20261121-180757-ff2484-99.3mf"
+        self.assertEqual(self.error(session._fit_stem, "Box", "C:\\" + "d" * 230, tail, True), "path_too_long")
+
+    def test_real_files_deep_directory_emoji_and_repeated_copies(self):
+        """Apply for real in a deep folder with a very long emoji name: copies of copies and a taken name still write."""
+        deep = os.path.join(self.storage, *["d" * 20] * 4)
+        os.makedirs(deep)
+        self.s = session.Session(deep, self.store.effective)
+        pocket = {"object": 0, "part": 0, "tri": TOP_TRI, "point": [110, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded"}
+        job_id, source = self.s.new_job()
+        fixtures.cube(source)
+        self.s.load(job_id, "/p/%s.3mf" % ("🧲" * 90), 1, {})
+        with mock.patch.object(session.time, "strftime", return_value="20261121-180757"):
+            first = self.s.apply({"job": job_id, "pockets": [pocket]})
+            paths = [first["path"]]
+            for _ in range(2):   # a copy of a copy: the project name stays, no suffix stacks up
+                job_id, source = self.s.new_job()
+                shutil.copyfile(paths[-1], source)
+                self.s.load(job_id, paths[-1], 1, {})
+                self.assertEqual(self.s.job.stem, first["name"].split("-embedder-")[0])
+                paths.append(self.s.apply({"job": job_id, "pockets": [pocket]})["path"])
+            # the same second and job id again: the name is taken, so -2 is tried and fits
+            self.s.job = replace_job(self.s.job, applied=False)
+            again = self.s.apply({"job": self.s.job.id, "pockets": [pocket]})["path"]
+        self.assertEqual(len(set(paths + [again])), 4)
+        for path in paths + [again]:
+            self.assertLessEqual(len(os.path.basename(path).encode("utf-8")), 255 - threemf.TMP_SUFFIX_LEN, path)
+            self.assertTrue(os.path.isfile(path))
+
+    @unittest.skipUnless(os.name == "nt", "the MAX_PATH budget applies to a real Windows file system")
+    def test_windows_real_paths_at_the_budget_edge(self):
+        """On Windows, apply in a folder that leaves room for only a short name, then in one that leaves none."""
+        pocket = {"object": 0, "part": 0, "tri": TOP_TRI, "point": [110, 110, 20], "preset": "magnet-disc-6x3", "mode": "embedded"}
+        tail = len("-embedder-20261121-180757-ff2484-99.3mf") + threemf.TMP_SUFFIX_LEN
+        for room, code in ((10, None), (1, "path_too_long")):   # units left for the name: "untitled" needs 8, an emoji 2
+            length = 258 - tail - room   # folder length: the separator and the name make up the rest of the 259
+            folder = os.path.join(self.storage, "p" * (length - len(self.storage) - 1))
+            os.makedirs(folder)
+            job_id, source = self.s.new_job()   # loaded from the short storage: its jobs folder is not what is measured
+            fixtures.cube(source)
+            self.s.load(job_id, "/p/" + "🧲" * 40 + ".3mf", 1, {})
+            self.s.storage = folder
+            if code:
+                self.assertEqual(self.error(self.s.apply, {"job": job_id, "pockets": [pocket]}), code)
+            else:
+                out = self.s.apply({"job": job_id, "pockets": [pocket]})["path"]
+                self.assertTrue(os.path.isfile(out))
+                self.assertLessEqual(session._units(out, True) + threemf.TMP_SUFFIX_LEN, 259)
+                self.s.storage = self.storage
 
 
 class Plan(Base):
@@ -434,6 +498,63 @@ class Plan(Base):
         r_plain = self.load(fixtures.plain_mesh)
         self.assertEqual(self.error(self.s.auto_fridge, {"job": r_plain["job"], "object": 0}), "unsupported_object")
 
+    def test_hold_advisory_uncertain_and_persistent(self):
+        from dataclasses import replace as _r
+        # known closed solid, full inputs: no uncertainty
+        ok = {"name": "ok", "parts": [fixtures.part("ok", fixtures.box(30, 30, 10))]}
+        full = dict(fixtures.SETTINGS, sparse_infill_density="15%", filament_type="PLA")
+        r = self.load(fixtures.build, objects=[ok], settings=full)
+        res = self.s.auto_fridge({"job": r["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})
+        item = res["items"][0]
+        self.assertTrue(item["args"]["fridge"])
+        self.assertNotIn("hold_uncertain", item["plan"]["warnings"])
+        # missing infill/density: advisory, and it survives a plain re-plan and apply
+        r2 = self.load(fixtures.build, objects=[ok])
+        item2 = self.s.auto_fridge({"job": r2["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})["items"][0]
+        self.assertIn("hold_uncertain", item2["plan"]["warnings"])
+        self.store.update({"magnet_grade": "N52"})
+        again = self.s.plan({"job": r2["job"], **item2["args"]})
+        self.assertIn("hold_uncertain", again["warnings"])
+        self.assertIn("hold_uncertain", self.s.apply({"job": r2["job"], "pockets": [item2["args"]]})["warnings"])
+        # a manual bottom magnet (no fridge marker) gets no hold advisory
+        r3 = self.load(fixtures.build, objects=[ok])
+        manual = {k: v for k, v in item2["args"].items() if k != "fridge"}
+        self.assertNotIn("hold_uncertain", self.s.plan({"job": r3["job"], **manual})["warnings"])
+        # explicit override is kept, an invalid one is refused
+        r4 = self.load(fixtures.build, objects=[ok])
+        it = self.s.auto_fridge({"job": r4["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2", "magnet_grade": "ferrite", "fridge_surface": "board"})["items"][0]
+        self.assertEqual((it["args"]["magnet_grade"], it["args"]["fridge_surface"]), ("ferrite", "board"))
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r4["job"], "object": 0, "fridge_surface": "wood"}), "bad_request")
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r4["job"], "object": 0, "magnet_grade": "N99"}), "bad_request")
+        self.assertEqual(self.error(self.s.plan, {"job": r4["job"], **it["args"], "fridge_surface": "wood"}), "bad_request")
+        written, files = set(self.s.written), sorted(n for n in os.listdir(self.storage) if n.endswith(".3mf"))
+        self.assertEqual(self.error(self.s.apply, {"job": r4["job"], "pockets": [{**it["args"], "magnet_grade": "N99"}]}), "bad_request")
+        self.assertFalse(self.s.job.applied, "a refused apply leaves the project loaded and unapplied")
+        self.assertEqual(self.s.written, written, "and writes no copy")
+        self.assertEqual(sorted(n for n in os.listdir(self.storage) if n.endswith(".3mf")), files)
+        # mixed strengths: one strong magnet does not stand in for a weak one edited later
+        heavy = {"name": "hv", "parts": [fixtures.part("hv", fixtures.box(45, 45, 120))]}
+        r7 = self.load(fixtures.build, objects=[heavy], settings=dict(full, sparse_infill_density="25%"))
+        base = {"job": r7["job"], "object": 0, "count": 4, "preset": "magnet-disc-6x2"}
+        strong = self.s.auto_fridge({**base, "magnet_grade": "N52", "fridge_surface": "steel", "preset": "magnet-disc-20x3"})["items"]
+        weak = self.s.auto_fridge({**base, "magnet_grade": "ferrite", "preset": "magnet-disc-3x1"})["items"]
+        mixed = [strong[0]["args"]] + [w["args"] for w in weak[1:]]
+        self.assertIn("weak_magnet_hold", self.s.plan({"job": r7["job"], **mixed[0], "others": mixed[1:]})["warnings"])
+        # an NFC tag edited into a marked pocket gets no fridge advisory; the magnets left still do
+        rn = self.load(fixtures.build, objects=[ok])
+        nfc = {**item2["args"], "preset": "nfc-sticker-25"}
+        self.assertNotIn("hold_uncertain", self.s.plan({"job": rn["job"], **nfc})["warnings"])
+        self.assertIn("hold_uncertain", self.s.plan({"job": rn["job"], **item2["args"], "others": [nfc]})["warnings"])
+        # a malformed override of any type is a bad_request, not a TypeError
+        for bad in ({"a": 1}, ["N52"], 7):
+            self.assertEqual(self.error(self.s.plan, {"job": rn["job"], **item2["args"], "magnet_grade": bad}), "bad_request")
+            self.assertEqual(self.error(self.s.auto_fridge, {"job": rn["job"], "object": 0, "fridge_surface": bad}), "bad_request")
+        # open mesh (one triangle missing) and reversed winding
+        v, t = fixtures.box(30, 30, 10)
+        holey = {"name": "h", "parts": [fixtures.part("h", (v, t[:-1]))]}
+        r5 = self.load(fixtures.build, objects=[holey], settings=full)
+        self.assertIn("hold_uncertain", self.s.auto_fridge({"job": r5["job"], "object": 0, "count": 1, "preset": "magnet-disc-6x2"})["items"][0]["plan"]["warnings"])
+
     def test_auto_fridge_all_objects(self):
         r = self.load(fixtures.build,
                       objects=[fixtures.cube_object("a", size=20), fixtures.cube_object("b", size=60)],
@@ -450,6 +571,72 @@ class Plan(Base):
         res2 = self.s.auto_fridge({"job": r2["job"], "object": "all", "count": "auto"})
         self.assertEqual(res2["count"], 1)
         self.assertEqual(res2["items"][0]["args"]["object"], 1)
+
+    def test_auto_fridge_physics_sizing_and_weak_hold_warning(self):
+        # Moderate tall column (45x45x60 mm, 15% infill) -> scales up to 2x2 = 4 magnets
+        mid = {"name": "mid", "parts": [fixtures.part("mid", fixtures.box(45, 45, 60))]}
+        r_mid = self.load(fixtures.build, objects=[mid], settings=dict(fixtures.SETTINGS, sparse_infill_density="15%"))
+        res_mid = self.s.auto_fridge({"job": r_mid["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
+        self.assertEqual(res_mid["count"], 4)
+
+        # Heavy tall column (45x45x120 mm, 25% infill) -> scales beyond 4 into a 3x3 = 9 grid
+        tall = {"name": "tall", "parts": [fixtures.part("tall", fixtures.box(45, 45, 120))]}
+        r_tall = self.load(fixtures.build, objects=[tall], settings=dict(fixtures.SETTINGS, sparse_infill_density="25%"))
+        res_tall = self.s.auto_fridge({"job": r_tall["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
+        self.assertEqual(res_tall["count"], 9)
+
+        # On a ferrite/stainless setting with a heavy block where even the full grid cannot meet the 2.5x safety factor, warn!
+        self.store.update({"magnet_grade": "ferrite", "fridge_surface": "stainless"})
+        res_weak = self.s.auto_fridge({"job": r_tall["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
+        self.assertIn("weak_magnet_hold", res_weak["items"][0]["plan"]["warnings"])
+
+        # Large heavy plate (100x80x100) needing >4 magnets (and odd/prime -> n+1) scales up to a symmetric grid!
+        self.store.update({"magnet_grade": "N35", "fridge_surface": "steel"})
+        heavy = {"name": "heavy", "parts": [fixtures.part("heavy", fixtures.box(100, 80, 100))]}
+        r_heavy = self.load(fixtures.build, objects=[heavy], settings=dict(fixtures.SETTINGS, sparse_infill_density="40%"))
+        res_heavy = self.s.auto_fridge({"job": r_heavy["job"], "object": 0, "count": "auto", "preset": "magnet-disc-6x2"})
+        self.assertGreater(res_heavy["count"], 4)
+
+        # Filament density lookup: explicit filament_density and fallback by filament_type (ABS/ASA/PC/TPU/PLA)
+        self.assertAlmostEqual(pocket.filament_density(["1.35"], ["PLA"]), 1.35)
+        self.assertAlmostEqual(pocket.filament_density(None, ["ABS"]), 1.04)
+        self.assertAlmostEqual(pocket.filament_density(None, ["ASA"]), 1.07)
+        self.assertAlmostEqual(pocket.filament_density(None, ["PC"]), 1.20)
+        self.assertAlmostEqual(pocket.filament_density(None, ["TPU"]), 1.21)
+        self.assertAlmostEqual(pocket.filament_density(None, ["UNKNOWN"]), 1.24)
+
+        # Excessive pull warning when strong N52 block magnets are used on a steel door
+        self.store.update({"magnet_grade": "N52", "fridge_surface": "steel"})
+        big_plate = {"name": "big", "parts": [fixtures.part("big", fixtures.box(80, 80, 15))]}
+        r_big = self.load(fixtures.build, objects=[big_plate])
+        res_excess = self.s.auto_fridge({"job": r_big["job"], "object": 0, "count": 4, "preset": "magnet-block-20x10x5"})
+        self.assertIn("excessive_magnet_hold", res_excess["items"][0]["plan"]["warnings"])
+        # Invalid density string falls back to PLA, and invalid non-dict pocket plan arg raises bad_request
+        self.assertAlmostEqual(pocket.filament_density("not-a-number", "PLA"), 1.24)
+        self.assertEqual(self.error(self.s._plan_at, self.s._current(r_big["job"]), "not-a-dict"), "bad_request")
+        # All-objects mode when all objects are cut/unsupported raises the underlying SessionError, and empty entries -> bad_request
+        cut = '<?xml version="1.0"?>\n<objects>\n <object id="1">\n  <cut_id id="5" check_sum="1" connectors_cnt="1"/>\n </object>\n</objects>\n'
+        r_all_cut = self.load(extra={"Metadata/cut_information.xml": cut})
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_all_cut["job"], "object": "all"}), "cut_object")
+        from dataclasses import replace
+        cur = self.s._current(r_all_cut["job"])
+        self.s.job = replace(cur, entries=())
+        self.assertEqual(self.error(self.s.auto_fridge, {"job": r_all_cut["job"], "object": "all"}), "bad_request")
+        self.assertFalse(pocket._is_prime(1))
+        # _bytes big-endian path, load progress callback, no_layer_height, and _delete OSError handling
+        from unittest import mock
+        import array as _arr
+        with mock.patch("sys.byteorder", "big"):
+            self.assertEqual(len(session._bytes(_arr.array("f", [1.0, 2.0]))), 8)
+        ticks = []
+        jid, src = self.s.new_job()
+        fixtures.cube(src)
+        self.s.load(jid, "/work/cube.3mf", 1, {}, progress=lambda d, t: ticks.append((d, t)))
+        self.assertTrue(ticks)
+        r_no_lh = self.load(fixtures.build, settings={k: v for k, v in fixtures.SETTINGS.items() if k != "layer_height"})
+        self.assertEqual(self.plan(r_no_lh["job"])["blocked"]["code"], "no_layer_height")
+        with mock.patch("os.remove", side_effect=OSError("locked")):
+            self.assertEqual(self.s._delete([(os.path.join(self.storage, "x.3mf"), 0, 100)]), (0, 0, 1))
         # Two instances of one object share its pockets: "all" plans that object once, not once per instance
         r3 = self.load(fixtures.two_instances)
         one = self.s.auto_fridge({"job": r3["job"], "object": 0, "count": 2})

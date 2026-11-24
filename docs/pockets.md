@@ -134,6 +134,8 @@ pocket (the tag may not read), and when another custom G-code already sits on th
 leaves it alone and adds no pause there). That last warning shows as soon as you place the pocket, not only
 after Apply.
 
+Fridge magnets from the auto buttons are sized from an uncalibrated estimate of the part's weight and the magnet's pull. Embedder warns when the magnets that fit may not hold the model, when the pull is very high, and when the estimate is uncertain (open or empty mesh, or infill or filament density missing from the project). This is advice only: test the hold yourself.
+
 Things to know:
 
 - **Magnets can jump.** A magnet may snap to a steel nozzle or the print head. Put each magnet in with

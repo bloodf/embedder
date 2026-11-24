@@ -601,6 +601,14 @@ test('warnings are shown in words', `
   assert(w[0].includes('thinner than two layers') && w[1].includes('within 10 mm'), 'texts: ' + w);
 `);
 
+test('hold warnings say advisory estimate, not a guarantee', `
+  await loaded();
+  await place({...PLAN, warnings: ['weak_magnet_hold', 'hold_uncertain']});
+  const w = qa('[data-test=plan-warning]').map(text);
+  eq(w.length, 2, 'two warnings');
+  assert(w[0].includes('not a guarantee') && w[1].includes('no safety guarantee'), 'texts: ' + w);
+`);
+
 test('apply writes a copy with the staged and removed pockets; open asks OrcaSlicer', `
   await loaded();
   const m = await place(PLAN);
@@ -715,6 +723,41 @@ test('Auto fridge magnet stages symmetric bottom pockets in one click', `
   await settle();
   eq(rows('staged').length, 2, 'two bottom pockets staged');
   eq(rows('staged')[0][1], 'Cube · bottom · embedded · pause at Z 3.80 mm', 'bottom row');
+`);
+
+test('removing one auto fridge pocket plans the rest of that object again', `
+  await loaded();
+  await click(byTest('auto-fridge-2'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'auto_fridge sent');
+  const mk = x => ({object: 0, part: 0, tri: 0, point: [x, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded', fridge: true});
+  const weak = {...PLAN, face: 'bottom', pause_z: 3.8, warnings: []};
+  await reply(last('cmd', 'pocket.auto_fridge'), {count: 2, items: [{args: mk(104), plan: weak}, {args: mk(116), plan: weak}]});
+  await settle();
+  eq(rows('staged').length, 2, 'two staged');
+  const before = cmds('pocket.plan').length;
+  await click(qa('[data-test=staged] button[aria-label]')[0]);
+  await until(() => cmds('pocket.plan').length > before, 'the remaining fridge pocket is planned again');
+  const m = last('cmd', 'pocket.plan');
+  eq(m.args.fridge, true, 'with its fridge marker');
+  await reply(m, {...weak, warnings: ['weak_magnet_hold']});
+  await settle();
+  assert(text(byTest('staged')).includes('not a guarantee'), 'the advisory shows on the pocket left: ' + text(byTest('staged')));
+`);
+
+test('a failed re-plan of the fridge pockets left never keeps the old plan as enough', `
+  await loaded();
+  await click(byTest('auto-fridge-2'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'auto_fridge sent');
+  const mk = x => ({object: 0, part: 0, tri: 0, point: [x, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded', fridge: true});
+  const ok = {...PLAN, face: 'bottom', pause_z: 3.8, warnings: []};
+  await reply(last('cmd', 'pocket.auto_fridge'), {count: 2, items: [{args: mk(104), plan: ok}, {args: mk(116), plan: ok}]});
+  await settle();
+  const before = cmds('pocket.plan').length;
+  await click(qa('[data-test=staged] button[aria-label]')[0]);
+  await until(() => cmds('pocket.plan').length > before, 'the remaining fridge pocket is planned again');
+  await fail(last('cmd', 'pocket.plan'), {code: 'internal', detail: 'boom'});
+  await settle();
+  assert(text(byTest('staged')).includes('no safety guarantee'), 'the row says the hold is unknown: ' + text(byTest('staged')));
 `);
 
 test('the list says which inserts to have ready, open pockets and copies included', `
@@ -847,7 +890,7 @@ test('unsaved settings are named in the save bar and can be discarded', `
   eq(q('#set-cover_nfc').value, '0.6 mm', 'value back');
   assert(byTest('settings-save').disabled && !text(q('.oui-settings-foot')).includes('Unsaved'), 'bar quiet again');
   assert(!last('cmd', 'settings.save'), 'nothing was sent');
-  eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
+  eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'Fridge magnets', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
 `);
 
 test('settings pages: wide, the list beside one page; a pick moves focus to its heading and is kept for next time', `

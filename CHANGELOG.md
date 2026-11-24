@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- **Magnet hold estimate** for auto fridge magnets: Embedder estimates how heavy the part is (from its volume, infill and filament density) and how much the magnets can hold through the cover, then adds magnets when it needs more. Larger counts go in an even grid. Pick the magnet grade (N35, N42, N52 or ferrite) and the fridge surface (steel, stainless or board) in the new Fridge magnets section of Settings. It is a rough estimate, not a guarantee: a warning shows when the magnets that fit may not hold the part, when they pull hard enough to crack the cover or scratch the fridge, or when the model or settings are missing something the estimate needs. Thanks @plbogen2 (#55).
+
+### Fixed
+- On Windows, applying again to a copy Embedder already made could fail with "No such file or directory" when OrcaSlicer's plugin folder is deep, because the file name kept growing past the 260-character path limit. The copy's name no longer repeats old Embedder suffixes and is shortened to fit; if no name fits, Apply says the storage folder path is too long. Thanks @plbogen2 (#56).
+
 ## [0.9.0] - 2026-11-22
 
 ### Added

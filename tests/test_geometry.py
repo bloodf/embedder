@@ -92,6 +92,24 @@ class FaceCentre(unittest.TestCase):
         pos, idx = pos + up, idx + [i + 6 for i in upi]
         self.assertTrue(close(g.face_centre(pos, idx, 0, (0, 0, 1)), (0.5, 0.5, 0)))
 
+    def test_transform_and_mass_edge_cases(self):
+        with self.assertRaises(ValueError):
+            g.from_3mf("1 2 3")
+        with self.assertRaises(ValueError):
+            g.from_config("1 2 3")
+        from array import array
+        pos = array("f", [c for p in ((0, 0, 0), (2, 0, 0), (2, 3, 0), (0, 3, 0), (0, 0, 4), (2, 0, 4), (2, 3, 4), (0, 3, 4)) for c in p])
+        tris = [(0, 2, 1), (0, 3, 2), (4, 5, 6), (4, 6, 7), (0, 1, 5), (0, 5, 4), (1, 2, 6), (1, 6, 5), (2, 3, 7), (2, 7, 6), (3, 0, 4), (3, 4, 7)]
+        for wind in (tris, [(a, c, b) for a, b, c in tris]):
+            idx = array("I", [i for t in wind for i in t])
+            vol, zc = g.mesh_mass_props([(0, pos, idx)])
+            self.assertAlmostEqual(vol, 24.0, places=4)
+            self.assertAlmostEqual(zc, 2.0, places=4)
+            self.assertEqual(g.open_edge_count([(0, pos, idx)]), 0)
+        self.assertGreater(g.open_edge_count([(0, pos, array("I", [i for t in tris[1:] for i in t]))]), 0)
+        self.assertEqual(g.mesh_mass_props([]), (0.0, 0.0))
+        self.assertEqual(g.mesh_mass_props([(0, [0, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 2])]), (0.0, 0.0))
+
 
 class Meshes(unittest.TestCase):
     def test_cylinder_is_circumscribed_and_closed(self):
