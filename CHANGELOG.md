@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.10.0] - 2026-11-24
 
 ### Added
 - **Magnet hold estimate** for auto fridge magnets: Embedder estimates how heavy the part is (from its volume, infill and filament density) and how much the magnets can hold through the cover, then adds magnets when it needs more. Larger counts go in an even grid. Pick the magnet grade (N35, N42, N52 or ferrite) and the fridge surface (steel, stainless or board) in the new Fridge magnets section of Settings. It is a rough estimate, not a guarantee: a warning shows when the magnets that fit may not hold the part, when they pull hard enough to crack the cover or scratch the fridge, or when the model or settings are missing something the estimate needs. Thanks @plbogen2 (#55).
