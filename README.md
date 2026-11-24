@@ -21,7 +21,7 @@
 
 ## ✨ What it does
 
-Embedder puts magnets and NFC stickers inside your 3D prints. You pick an insert size and click the face of the part where it goes, and Embedder cuts a pocket with the right clearance. For a pocket that is sealed inside the print, it also adds a pause at the layer where the cavity is about to close, so you can drop the insert in before the printer covers it. It works on a copy of your project, and the original is never changed.
+Embedder puts magnets, NFC stickers and nuts inside your 3D prints. You pick an insert size and click the face of the part where it goes, and Embedder cuts a pocket with the right clearance. For a pocket that is sealed inside the print, it also adds a pause at the layer where the cavity is about to close, so you can drop the insert in before the printer covers it. It works on a copy of your project, and the original is never changed.
 
 <p align="center">
   <picture>
@@ -32,12 +32,17 @@ Embedder puts magnets and NFC stickers inside your 3D prints. You pick an insert
 
 ## 📦 Install
 
-Subscribe to [Embedder on Orca Cloud](https://cloud.orcaslicer.com/p/58222d4f9e52), then open **File > Plugins** in OrcaSlicer, click **Refresh** and tick **Activate**.
+First find OrcaSlicer's **Plugins** window:
+
+- **Windows and Linux:** click the small ▾ arrow right of **File** at the top-left corner of the OrcaSlicer window, then **Plugins**. (**Plugins** is not inside **File** here.)
+- **macOS:** click **File** in the menu bar at the top of the screen, then **Plugins**.
+
+From Orca Cloud: subscribe to [Embedder on Orca Cloud](https://cloud.orcaslicer.com/p/58222d4f9e52), then open **Plugins**, click **Refresh** and tick **Activate**.
 
 From a file:
 
 1. Download `embedder_any.whl` from the [latest release](https://github.com/bloodf/embedder/releases/latest).
-2. In OrcaSlicer, open **File > Plugins > Install local plugin** and pick the wheel.
+2. Open **Plugins** as above, click the small arrow on the left end of the **Install plugin** button and choose **Install local plugin**, then click it and pick the wheel.
 3. Tick **Activate** and allow the background thread when OrcaSlicer asks.
 4. Open the **Embedder** tab, next to Prepare, Preview and Device.
 
@@ -82,8 +87,10 @@ Embedder is an independent project, not made or supported by the OrcaSlicer team
 | | Vented shapes | A disc sits in a hexagon and a block in a box with a 1 mm round vent on each corner. Air and spare glue get out, so the insert goes all the way down. |
 | | Pick the shape | Circle, hexagon, square or rectangle, each the smallest that holds the insert. Your pick is kept for its preset. |
 | | Side-face slots | Behind an upright wall the insert stands on edge in a vertical slot and is dropped in from above. |
+| | Auto fridge magnet | **Auto fridge magnet (bottom)** (`Auto`, `1×`, `2×`, `4×`) finds the bottom of the selected object and stages symmetric magnet pockets there, away from the edge. **Auto all objects** does it for every object on the plate in one click. |
+| | Polarity note | Mark a magnet pocket "N up" or "S up". The note shows in the pocket list and in the pause message, so each magnet goes in the right way round. |
 | | Centre on the face | Puts the pocket in the middle of the flat face you click, which is what a lid, a base or a tile needs. |
-| | Your own sizes | Any disc or block, saved by name and kept between sessions. |
+| | Your own sizes | Any disc, block or nut, saved by name and kept between sessions. |
 | | Inserts to have ready | Under the pocket list, for example "2 x 6x3 magnet, 1 x 25 mm NFC sticker", with the heights where the print will pause. Every copy of an object counts. |
 | | Shared pauses | Pockets that end at the same height share one pause. |
 | | Warnings while you place | A thin cover, a pocket that reaches outside the part, an NFC tag within 10 mm of a magnet, or your own custom G-code already on the pause layer. |

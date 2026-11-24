@@ -23,7 +23,7 @@ const LANGS = ['en', 'pt-BR'];
 // the 3D view and the whole header line in Portuguese (it is wider than the panel's shape; the render is fitted whole).
 // The square and social images reuse that render, fitted whole into their smaller panel.
 // 960 px tall holds the whole form down to Add pocket, and is the panel's own shape, so the render fills it.
-const PANEL = [1000, 960], RESULT = [960, 600];
+const PANEL = [1300, 1250], RESULT = [960, 600];
 const LABELS = {
   en: { disc: 'Ø10 × 3 mm disc', sticker: 'Ø25 mm sticker', badge: 'Badge' },
   'pt-BR': { disc: 'Disco Ø10 × 3 mm', sticker: 'Adesivo Ø25 mm', badge: 'Crachá' },
@@ -124,7 +124,7 @@ const SHOTS = [
       + choose('preset', LABELS[lang].sticker) + CENTRE);
     await s.clickView(); await s.run(PLANNED);
   } },
-  { name: 'panel-pause', themes: ['dark'], langs: LANGS, size: [1000, 1100], async go(s) {
+  { name: 'panel-pause', themes: ['dark'], langs: LANGS, size: [1300, 1400], async go(s) {
     await s.run(LOADED); await s.clickView(-60, 0); await s.run(PLANNED + ADD); await s.clickView(60, 0); await s.run(PLANNED + ADD);
   } },
   { name: 'screen-pockets', themes: ['dark', 'light'], langs: LANGS, async go(s) {
