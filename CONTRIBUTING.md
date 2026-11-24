@@ -80,8 +80,8 @@ command line or the GUI and check the pocket and the pause in the G-code.
 Images live in `assets/` and the tab icon in `src/embedder/ui/icon.png` (the store tile at 40x40 RGBA, its dark surround transparent). There are two sets.
 
 **The marketing art** is what the README, the Orca Cloud listing and the GitHub social preview show: the store tile,
-the main, square and four feature images, the social preview and the README heroes, in English and Brazilian
-Portuguese. The generated originals are in `assets/marketing/source/`, untouched, each with one empty panel for a
+the main, square and four feature images, the social preview and the README heroes, in English (the feature and
+README images also in Brazilian Portuguese, for README.pt-BR.md). The generated originals are in `assets/marketing/source/`, untouched, each with one empty panel for a
 screenshot. `scripts/marketing.py` crops and scales each one to its listing size (512x512 tile, 1600x900 main,
 feature and hero images, 900x900 square, 1280x640 social preview), finds the panel from the pixels, pastes a real
 render of the page inside it, and records every export (source, operation, size, bytes, date) under `exports` in

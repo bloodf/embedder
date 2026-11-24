@@ -47,6 +47,8 @@ for _lang in ("en", "pt-BR"):
             ("readme/embedder-screen-pockets-light", None, (1440, 900), "screen-pockets-light"),
             ("readme/embedder-screen-applied-dark", None, (960, 600), "screen-applied-dark"),
             ("readme/embedder-screen-applied-light", None, (960, 600), "screen-applied-light")):
+        if _lang != "en" and not _name.startswith(("readme/", "orca-cloud/embedder-feature")):
+            continue                # the listing is English only; pt-BR is kept where README.pt-BR.md shows it
         EXPORTS["assets/%s-%s.png" % (_name, _lang)] = (
             _source and "embedder-workshop-%s-%s.png" % (_source, _lang), _size, "%s-%s" % (_shot, _lang))
 
