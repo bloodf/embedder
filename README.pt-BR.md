@@ -82,6 +82,8 @@ O Embedder é um projeto independente, que não é feito nem mantido pela equipe
 | | Formatos com respiro | Um disco fica num hexágono, e um bloco numa caixa com um respiro redondo de 1 mm em cada canto. O ar e a cola que sobra saem, e o inserto desce até o fundo. |
 | | Escolha o formato | Círculo, hexágono, quadrado ou retângulo, cada um o menor que segura o inserto. A escolha fica guardada para a predefinição. |
 | | Fendas em faces laterais | Atrás de uma parede vertical, o inserto fica de pé numa fenda vertical e entra por cima. |
+| | Ímã de geladeira automático | **Ímã de geladeira automático (base)** (`Auto`, `1×`, `2×`, `4×`) encontra a base do objeto selecionado e posiciona bolsos simétricos de ímã ali, longe da borda. **Auto todos os objetos** faz isso para cada objeto da mesa em um clique. |
+| | Nota de polaridade | Marque um bolso de ímã como "N para cima" ou "S para cima". A nota aparece na lista de bolsos e na mensagem de pausa, para você colocar cada ímã do lado certo. |
 | | Centralizar na face | Leva o bolso ao meio da face plana clicada, que é o que uma tampa, uma base ou um azulejo pedem. |
 | | Seus tamanhos | Qualquer disco ou bloco, salvo com um nome e mantido entre as sessões. |
 | | Insertos para deixar à mão | Abaixo da lista de bolsos, por exemplo "2 x 6x3 magnet, 1 x 25 mm NFC sticker", com as alturas em que a impressão vai pausar. Cada cópia do objeto conta. |
