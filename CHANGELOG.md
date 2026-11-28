@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-11-28
+
+### Fixed
+- Page tests that failed in the publish workflow of 0.11.0 (a toast offset and a Chrome ResizeObserver note); 0.11.0 has no Orca Cloud build, this release carries the same changes.
+
 ## [0.11.0] - 2026-11-28
 
 ### Changed
