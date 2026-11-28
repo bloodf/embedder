@@ -1,8 +1,8 @@
 import { reactive } from 'vue';
 import * as bridge from '../core/bridge';
 import { Tracker, message, type Notice } from '../core/tracker';
-import { copyText } from '../core/clipboard';
 import { showToast, type OuiToastTone } from '@orca-plugins/ui-foundation/src/components/toast';
+import { copyText } from '@orca-plugins/ui-foundation/src/components/clipboard';
 import { t, tMaybe, fmt, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';

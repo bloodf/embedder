@@ -3,7 +3,7 @@
   "version": "0.10.3",
   "private": true,
   "type": "module",
-  "description": "Embedder page (Vue 3 + PrimeVue 5, shared Orca UI foundation 5.0.8), built into one offline HTML file",
+  "description": "Embedder page (Vue 3 + PrimeVue 5, shared Orca UI foundation), built into one offline HTML file",
   "scripts": {
     "typecheck": "node node_modules/@orca-plugins/ui-foundation/scripts/vue-tsc.mjs --noEmit",
     "build": "node node_modules/@orca-plugins/ui-foundation/scripts/vue-tsc.mjs --noEmit && vite build && node scripts/emit.mjs",
@@ -12,7 +12,7 @@
     "test": "npm run test:unit && npm run test:page"
   },
   "dependencies": {
-    "@orca-plugins/ui-foundation": "github:bloodf/orca-ui-foundation#v5.13.1",
+    "@orca-plugins/ui-foundation": "github:bloodf/orca-ui-foundation#v5.14.0",
     "@primeuix/themes": "3.1.1",
     "primevue": "5.0.6",
     "three": "0.187.0",

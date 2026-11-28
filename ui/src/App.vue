@@ -69,15 +69,8 @@ html:lang(zh-CN) { --oui-font: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK 
 /* A classic scrollbar (Windows) appearing when the page grows must not narrow the page and flip the Embed layout. */
 html { scrollbar-gutter: stable; }
 .em-mark-insert { fill: var(--em-ink); }
-/* Narrow: the state gives way so the name, the state and Load again stay on one line over the tabs; under 520 px the
-   project line (its name is the 3D view's title) leaves and the chip stays. */
-@container oui-appbar (max-width: 760px) {
-  .oui-appbar-row > .oui-spacer { display: none; }
-  .oui-appbar-row > .oui-appbar-status { flex: 1 1 0; justify-content: flex-end; }
-}
+/* Under 520 px the project line (its name is the 3D view's title) leaves and the chip stays. */
 @container oui-appbar (max-width: 520px) { .em-project { display: none; } }
-/* A long project name gives way before the tabs do: "Settings" is never cut to make room for it. */
-.oui-appbar-row > .oui-appbar-tabs { flex-shrink: 0; }
 /* The view takes the page's height under the notices: the Embed panels fill it as one screen, and Settings keeps its
    status line along the bottom edge. */
 .em { grid-template-rows: auto 1fr; }
@@ -88,8 +81,6 @@ html { scrollbar-gutter: stable; }
 .em-kind { flex: none; display: inline-grid; place-items: center; width: 10px; height: 10px; border-radius: 50%; color: var(--em-magnet); background: currentColor; }
 .em-kind[data-kind='nfc'] { color: var(--em-nfc); border-radius: 2px; }
 .em-kind.em-kind-lg { width: 28px; height: 28px; border-radius: var(--oui-radius); background: color-mix(in srgb, currentColor 16%, transparent); font-weight: 700; }
-.em-rows { list-style: none; padding: 0; }
-.em-rows > li { display: flex; align-items: center; gap: var(--oui-s3); min-height: 52px; padding: var(--oui-s2) var(--oui-s2) var(--oui-s2) var(--oui-s4); border-bottom: 1px solid var(--oui-border); }
 .em-row-id { flex: 1 1 0; display: grid; gap: 1px; min-width: 0; }
 .em-row-id > .oui-strong { overflow-wrap: anywhere; }
 .em-note { display: flex; align-items: flex-start; gap: 6px; }

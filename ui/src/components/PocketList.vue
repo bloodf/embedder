@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import Message from 'primevue/message';
-import { OuiEmpty, OuiHint, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
+import { OuiEmpty, OuiHint, OuiIcon, OuiListRow, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
 import { check, layers, pause, trash, warning } from '@orca-plugins/ui-foundation/src/icons';
 import ExistingPockets from './ExistingPockets.vue';
 import { s, tracker } from '../app/store';
@@ -59,26 +59,27 @@ const FRIDGE_COUNTS = [1, 2, 4];
     <ExistingPockets v-if="existing.length && !s.staged.length" />
     <OuiEmpty v-if="!s.staged.length" compact :icon="layers" tone="lime" :title="empty[0]" :text="empty[1]" data-test="staged-empty" />
     <template v-else>
-      <div v-if="holds.length" id="em-holds" class="em-holds" data-test="hold-warnings">
+      <div v-if="holds.length" class="em-holds" data-test="hold-warnings">
         <Message v-for="w in holds" :key="w.code" severity="warn" size="small" data-test="hold-warning">
           <template #icon><OuiIcon :icon="warning" :size="14" /></template>{{ w.text }}
         </Message>
       </div>
-      <ul class="em-rows" data-test="staged">
-        <li v-for="(p, i) in s.staged" :key="p.key" :data-selected="s.selected === p.key || undefined">
-          <!-- The row is a toggle: pressed, the pocket is in hand (the form changes it, the 3D view moves it). -->
-          <button type="button" class="em-row-pick" :aria-pressed="s.selected === p.key" :aria-describedby="held(p).length ? 'em-holds' : undefined" data-test="row-pick" @click="selectStaged(s.selected === p.key ? null : p.key)">
-            <!-- Its number, in the colour of its kind: the pocket in the 3D view carries the same one. -->
-            <span class="em-kind em-kind-lg oui-num" :data-kind="p.plan.kind ?? 'magnet'" data-test="row-n">{{ i + 1 }}</span>
-            <span class="em-row-id">
-              <span class="oui-strong">{{ insertLabel(p.plan.label) }}</span>
-              <span class="oui-meta">{{ where(p) }}</span>
-              <span v-for="w in ownWarnings(p.plan)" :key="w" class="oui-meta em-warn em-note" data-test="row-warning"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</span>
-            </span>
-            <span v-if="held(p).length" class="em-row-flag em-warn" :title="heldTitle(p)" data-test="row-hold"><OuiIcon :icon="warning" :size="13" /></span>
-          </button>
-          <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: (i + 1) + ' · ' + insertLabel(p.plan.label) })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
-        </li>
+      <ul class="oui-list em-staged" data-test="staged">
+        <!-- The row is a toggle: pressed, the pocket is in hand (the form changes it, the 3D view moves it). -->
+        <OuiListRow v-for="(p, i) in s.staged" :key="p.key" selectable :selected="s.selected === p.key" @update:selected="selectStaged($event ? p.key : null)">
+          <!-- Its number, in the colour of its kind: the pocket in the 3D view carries the same one. -->
+          <span class="em-kind em-kind-lg oui-num" :data-kind="p.plan.kind ?? 'magnet'" data-test="row-n">{{ i + 1 }}</span>
+          <span class="em-row-id">
+            <span class="oui-strong">{{ insertLabel(p.plan.label) }}</span>
+            <span class="oui-meta">{{ where(p) }}</span>
+            <span v-for="w in ownWarnings(p.plan)" :key="w" class="oui-meta em-warn em-note" data-test="row-warning"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</span>
+          </span>
+          <!-- The hold advice said once above the rows covers this pocket: a mark to see, the sentence to hear. -->
+          <span v-if="held(p).length" class="em-row-flag em-warn" :title="heldTitle(p)" data-test="row-hold"><OuiIcon :icon="warning" :size="13" /><span class="oui-sr">{{ heldTitle(p) }}</span></span>
+          <template #actions>
+            <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: (i + 1) + ' · ' + insertLabel(p.plan.label) })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
+          </template>
+        </OuiListRow>
       </ul>
     </template>
 
@@ -123,16 +124,8 @@ const FRIDGE_COUNTS = [1, 2, 4];
 </template>
 
 <style>
-/* foundation-gap: the foundation has no selectable list row (a row that is a toggle and shows which one is chosen), nor
-   a focus ring drawn inside an element that fills its container.
-   A staged pocket's row is a toggle button over the whole row but the trash button. The pocket in hand is marked by a
-   bar and a tint as well as by aria-pressed. */
-.em-row-pick { flex: 1 1 0; align-self: stretch; display: flex; align-items: center; gap: var(--oui-s3); min-width: 0;
-  margin: calc(-1 * var(--oui-s2)) 0 calc(-1 * var(--oui-s2)) calc(-1 * var(--oui-s4)); padding: var(--oui-s2) 0 var(--oui-s2) var(--oui-s4);
-  appearance: none; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer; }
-.orca-ui .em-row-pick:focus-visible { outline-offset: -2px; }
-.em-rows > li:has(> .em-row-pick:hover) { background: var(--oui-raised); }
-.em-rows > li[data-selected] { background: var(--oui-primary-soft); box-shadow: inset 3px 0 0 var(--oui-primary-mark); }
+/* The staged list is one block among several in the panel: its last row keeps the hairline that parts it from the next. */
+.em-staged.oui-list > .oui-listrow:last-child { border-bottom: 1px solid var(--oui-border); }
 .em-row-flag { flex: none; display: inline-grid; }
 .em-holds { display: grid; gap: var(--oui-s2); padding: var(--oui-s3) var(--oui-s4); border-bottom: 1px solid var(--oui-border); }
 /* The panel's blocks keep their height and the body scrolls (in the layouts where the panel has a height of its own):
@@ -142,7 +135,7 @@ const FRIDGE_COUNTS = [1, 2, 4];
 .em-list > .oui-panel-body > .oui-empty { flex: 1 0 auto; min-height: 96px; }   /* not the foundation's 100%: the blocks under it stay in sight */
 .em-ready { display: grid; gap: var(--oui-s1); padding: var(--oui-s4); }
 .em-ready > .oui-label:not(:first-child) { margin-top: var(--oui-s3); }
-.em-list .oui-panel-body > * + .em-ready { border-top: 1px solid var(--oui-border); }
+.em-list .oui-panel-body > :not(.em-staged) + .em-ready { border-top: 1px solid var(--oui-border); }
 .em-ready-list { display: grid; gap: var(--oui-s1); list-style: none; padding: 0; }
 .em-ready-line { display: flex; align-items: baseline; gap: var(--oui-s2); }
 .em-ready-line > .em-kind { align-self: center; }
