@@ -268,6 +268,18 @@ def pause_text(labels):
     return PAUSE_PREFIX + " insert " + ", ".join("%d x %s" % (n, label) for label, n in counts.items())
 
 
+def pause_items(pockets, copies=None):
+    """{pause height: [{"label", "polarity", "n"}, ...]}: what goes in at each pause, as data. The page writes its own
+    sentence from it, in its language; pause_text() is the comment in the G-code. Arguments as pauses()."""
+    groups = {}
+    for i, p in enumerate(pockets):
+        if p.pause_z is not None:
+            counts = groups.setdefault(round(p.pause_z, 6), Counter())
+            counts[(p.insert.label, p.polarity or None)] += copies[i] if copies else 1
+    return {z: [{"label": label, "polarity": polarity, "n": n} for (label, polarity), n in counts.items()]
+            for z, counts in groups.items()}
+
+
 def pauses(pockets, existing, copies=None):
     """((top_z, extra), ...) sorted by height, one per height shared by embedded pockets, plus warnings for
     heights that already carry someone else's custom G-code (left alone, no Embedder pause added there).

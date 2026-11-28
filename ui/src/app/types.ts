@@ -122,7 +122,8 @@ export interface ApplyResult {
   name: string;
   pockets: number;
   removed: number;
-  pauses: { top_z: number; extra: string }[];
+  /** `extra` is the comment written into the G-code (English); `items` is the same as data, for the page to word. */
+  pauses: { top_z: number; extra: string; items: { label: string; polarity: Polarity | null; n: number }[] }[];
   warnings: string[];
   pruned: number;            // older copies deleted from the plugin folder after this apply
 }

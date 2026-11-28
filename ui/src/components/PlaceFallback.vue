@@ -2,8 +2,8 @@
 import { ref } from 'vue';
 import Button from 'primevue/button';
 import Select from 'primevue/select';
-import { OuiEmpty, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
-import { box, eye, target } from '@orca-plugins/ui-foundation/src/icons';
+import { OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
+import { box, target } from '@orca-plugins/ui-foundation/src/icons';
 import { s } from '../app/store';
 import { currentObject, meshesOf, placeAt } from '../app/project';
 import { centrePick, partMesh } from '../core/pick';
@@ -26,19 +26,21 @@ function place() {
 </script>
 
 <template>
-  <OuiPanel class="em-fallback" :title="t('no3d.title')" :icon="box" tone="sky" flush data-test="no3d">
-    <OuiEmpty :icon="eye" tone="sky" :title="t('embed.no3d')" :text="t('no3d.help')">
-      <template #actions>
-        <label id="face-l" class="oui-meta oui-strong">{{ t('place.face') }}</label>
-        <Select v-model="face" :options="faces.map(f => ({ value: f.value, label: t(f.label) }))" option-label="label" option-value="value"
-                aria-labelledby="face-l" data-test="fallback-face" />
-        <Button :label="t('place.button')" severity="secondary" :disabled="s.mesh.state !== 'ready'" data-test="fallback-place" @click="place">
-          <template #icon><OuiIcon :icon="target" :size="14" /></template></Button>
-      </template>
-    </OuiEmpty>
+  <!-- The title says what this is; the one sentence under it how. No tall empty panel around one choice and a button. -->
+  <OuiPanel class="em-fallback" :title="t('no3d.title')" :icon="box" tone="sky" data-test="no3d">
+    <p id="face-help" class="oui-meta">{{ t('no3d.help') }}</p>
+    <div class="em-fallback-row">
+      <label id="face-l" class="oui-strong">{{ t('place.face') }}</label>
+      <Select v-model="face" :options="faces.map(f => ({ value: f.value, label: t(f.label) }))" option-label="label" option-value="value"
+              aria-labelledby="face-l" aria-describedby="face-help" data-test="fallback-face" />
+      <Button :label="t('place.button')" severity="secondary" :disabled="s.mesh.state !== 'ready'" data-test="fallback-place" @click="place">
+        <template #icon><OuiIcon :icon="target" :size="14" /></template></Button>
+    </div>
   </OuiPanel>
 </template>
 
 <style>
-.em-fallback .oui-empty .oui-row { justify-content: center; }
+.em-fallback.em-stage-panel { height: auto; align-self: start; }
+.em-fallback > .oui-panel-body { display: grid; gap: var(--oui-s3); }
+.em-fallback-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--oui-s2) var(--oui-s3); }
 </style>

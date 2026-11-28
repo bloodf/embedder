@@ -16,8 +16,8 @@ Full description: https://github.com/bloodf/embedder/blob/main/README.md
 
 - Click a face in the 3D view to place a pocket. It shows there before anything is written.
 - Built-in sizes: 15 disc and 4 block magnets, NFC stickers (10 to 38 mm), coin tags and a card, M3 to M6 hex nuts and M3 to M5 square nuts. Save your own sizes too.
-- **Auto fridge magnet** stages symmetric magnet pockets on the bottom of the selected object, or on every object of the plate with **Auto all objects**.
-- Mark a magnet "N up" or "S up". The note shows in the pocket list and the pause message.
+- **Fridge magnets on the bottom** stages evenly spaced magnet pockets on the bottom of the selected object, or on every object of the plate with **All objects**.
+- Mark a magnet "N up" or "S up". The mark shows in the pocket list and the pause message.
 - Sealed pockets get OrcaSlicer's own layer pause just before the cavity closes. Open pockets need no pause.
 
 ![Fit magnets into your prints](https://raw.githubusercontent.com/bloodf/embedder/main/assets/orca-cloud/embedder-feature-02-magnets-en.png){align=center}

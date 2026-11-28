@@ -376,7 +376,8 @@ class Plan(Base):
             "remove": [],
         })
         self.assertEqual(applied["pauses"], [
-            {"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet (N up), 1 x 6x3 magnet (S up)"}
+            {"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet (N up), 1 x 6x3 magnet (S up)",
+             "items": [{"label": "6x3 magnet", "polarity": "N", "n": 1}, {"label": "6x3 magnet", "polarity": "S", "n": 1}]}
         ])
 
     def test_auto_fridge_places_symmetric_bottom_pockets(self):
@@ -659,7 +660,8 @@ class Apply(Base):
         out = self.apply(r["job"], [self.pocket(), self.pocket(point=[105, 105, 20]), self.pocket(mode="open", point=[115, 115, 20])])
         self.assertRegex(out["name"], r"^My Part-embedder-\d{8}-\d{6}-[0-9a-f]{6}\.3mf$")
         self.assertEqual(os.path.dirname(out["path"]), self.storage)
-        self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 2 x 6x3 magnet"}])
+        self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 2 x 6x3 magnet",
+            "items": [{"label": "6x3 magnet", "polarity": None, "n": 2}]}])
         pkg = threemf.read(out["path"])
         self.assertEqual([e.name for e in pkg.embedder_parts()],
                          ["Embedder 6x3 magnet (embedded)"] * 2 + ["Embedder 6x3 magnet (open)"])
@@ -668,7 +670,8 @@ class Apply(Base):
     def test_pause_counts_every_instance(self):
         r = self.load(fixtures.two_instances)
         out = self.apply(r["job"], [self.pocket(point=[70, 110, 20])])
-        self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 2 x 6x3 magnet"}])
+        self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 2 x 6x3 magnet",
+            "items": [{"label": "6x3 magnet", "polarity": None, "n": 2}]}])
 
     def test_an_empty_embedded_pocket_is_skipped(self):
         """An Embedder pocket with no vertices left in the project has no top: it gets no pause, not a crash."""
@@ -724,7 +727,8 @@ class Apply(Base):
         for builder in (fixtures.orca_251, fixtures.odd_attributes):
             r = self.load(builder)
             out = self.apply(r["job"], [self.pocket()])
-            self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet"}], builder)
+            self.assertEqual(out["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet",
+            "items": [{"label": "6x3 magnet", "polarity": None, "n": 1}]}], builder)
             self.assertEqual([e.label for e in threemf.read(out["path"]).embedder_parts()], ["6x3 magnet"])
             job_id, source = self.s.new_job()
             shutil.copyfile(out["path"], source)

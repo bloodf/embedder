@@ -8,32 +8,30 @@ import Checkbox from 'primevue/checkbox';
 import { OuiHint, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
 import { check, insert, magnet, plus, rfid, save, user, type OuiIconData } from '@orca-plugins/ui-foundation/src/icons';
 import PlanCard from './PlanCard.vue';
-import { choosePocketShape, choosePreset, s, savePreset, tracker } from '../app/store';
-import { addStaged, autoFridge, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
+import { choosePocketShape, choosePreset, s, savePreset } from '../app/store';
+import { addStaged, canAdd as addable, currentObject, replan, selectObject, selectStaged } from '../app/project';
 import { customDims, defaultPocketShape, embeddedBlock, groupPresets, POCKET_SHAPES } from '../app/logic';
-import type { Custom, PocketShape, Preset } from '../app/types';
+import type { Custom, PocketShape } from '../app/types';
 import { prompt } from '../core/dialog';
-import { locale, t, tMaybe, fmt } from '../core/i18n';
+import { locale, t, tMaybe, fmt, presetLabel } from '../core/i18n';
 import { vDecimal } from '../core/decimal';
 
-const n = (v: number | undefined) => fmt.number(v ?? 0, 1).replace(/[.,]0$/, '');
-function presetLabel(p: Preset): string {
-  if (!p.builtin) return p.name;
-  if (p.id.startsWith('nfc-sticker')) return t('preset.sticker', { d: n(p.d) });
-  if (p.id.startsWith('nfc-coin')) return t('preset.coin', { d: n(p.d), t: n(p.t) });
-  if (p.id === 'nfc-card') return t('preset.card', { l: n(p.l), w: n(p.w), t: n(p.t) });
-  if (p.id.startsWith('nut-hex-m')) return t('preset.hexNut', { size: p.id.slice('nut-hex-m'.length).toUpperCase() });
-  if (p.id.startsWith('nut-square-m')) return t('preset.squareNut', { size: p.id.slice('nut-square-m'.length).toUpperCase() });
-  return p.shape === 'disc' ? t('preset.disc', { d: n(p.d), t: n(p.t) }) : t('preset.block', { l: n(p.l), w: n(p.w), t: n(p.t) });
-}
-
 const GROUP_ICON = { magnet, nfc: rfid, nut: insert, mine: user };
-const groups = computed(() => groupPresets(s.builtin, s.user).map(g => ({
-  label: t(`group.${g.key}`), icon: GROUP_ICON[g.key], items: g.items.map(p => ({ id: p.id, label: presetLabel(p), kind: p.kind })) })));
-const chosen = computed(() => groups.value.flatMap(g => g.items).find(p => p.id === s.insert.preset));
+// The last choice under Mine is a size of one's own: picking it opens the fields for it under the list.
+const CUSTOM = '\u0000custom';
+const groups = computed(() => {
+  const made = groupPresets(s.builtin, s.user).map(g => ({
+    key: g.key, label: t(`group.${g.key}`), icon: GROUP_ICON[g.key], items: g.items.map(p => ({ id: p.id, label: presetLabel(p), kind: p.kind as string | undefined })) }));
+  const own = { id: CUSTOM, label: t('form.custom'), kind: s.insert.custom?.kind as string | undefined };
+  const mine = made.find(g => g.key === 'mine');
+  return mine ? made.map(g => (g === mine ? { ...g, items: [...g.items, own] } : g)) : [...made, { key: 'mine' as const, label: t('group.mine'), icon: GROUP_ICON.mine, items: [own] }];
+});
+const picked = computed(() => (s.insert.custom ? CUSTOM : s.insert.preset));
+const chosen = computed(() => groups.value.flatMap(g => g.items).find(p => p.id === picked.value));
+const pick = (id: string | null) => { if (id === CUSTOM) startCustom(); else choosePreset(id); };
 const objects = computed(() => (s.project?.objects ?? []).map(o => ({
   value: o.object, label: o.instance ? t('obj.instance', { name: o.name, n: o.instance + 1 }) : o.name })));
-const block = computed(() => embeddedBlock(currentObject(), s.plan));
+const block = computed(() => embeddedBlock(currentObject(), s.plan, s.project?.blocks));
 // A reason the banner above the panels already gives for the whole plate is not said again under the control.
 const blockSaidAbove = computed(() => !!block.value && (s.project?.blocks ?? []).includes(block.value));
 const modes = computed(() => [
@@ -67,9 +65,8 @@ const pocketShape = computed(() => s.pocketShape ?? defaultPocketShape(insertSha
 const inSlot = computed(() => s.mode === 'embedded' && !!s.hit && s.plan?.face === 'side');
 const pocketShapes = computed(() => POCKET_SHAPES.map(v => ({ value: v, label: t(`cut.${v}`), icon: SHAPE_ICON[v] })));
 
-function setCustom(on: boolean) {
-  const fresh: Custom = { kind: 'magnet', shape: 'disc', d: 6, l: 10, w: 5, t: 3 };
-  if (on) s.insert = { preset: s.insert.preset, custom: fresh }; else choosePreset(s.insert.preset);
+function startCustom() {
+  if (!s.insert.custom) s.insert = { preset: s.insert.preset, custom: { kind: 'magnet', shape: 'disc', d: 6, l: 10, w: 5, t: 3 } };
 }
 function setDim(key: keyof Custom, value: unknown) {
   if (s.insert.custom) s.insert = { ...s.insert, custom: { ...s.insert.custom, [key]: value } as Custom };
@@ -102,17 +99,16 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polar
 
       <div class="oui-field">
         <label id="ins-l">{{ t('form.insert') }}</label>
-        <Select v-if="!s.insert.custom" :model-value="s.insert.preset" :options="groups" option-group-label="label" option-group-children="items"
+        <Select :model-value="picked" :options="groups" option-group-label="label" option-group-children="items"
                 option-label="label" option-value="id" aria-labelledby="ins-l" data-test="preset" fluid scroll-height="min(320px, 50vh)"
-                @update:model-value="choosePreset($event)">
+                @update:model-value="pick($event)">
           <template #value="{ value, placeholder }">
-            <span v-if="chosen && value" class="em-opt"><span class="em-kind" :data-kind="chosen.kind" />{{ chosen.label }}</span>
+            <span v-if="chosen && value" class="em-opt"><span v-if="chosen.kind" class="em-kind" :data-kind="chosen.kind" />{{ chosen.label }}</span>
             <template v-else>{{ placeholder }}&nbsp;</template>
           </template>
           <template #optiongroup="{ option }"><span class="em-opt em-group"><OuiIcon :icon="option.icon" :size="14" />{{ option.label }}</span></template>
-          <template #option="{ option }"><span class="em-opt"><span class="em-kind" :data-kind="option.kind" />{{ option.label }}</span></template>
+          <template #option="{ option }"><span class="em-opt" :data-test="option.id === CUSTOM ? 'custom' : undefined"><span v-if="option.kind" class="em-kind" :data-kind="option.kind" />{{ option.label }}</span></template>
         </Select>
-        <label class="em-check" for="f-custom"><Checkbox :model-value="!!s.insert.custom" binary input-id="f-custom" data-test="custom" @update:model-value="setCustom($event)" />{{ t('form.custom') }}</label>
       </div>
 
       <div v-if="s.insert.custom" class="em-custom oui-well" data-test="custom-dims">
@@ -159,9 +155,10 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polar
       </div>
 
       <div v-if="insertKind === 'magnet'" class="oui-field">
-        <label id="pol-l">{{ t('form.polarity') }}</label>
+        <div class="em-labelled"><label id="pol-l">{{ t('form.polarity') }}</label>
+          <OuiHint :label="t('form.polarity')"><span id="pol-help">{{ t('form.polarityHelp') }}</span></OuiHint></div>
         <SelectButton v-model="s.polarity" :options="polarities" option-label="label" option-value="value" :allow-empty="false"
-                      aria-labelledby="pol-l" data-test="polarity" fluid />
+                      aria-labelledby="pol-l" aria-describedby="pol-help" data-test="polarity" fluid />
       </div>
 
       <div class="em-two">
@@ -176,28 +173,15 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polar
         <label class="em-check" for="f-center"><Checkbox v-model="s.center" binary input-id="f-center" data-test="center" aria-describedby="f-center-help" />{{ t('form.center') }}</label>
         <OuiHint :label="t('form.center')"><span id="f-center-help">{{ t('form.centerHelp') }}</span></OuiHint>
       </div>
-
-      <div class="oui-field">
-        <div class="em-labelled">
-          <label id="fridge-l">{{ t('form.autoFridge') }}</label>
-          <OuiHint :label="t('form.autoFridge')"><span id="fridge-help">{{ t('form.autoFridgeHelp') }}</span></OuiHint>
-        </div>
-        <div class="em-fridge" role="group" aria-labelledby="fridge-l" aria-describedby="fridge-help" data-test="auto-fridge">
-          <Button :label="t('form.autoFridgeAuto')" severity="secondary" size="small" fluid :loading="tracker.isBusy('auto-fridge')" data-test="auto-fridge-auto" @click="autoFridge('auto')" />
-          <Button label="1×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-1" @click="autoFridge(1)" />
-          <Button label="2×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-2" @click="autoFridge(2)" />
-          <Button label="4×" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-4" @click="autoFridge(4)" />
-        </div>
-        <Button v-if="objects.length > 1" :label="t('form.autoFridgeAll')" severity="secondary" size="small" fluid :disabled="tracker.isBusy('auto-fridge')" data-test="auto-fridge-all" @click="autoFridge('auto', true)" />
-      </div>
     </div>
 
-    <PlanCard />
-
+    <!-- The pocket in hand and the way on stay in sight under the settings, which scroll: what the click on a face
+         made, its warnings and the one button to press next are never below the fold. -->
     <template #footer>
+      <PlanCard />
       <Button v-if="s.selected != null" :label="t('form.done')" severity="secondary" fluid aria-describedby="em-plan-state" data-test="done" @click="selectStaged(null)">
         <template #icon><OuiIcon :icon="check" :size="14" /></template></Button>
-      <Button v-else :label="t('plan.add')" severity="secondary" fluid :disabled="!canAdd" aria-describedby="em-plan-state" data-test="add" @click="addStaged">
+      <Button v-else :label="t('plan.add')" :severity="canAdd ? undefined : 'secondary'" fluid :disabled="!canAdd" aria-describedby="em-plan-state" data-test="add" @click="addStaged">
         <template #icon><OuiIcon :icon="plus" :size="14" /></template></Button>
     </template>
   </OuiPanel>
@@ -221,6 +205,5 @@ watch(() => [s.insert, s.mode, s.spin, s.cover, s.center, s.pocketShape, s.polar
 .em-cuts.p-selectbutton { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @container (min-width: 460px) { .em-cuts.p-selectbutton { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .em-cut { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
-.em-fridge { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--oui-s2); }
-.em-form .oui-panel-foot { margin-top: auto; }
+.em-form > .oui-panel-foot { padding: var(--oui-s3); gap: var(--oui-s3); }
 </style>

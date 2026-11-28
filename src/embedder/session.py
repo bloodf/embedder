@@ -643,8 +643,10 @@ class Session:
                 raise SessionError("pocket_blocked", "pocket %d: %s" % (n + 1, e.code)) from None
         pockets = [p for _, p in planned]
         kept = self._kept_pauses(job, set(remove))
-        pauses, pause_warnings = pocket.pauses(pockets + [k for k, _ in kept], self._user_layers(job),
-                                               [job.copies(e.obj.id) for e, _ in planned] + [n for _, n in kept])
+        pausing = pockets + [k for k, _ in kept]
+        copies = [job.copies(e.obj.id) for e, _ in planned] + [n for _, n in kept]
+        pauses, pause_warnings = pocket.pauses(pausing, self._user_layers(job), copies)
+        items = pocket.pause_items(pausing, copies)
         adds = [threemf.Addition(e.obj.id, e.item.index, "Embedder %s (%s)" % (p.insert.label, p.mode), *p.mesh(), p.transform)
                 for e, p in planned]
         marked = [(a, p) for a, (_, p) in zip(many, planned) if isinstance(a, dict) and a.get("fridge") is True]
@@ -658,7 +660,8 @@ class Session:
         warnings = sorted({w for p in pockets for w in p.warnings} | hold | {w[0] for w in pause_warnings}
                           | {w[0] for w in pocket.proximity_warnings(pockets)})
         return {"path": out, "name": os.path.basename(out), "pockets": len(pockets), "removed": len(remove),
-                "pauses": [{"top_z": z, "extra": x} for z, x in pauses], "warnings": warnings,
+                "pauses": [{"top_z": z, "extra": x, "items": items.get(round(z, 6), [])} for z, x in pauses],
+                "warnings": warnings,
                 "pruned": pruned}
 
     # -------------------------------------------------------------- applied copies

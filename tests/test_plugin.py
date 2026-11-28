@@ -126,7 +126,8 @@ class RoundTrip(Base):
         plan = self.call("pocket.plan", job=r["job"], **pocket)
         self.assertAlmostEqual(plan["pause_z"], 19.2)
         applied = self.call("project.apply", job=r["job"], pockets=[pocket], remove=[])
-        self.assertEqual(applied["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet"}])
+        self.assertEqual(applied["pauses"], [{"top_z": 19.2, "extra": "Embedder: insert 1 x 6x3 magnet",
+            "items": [{"label": "6x3 magnet", "polarity": None, "n": 1}]}])
         self.assertTrue(applied["path"].startswith(self.storage))
         self.assertEqual(audit_guard.denials(), [])
         pkg = threemf.read(applied["path"])

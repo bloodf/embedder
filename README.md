@@ -87,8 +87,8 @@ Embedder is an independent project, not made or supported by the OrcaSlicer team
 | | Vented shapes | A disc sits in a hexagon and a block in a box with a 1 mm round vent on each corner. Air and spare glue get out, so the insert goes all the way down. |
 | | Pick the shape | Circle, hexagon, square or rectangle, each the smallest that holds the insert. Your pick is kept for its preset. |
 | | Side-face slots | Behind an upright wall the insert stands on edge in a vertical slot and is dropped in from above. |
-| | Auto fridge magnet | **Auto fridge magnet (bottom)** (`Auto`, `1×`, `2×`, `4×`) finds the bottom of the selected object and stages symmetric magnet pockets there, away from the edge. **Auto all objects** does it for every object on the plate in one click. |
-| | Polarity note | Mark a magnet pocket "N up" or "S up". The note shows in the pocket list and in the pause message, so each magnet goes in the right way round. |
+| | Fridge magnets on the bottom | Under the pocket list, **Fridge magnets on the bottom** (`Auto`, `1`, `2`, `4`) finds the bottom of the selected object and stages evenly spaced magnet pockets there, away from the edge. Tick **All objects** to do it for every object on the plate in one click. |
+| | Polarity mark | Mark a magnet pocket "N up" or "S up". The mark shows in the pocket list and in the pause message, so each magnet goes in the right way round. |
 | | Centre on the face | Puts the pocket in the middle of the flat face you click, which is what a lid, a base or a tile needs. |
 | | Your own sizes | Any disc, block or nut, saved by name and kept between sessions. |
 | | Inserts to have ready | Under the pocket list, for example "2 x 6x3 magnet, 1 x 25 mm NFC sticker", with the heights where the print will pause. Every copy of an object counts. |
@@ -117,8 +117,8 @@ The full rules for pocket shapes, the pause, warnings and limits are in [docs/po
 
 1. Open your project in OrcaSlicer and pick the plate with the part.
 2. Open the **Embedder** tab and press **Load project**.
-3. Under **Insert**, choose a size from the list, or tick **Custom size** and enter your own. Under **Pocket**, choose **Embedded** or **Open**.
-4. Rotate the part and click the face where the insert goes. Tick **Centre on the face** to put it in the middle. **This pocket** shows its size, cavity, pause and cover.
+3. Under **Insert**, choose a size from the list, or pick **Custom size…** at its end and enter your own. Under **Pocket type**, choose **Embedded** or **Open**.
+4. Rotate the part and click the face where the insert goes. Tick **Centre on the face** to put it in the middle. **This pocket** shows what goes in, where the print pauses and the cover; **Dimensions** opens its size and position.
 5. Press **Add pocket**. Add more the same way.
 6. Press **Apply**, then **Open in OrcaSlicer**. In the new project, use **File > Save Project As** to keep it.
 7. Slice. In the preview, the pause shows on the layer slider just above each embedded pocket.
@@ -216,7 +216,7 @@ A magnet close to a tag can stop it from reading. Embedder warns when an NFC poc
 
 ## 🌍 Languages
 
-English, Brazilian Portuguese, Spanish, German, Simplified Chinese and Polish. Embedder follows OrcaSlicer's language, or the one you pick under **Settings > Language**.
+English, Brazilian Portuguese, Spanish, German, Simplified Chinese and Polish. Embedder follows OrcaSlicer's language, or the one you pick under **Settings > General**.
 
 ## 🧩 More plugins by bloodf
 

@@ -6,6 +6,7 @@ import { zhCN } from './messages-zh';
 import { pl } from './messages-pl';
 import { interpolate, isLocale, parseInsertLabel, pluralKey, resolveLocale, type LangPref, type Locale } from './i18n-core';
 import { boot } from './boot';
+import type { Preset } from '../app/types';
 
 const PREF_KEY = 'embedder.lang';
 const dicts: Record<Locale, Record<MessageKey, string>> = { en, 'pt-BR': ptBR, es, de, 'zh-CN': zhCN, pl };
@@ -61,4 +62,25 @@ export function insertLabel(label: string | undefined): string {
   const nf = new Intl.NumberFormat(locale.value, { maximumFractionDigits: 2 });
   const dims = Object.fromEntries(Object.entries(parsed.dims).map(([k, v]) => [k, nf.format(v)]));
   return t(parsed.key, dims);
+}
+
+const dim = (v: number | undefined) => fmt.number(v ?? 0, 1).replace(/[.,]0$/, '');
+/** A preset's size in words, whatever it is called: "Ø6 × 3 mm disc", "20 × 10 × 3 mm block". */
+export function sizeLabel(p: Preset): string {
+  return p.shape === 'disc' ? t('preset.disc', { d: dim(p.d), t: dim(p.t) }) : t('preset.block', { l: dim(p.l), w: dim(p.w), t: dim(p.t) });
+}
+/** A preset as the picker, the list and Settings name it: the user's own by its name, a built-in by what it is. */
+export function presetLabel(p: Preset): string {
+  if (!p.builtin) return p.name;
+  if (p.id.startsWith('nfc-sticker')) return t('preset.sticker', { d: dim(p.d) });
+  if (p.id.startsWith('nfc-coin')) return t('preset.coin', { d: dim(p.d), t: dim(p.t) });
+  if (p.id === 'nfc-card') return t('preset.card', { l: dim(p.l), w: dim(p.w), t: dim(p.t) });
+  if (p.id.startsWith('nut-hex-m')) return t('preset.hexNut', { size: p.id.slice('nut-hex-m'.length).toUpperCase() });
+  if (p.id.startsWith('nut-square-m')) return t('preset.squareNut', { size: p.id.slice('nut-square-m'.length).toUpperCase() });
+  return sizeLabel(p);
+}
+
+/** "A, B and C" as the page language lists things. */
+export function listOf(items: string[]): string {
+  return new Intl.ListFormat(locale.value, { style: 'long', type: 'conjunction' }).format(items);
 }

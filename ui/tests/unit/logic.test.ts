@@ -1,7 +1,7 @@
 // Pure Embed-panel rules: plan arguments, the Embedded block reason, pause summary, preset groups, staging.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { defaultPocketShape, embeddedBlock, groupPresets, POCKET_SHAPES, rememberedShape, insertsNeeded, pauseSummary, planArgs, previewsFor, sizeOf, splitLead, stage, toggle, unstage } from '../../src/app/logic.ts';
+import { defaultPocketShape, embeddedBlock, groupPresets, POCKET_SHAPES, rememberedShape, insertsNeeded, pauseSummary, planArgs, previewsFor, sizeOf, splitLead, stage, toggle, unstage, ownWarnings, sharedWarnings } from '../../src/app/logic.ts';
 import type { ObjectInfo, Plan, Preset, Staged } from '../../src/app/types.ts';
 
 const hit = { part: 1, tri: 7, point: [1, 2, 3] as [number, number, number] };
@@ -40,6 +40,7 @@ test('Embedded is blocked by the object first, then by an embedded plan', () => 
   assert.equal(embeddedBlock({ embedded_block: null } as ObjectInfo, plan('embedded', 'tilted_face')), 'tilted_face');
   assert.equal(embeddedBlock(null, plan('open', 'bad_mode')), null);
   assert.equal(embeddedBlock(null, null), null);
+  assert.equal(embeddedBlock({ embedded_block: null } as ObjectInfo, null, ['by_object', 'raft']), 'by_object', 'a block of the whole plate holds for every object');
 });
 
 const staged = (key: number, z: number | null, label: string, mode: 'open' | 'embedded' = 'embedded'): Staged =>
@@ -68,6 +69,15 @@ test('the viewer shows only the selected object\'s staged pockets', () => {
   const nfc = at(4, 0);
   nfc.plan.kind = 'nfc';
   assert.deepEqual(previewsFor([at(1, 0), nfc], 0).map(p => p.kind), ['magnet', 'nfc'], 'each preview carries the kind that colours it');
+  assert.deepEqual(previewsFor([at(1, 0), at(2, 1), at(7, 0)], 0).map(p => p.n), [1, 3], 'and its number in the whole list, the one its row shows');
+});
+
+test('hold advisories are shared by the fridge pockets of an object; a pocket keeps its own warnings', () => {
+  const at = (key: number, object: number, warnings: string[]): Staged => ({ key, args: { object } as Staged['args'], plan: { mode: 'embedded', blocked: null, preview: null, warnings } });
+  const list = [at(1, 0, ['hold_uncertain', 'thin_cover']), at(2, 0, ['hold_uncertain']), at(3, 1, ['weak_magnet_hold', 'hold_uncertain']), at(4, 1, [])];
+  assert.deepEqual(sharedWarnings(list), [{ code: 'hold_uncertain', objects: [0, 1] }, { code: 'weak_magnet_hold', objects: [1] }]);
+  assert.deepEqual(list.map(x => ownWarnings(x.plan)), [['thin_cover'], [], [], []]);
+  assert.deepEqual(sharedWarnings([at(1, 0, ['thin_cover'])]), []);
 });
 
 test('the object size is the bounding box of its meshes; nothing to measure is null, never 0', () => {

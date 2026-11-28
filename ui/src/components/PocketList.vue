@@ -1,29 +1,52 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
+import Message from 'primevue/message';
 import { OuiEmpty, OuiHint, OuiIcon, OuiPanel } from '@orca-plugins/ui-foundation/src/components';
-import { check, insert, layers, pause, rfid, trash, warning } from '@orca-plugins/ui-foundation/src/icons';
+import { check, layers, pause, trash, warning } from '@orca-plugins/ui-foundation/src/icons';
+import ExistingPockets from './ExistingPockets.vue';
 import { s, tracker } from '../app/store';
-import { apply, markRemove, removeStaged, selectStaged } from '../app/project';
-import { insertsNeeded, pauseSummary, splitLead } from '../app/logic';
+import { apply, autoFridge, removeStaged, selectStaged } from '../app/project';
+import { HOLD_WARNINGS, insertsNeeded, ownWarnings, pauseSummary, sharedWarnings, splitLead } from '../app/logic';
 import type { Staged } from '../app/types';
-import { locale, t, tn, tMaybe, fmt, insertLabel } from '../core/i18n';
+import { locale, t, tn, tMaybe, fmt, insertLabel, listOf } from '../core/i18n';
 
 const pauses = computed(() => pauseSummary(s.staged).map(g => splitLead(t('pause.line', {
-  z: fmt.number(g.z, 2), items: g.items.map(i => t('pause.item', { n: i.n, label: insertLabel(i.label) })).join(', ') }))));
+  z: fmt.number(g.z, 2), items: g.items.map(i => tn('pause.item', i.n, { label: insertLabel(i.label) })).join(', ') }))));
 const inserts = computed(() => insertsNeeded(s.staged));
 const existing = computed(() => s.project?.existing ?? []);
+const several = computed(() => (s.project?.objects.length ?? 0) > 1);
 const canApply = computed(() => !!(s.staged.length || s.remove.length) && !tracker.isBusy('apply'));
 const empty = computed(() => splitLead(t('list.empty')));
 const lower = (text: string) => text.toLocaleLowerCase(locale.value);
+const objectName = (k: number) => {
+  const o = s.project?.objects[k];
+  return !o ? '' : o.instance ? t('obj.instance', { name: o.name, n: o.instance + 1 }) : o.name;
+};
 /** "Fridge tile · top · embedded · pause at Z 7.20 mm". The separator stays with the word before it, so a second line
  *  never starts with a dot. */
 function where(p: Staged): string {
   return [s.project?.objects[p.args.object]?.name ?? '', p.plan.face ? lower(tMaybe(`face.${p.plan.face}`, p.plan.face)) : '', lower(t(`mode.${p.plan.mode}`)),
     p.plan.polarity ? t(`polarity.${p.plan.polarity}`) : '',
-    p.plan.pause_z != null ? t('list.pauseAt', { z: fmt.number(p.plan.pause_z, 2) }) : ''].filter(Boolean).join(' · ');
+    p.plan.pause_z != null ? t('list.pauseAt', { z: fmt.number(p.plan.pause_z, 2) }) : ''].filter(Boolean).join(' · ');
 }
+// The hold advisories of auto fridge are about all the magnets of an object together: each is said once above the
+// rows (naming the objects when the plate has several), and the rows it covers only carry a mark.
+const holds = computed(() => sharedWarnings(s.staged).map(w => {
+  const text = tMaybe(`warn.${w.code}`, w.code);
+  return { code: w.code, text: several.value ? t('list.forObjects', { names: listOf(w.objects.map(objectName)), text }) : text };
+}));
+const held = (p: Staged) => (p.plan.warnings ?? []).filter(w => HOLD_WARNINGS.includes(w));
+const heldTitle = (p: Staged) => held(p).map(w => tMaybe(`warn.${w}`, w)).join(' ');
+/** "2 pockets to add and 1 pocket to remove. Apply writes a new copy."; nothing while there is nothing to apply. */
+const summary = computed(() => {
+  const parts = [s.staged.length ? tn('list.toAdd', s.staged.length) : '', s.remove.length ? tn('list.toRemove', s.remove.length) : ''].filter(Boolean);
+  return parts.length ? t('list.summary', { what: listOf(parts) }) : '';
+});
+const fridgeAll = ref(false);
+const fridge = (count: 'auto' | number) => autoFridge(count, several.value && fridgeAll.value);
+const FRIDGE_COUNTS = [1, 2, 4];
 </script>
 
 <template>
@@ -32,27 +55,53 @@ function where(p: Staged): string {
     <template v-if="s.staged.length" #hint><span data-test="staged-help">{{ t(s.webgl === false ? 'list.helpFallback' : 'list.help') }}</span></template>
     <template #meta><span class="oui-chip oui-num" data-test="staged-count">{{ s.staged.length }}</span></template>
 
+    <!-- With nothing staged yet, what the project already holds is the panel's content: it comes first. -->
+    <ExistingPockets v-if="existing.length && !s.staged.length" />
     <OuiEmpty v-if="!s.staged.length" compact :icon="layers" tone="lime" :title="empty[0]" :text="empty[1]" data-test="staged-empty" />
-    <ul v-else class="em-rows" data-test="staged">
-      <li v-for="p in s.staged" :key="p.key" :data-selected="s.selected === p.key || undefined">
-        <!-- The row is a toggle: pressed, the pocket is in hand (the form changes it, the 3D view moves it). -->
-        <button type="button" class="em-row-pick" :aria-pressed="s.selected === p.key" data-test="row-pick" @click="selectStaged(s.selected === p.key ? null : p.key)">
-          <span class="em-kind em-kind-lg" :data-kind="p.plan.kind ?? 'magnet'"><OuiIcon :icon="p.plan.kind === 'nfc' ? rfid : insert" :size="16" /></span>
-          <span class="em-row-id">
-            <span class="oui-strong">{{ insertLabel(p.plan.label) }}</span>
-            <span class="oui-meta">{{ where(p) }}</span>
-            <span v-for="w in p.plan.warnings ?? []" :key="w" class="oui-meta em-warn em-note"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</span>
-          </span>
-        </button>
-        <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: insertLabel(p.plan.label) })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
-      </li>
-    </ul>
+    <template v-else>
+      <div v-if="holds.length" id="em-holds" class="em-holds" data-test="hold-warnings">
+        <Message v-for="w in holds" :key="w.code" severity="warn" size="small" data-test="hold-warning">
+          <template #icon><OuiIcon :icon="warning" :size="14" /></template>{{ w.text }}
+        </Message>
+      </div>
+      <ul class="em-rows" data-test="staged">
+        <li v-for="(p, i) in s.staged" :key="p.key" :data-selected="s.selected === p.key || undefined">
+          <!-- The row is a toggle: pressed, the pocket is in hand (the form changes it, the 3D view moves it). -->
+          <button type="button" class="em-row-pick" :aria-pressed="s.selected === p.key" :aria-describedby="held(p).length ? 'em-holds' : undefined" data-test="row-pick" @click="selectStaged(s.selected === p.key ? null : p.key)">
+            <!-- Its number, in the colour of its kind: the pocket in the 3D view carries the same one. -->
+            <span class="em-kind em-kind-lg oui-num" :data-kind="p.plan.kind ?? 'magnet'" data-test="row-n">{{ i + 1 }}</span>
+            <span class="em-row-id">
+              <span class="oui-strong">{{ insertLabel(p.plan.label) }}</span>
+              <span class="oui-meta">{{ where(p) }}</span>
+              <span v-for="w in ownWarnings(p.plan)" :key="w" class="oui-meta em-warn em-note" data-test="row-warning"><OuiIcon :icon="warning" :size="13" />{{ tMaybe(`warn.${w}`, w) }}</span>
+            </span>
+            <span v-if="held(p).length" class="em-row-flag em-warn" :title="heldTitle(p)" data-test="row-hold"><OuiIcon :icon="warning" :size="13" /></span>
+          </button>
+          <Button text severity="danger" size="small" :aria-label="t('list.remove', { label: (i + 1) + ' · ' + insertLabel(p.plan.label) })" @click="removeStaged(p.key)"><template #icon><OuiIcon :icon="trash" :size="14" /></template></Button>
+        </li>
+      </ul>
+    </template>
+
+    <!-- Fridge magnets are placed for you, with the insert and the pocket type chosen in the form: an action, so it
+         sits with the list it fills and not among the form's settings. -->
+    <div class="em-ready">
+      <div class="em-labelled">
+        <p id="fridge-l" class="oui-label">{{ t('form.autoFridge') }}</p>
+        <OuiHint :label="t('form.autoFridge')"><span id="fridge-help">{{ t('form.autoFridgeHelp') }}</span></OuiHint>
+      </div>
+      <div class="em-fridge" role="group" aria-labelledby="fridge-l" aria-describedby="fridge-help" data-test="auto-fridge">
+        <Button :label="t('form.autoFridgeAuto')" severity="secondary" size="small" fluid :loading="tracker.isBusy('auto-fridge')" data-test="auto-fridge-auto" @click="fridge('auto')" />
+        <Button v-for="n in FRIDGE_COUNTS" :key="n" :label="String(n)" :aria-label="tn('form.autoFridgeN', n)" severity="secondary" size="small" fluid
+                :disabled="tracker.isBusy('auto-fridge')" :data-test="`auto-fridge-${n}`" @click="fridge(n)" />
+      </div>
+      <label v-if="several" class="em-check" for="f-fridge-all"><Checkbox v-model="fridgeAll" binary input-id="f-fridge-all" data-test="auto-fridge-all" />{{ t('form.autoFridgeAll') }}</label>
+    </div>
 
     <div v-if="inserts.length || pauses.length" class="em-ready">
       <template v-if="inserts.length">
         <p id="em-inserts-l" class="oui-label">{{ t('list.inserts') }}</p>
         <ul class="em-ready-list" aria-labelledby="em-inserts-l" data-test="inserts">
-          <li v-for="i in inserts" :key="i.kind + i.label" class="em-ready-line"><span class="em-kind" :data-kind="i.kind" /><strong class="oui-num">{{ i.n }} ×</strong> {{ insertLabel(i.label) }}</li>
+          <li v-for="i in inserts" :key="i.kind + i.label" class="em-ready-line"><span class="em-kind" :data-kind="i.kind" /><span class="oui-chip oui-num">{{ i.n }}</span> {{ insertLabel(i.label) }}</li>
         </ul>
       </template>
       <template v-if="pauses.length">
@@ -63,18 +112,10 @@ function where(p: Staged): string {
       </template>
     </div>
 
-    <div v-if="existing.length" class="em-ready em-existing">
-      <div class="em-labelled"><p id="em-existing-l" class="oui-label">{{ t('list.existing') }}</p><OuiHint :label="t('list.existing')">{{ t('list.existingHelp') }}</OuiHint></div>
-      <ul class="em-ready-list" aria-labelledby="em-existing-l" data-test="existing">
-        <li v-for="x in existing" :key="x.id">
-          <label class="em-check" :for="'rm-' + x.id"><Checkbox :model-value="s.remove.includes(x.id)" binary :input-id="'rm-' + x.id" @update:model-value="markRemove(x.id, $event)" />
-            {{ t('list.removeExisting', { label: insertLabel(x.label), mode: t(`mode.${x.mode}`) }) }}</label>
-        </li>
-      </ul>
-    </div>
+    <ExistingPockets v-if="existing.length && s.staged.length" />
 
     <template #footer>
-      <span class="oui-meta em-summary" data-test="summary">{{ tn('list.summary', s.staged.length, { removed: s.remove.length }) }}</span>
+      <span v-if="summary" class="oui-meta em-summary" data-test="summary">{{ summary }}</span>
       <Button :label="t('list.apply')" class="em-apply" :disabled="!canApply" :loading="tracker.isBusy('apply')" data-test="apply" @click="apply">
         <template #icon><OuiIcon :icon="check" :size="14" /></template></Button>
     </template>
@@ -92,15 +133,22 @@ function where(p: Staged): string {
 .orca-ui .em-row-pick:focus-visible { outline-offset: -2px; }
 .em-rows > li:has(> .em-row-pick:hover) { background: var(--oui-raised); }
 .em-rows > li[data-selected] { background: var(--oui-primary-soft); box-shadow: inset 3px 0 0 var(--oui-primary-mark); }
+.em-row-flag { flex: none; display: inline-grid; }
+.em-holds { display: grid; gap: var(--oui-s2); padding: var(--oui-s3) var(--oui-s4); border-bottom: 1px solid var(--oui-border); }
+/* The panel's blocks keep their height and the body scrolls (in the layouts where the panel has a height of its own):
+   nothing is squeezed under the footer. The empty state takes the room that is left. */
+.em-list > .oui-panel-body { display: flex; flex-direction: column; }
+.em-list > .oui-panel-body > * { flex: none; }
+.em-list > .oui-panel-body > .oui-empty { flex: 1 0 auto; min-height: 96px; }   /* not the foundation's 100%: the blocks under it stay in sight */
 .em-ready { display: grid; gap: var(--oui-s1); padding: var(--oui-s4); }
 .em-ready > .oui-label:not(:first-child) { margin-top: var(--oui-s3); }
-.em-ready + .em-ready { border-top: 1px solid var(--oui-border); }
+.em-list .oui-panel-body > * + .em-ready { border-top: 1px solid var(--oui-border); }
 .em-ready-list { display: grid; gap: var(--oui-s1); list-style: none; padding: 0; }
 .em-ready-line { display: flex; align-items: baseline; gap: var(--oui-s2); }
 .em-ready-line > .em-kind { align-self: center; }
 .em-ready-line > .oui-icon { align-self: flex-start; margin-top: 2px; color: var(--oui-muted); }
-.em-existing .em-check { width: auto; }
-.em-list .oui-panel-foot { margin-top: auto; }
+.em-fridge { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--oui-s2); }
+.em-ready > .em-check { margin-top: var(--oui-s1); }
 .em-summary { flex: 1 1 100%; }
 .em-apply { margin-inline-start: auto; }
 </style>

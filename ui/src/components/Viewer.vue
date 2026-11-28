@@ -132,7 +132,8 @@ onBeforeUnmount(() => {
     <div class="em-stage">
       <div ref="host" class="em-stage-host" tabindex="0" role="application" :aria-label="t('view.label')" aria-describedby="em-view-keys" data-test="stage" @keydown="onKey" />
       <p id="em-view-keys" class="oui-sr">{{ t('view.keys') }}</p>
-      <p class="oui-meta em-hint">{{ t('view.hint') }}</p>
+      <!-- How to start, until the first pocket is on the list. -->
+      <p v-if="!s.staged.length" class="oui-meta em-hint"><span>{{ t('view.hint') }}</span></p>
     </div>
   </OuiPanel>
 </template>
@@ -148,4 +149,6 @@ onBeforeUnmount(() => {
 .orca-ui .em-stage-host:focus-visible { outline-offset: -2px; }
 .em-stage-host > canvas { position: absolute; inset: 0; display: block; }
 .em-hint { position: absolute; inset: auto var(--oui-s3) var(--oui-s3); text-align: center; pointer-events: none; }
+/* On a plate of its own: the words are not read through the grid lines. */
+.em-hint > span { display: inline-block; padding: 2px 10px; border-radius: var(--oui-radius-lg); background: color-mix(in srgb, var(--oui-surface) 82%, transparent); }
 </style>

@@ -101,7 +101,7 @@ Plugin to page:
 | `mesh.chunk` | `job`, `object`, `part`, `kind` (`pos` or `idx`), `i` | `{i, chunks, bytes, data}` (base64) |
 | `pocket.plan` | see below | the planned pocket or a block |
 | `pocket.auto_fridge` | `job`, `object` (an index, or `"all"`: each object once), `count` (`auto` or `1`..`8`), `spread`, optional `magnet_grade` / `fridge_surface` overrides, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
-| `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings, pruned}` (asynchronous) |
+| `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings, pruned}` (asynchronous); each pause is `{top_z, extra, items}`, `extra` the G-code comment and `items` the same as data (`[{label, polarity, n}]`) for the page to word in its language |
 | `project.open` | `path` | `{open: "asked" or "none"}` |
 | `copies.status` | | `{count, bytes, kept}`: the old applied copies that may be deleted, and how many are kept |
 | `copies.clear` | | `{removed, freed, failed}` plus the status afterwards |
@@ -213,6 +213,12 @@ Errors reach the page as `{code, detail}`. Codes seen from the session and plugi
 `bad_request`, `bad_part`, `cut_object`, `no_model_settings`, `unsupported_object`, `bad_triangle`, `bad_point`, `pocket_blocked`, `export_failed`,
 `open_failed`, `unknown_command` and `internal`, plus the 3MF codes in [3mf.md](3mf.md) and the preset
 codes (`no_preset`, `unknown_preset`, `bad_dimension`, ...).
+
+The page says an error in its own words (`err.<code>`). A `detail` that is a name the user knows (a preset, an
+object, a file of the project) follows the sentence. A `detail` that is the machine's own text (a Python
+exception under `internal`, OrcaSlicer's error, a storage path) is never part of the sentence: it is kept as the
+error's technical details, behind a disclosure on the start-up banner and a **Copy details** action on a toast,
+and written to the page's console.
 
 ## Pockets and the pause rule
 

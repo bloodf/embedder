@@ -6,9 +6,10 @@ import { markRaw, reactive } from 'vue';
 // What it has to say goes to the sink (the page's toasts); a notice with the key of one already shown replaces it,
 // which is how a late answer takes the place of its "no answer" notice.
 export type NoticeKind = 'error' | 'unknown' | 'success' | 'info';
-export interface Notice { kind: NoticeKind; text: string; key?: string }
+/** `detail`: the raw technical text behind an error (a Python exception, a path), kept off the sentence the user reads. */
+export interface Notice { kind: NoticeKind; text: string; key?: string; detail?: string }
 export type NoticeSink = (n: Notice) => void;
-export interface Pending { key: string; label: string; startedAt: number }
+export interface Pending { key: string; label: string; startedAt: number; background?: boolean }
 export type RunResult<T = any> =
   | { ok: true; result: T }
   | { ok: false; reason: 'busy' | 'error' | 'timeout'; error?: string };
@@ -25,6 +26,8 @@ export interface RunOptions {
   allowRepeat?: boolean;
   /** Errors reported by the caller itself (e.g. inline next to a form). */
   quiet?: boolean;
+  /** A read or save the user did not ask for by name (a list refreshed, a setting kept): never announced as "still working". */
+  background?: boolean;
 }
 type Text = (key: 'msg.unknown' | 'msg.lateOk' | 'msg.lateError' | 'msg.failed', params: Record<string, unknown>) => string;
 
@@ -47,13 +50,13 @@ export class Tracker {
 
   isBusy(key: string): boolean { return this.pending.has(key); }
 
-  notify(kind: NoticeKind, text: string, key?: string): void {
-    this.sink({ kind, text, key });
+  notify(kind: NoticeKind, text: string, key?: string, detail?: string): void {
+    this.sink({ kind, text, key, ...(detail ? { detail } : {}) });
   }
 
   async run<T = any>(o: RunOptions): Promise<RunResult<T>> {
     if (this.pending.has(o.key) && !o.allowRepeat) return { ok: false, reason: 'busy' };
-    const mine: Pending = markRaw({ key: o.key, label: o.label, startedAt: this.clock.now() });
+    const mine: Pending = markRaw({ key: o.key, label: o.label, startedAt: this.clock.now(), ...(o.background ? { background: true } : {}) });
     this.pending.set(o.key, mine);
     const done = () => { if (this.pending.get(o.key) === mine) this.pending.delete(o.key); };
     const timeoutMs = o.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -68,7 +71,7 @@ export class Tracker {
         this.notify('unknown', this.text('msg.unknown', { action: o.label, seconds: Math.round(timeoutMs / 1000) }), o.key);
         sent.then(   // same key: replaces the "no answer" notice
           () => this.notify('info', this.text('msg.lateOk', { action: o.label }), o.key),
-          e => this.notify('error', this.text('msg.lateError', { action: o.label, error: message(e) }), o.key),
+          e => this.notify('error', this.text('msg.lateError', { action: o.label, error: message(e) }), o.key, detailOf(e)),
         );
         return { ok: false, reason: 'timeout' };
       }
@@ -81,7 +84,7 @@ export class Tracker {
       if (timedOut) return { ok: false, reason: 'timeout' };
       done();
       const error = message(e);
-      if (!o.quiet) this.notify('error', this.text('msg.failed', { action: o.label, error }), o.key);
+      if (!o.quiet) this.notify('error', this.text('msg.failed', { action: o.label, error }), o.key, detailOf(e));
       return { ok: false, reason: 'error', error };
     }
   }
@@ -89,4 +92,10 @@ export class Tracker {
 
 export function message(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
+}
+
+/** The technical text an error carries beside its sentence (`detail` on the thrown error), or undefined. */
+export function detailOf(e: unknown): string | undefined {
+  const d = (e as { detail?: unknown } | null)?.detail;
+  return typeof d === 'string' && d ? d : undefined;
 }

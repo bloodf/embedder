@@ -4,8 +4,8 @@ import * as bridge from '../core/bridge';
 import { t, tMaybe, insertLabel } from '../core/i18n';
 import { pullPart, type PartMesh } from '../core/mesh';
 import type { Hit } from '../core/pick';
-import { customDims, formOf, hitOf, othersOf, planArgs, restage, stage, unstage, toggle, verdict } from './logic';
-import { s, tracker, errorText } from './store';
+import { customDims, embeddedBlock, formOf, hitOf, othersOf, planArgs, restage, stage, unstage, toggle, verdict } from './logic';
+import { s, tracker, notifyFailed } from './store';
 import type { ApplyResult, Plan, PlanArgs, Project, Staged } from './types';
 
 const LONG_MS = 300_000;   // loading or writing a big project copy
@@ -49,7 +49,7 @@ export async function selectObject(k: number): Promise<void> {
   if (!project || !obj) return;
   letGo();
   s.object = k;
-  if (obj.embedded_block && s.mode === 'embedded') s.mode = 'open';
+  if (embeddedBlock(obj, null, project.blocks) && s.mode === 'embedded') s.mode = 'open';   // nothing embedded on this object or plate
   if (meshes.has(k)) {
     pullToken++;   // a pull still running for the object left must not mark this one loading or failed
     s.mesh = { ...s.mesh, state: 'ready', version: s.mesh.version + 1 };
@@ -70,7 +70,7 @@ export async function selectObject(k: number): Promise<void> {
   } catch (e) {
     if (token !== pullToken) return;
     s.mesh = { ...s.mesh, state: 'error' };
-    tracker.notify('error', t('msg.failed', { action: t('act.mesh'), error: errorText(e) }));
+    notifyFailed(t('act.mesh'), e);
   }
 }
 
@@ -123,7 +123,7 @@ function keepMove(): void {
       s.staged = restage(s.staged, x.key, args, plan);
       if (args.fridge) void refreshFridge(args.object, x.key);
     }
-  }, e => { if (current()) tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(e) })); });
+  }, e => { if (current()) notifyFailed(t('act.plan'), e); });
 }
 
 /** Take a pocket of the list in hand (a click on its row or on its marker in the 3D view): the form then changes that
@@ -246,7 +246,7 @@ export async function replan(force = false): Promise<void> {
 function settle(plan: Plan | null, args: PlanArgs, error: unknown, said: string): void {
   const mine = s.staged.find(x => x.key === s.selected) ?? null;
   if (!plan) {   // the plugin refused the request
-    tracker.notify('error', t('msg.failed', { action: t('act.plan'), error: errorText(error) }));
+    notifyFailed(t('act.plan'), error);
     if (mine) takeStaged(mine); else letGo();
     return;
   }
