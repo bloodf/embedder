@@ -94,7 +94,8 @@ test('Polish plurals: one, few and many (1, 2, 5, 12, 22); other languages keep 
   assert.deepEqual(ns.map(n => say('pl', pl, 'copies.status', n)), [
     '1 starą kopię można usunąć (1 MB).', '2 stare kopie można usunąć (1 MB).', '5 starych kopii można usunąć (1 MB).',
     '12 starych kopii można usunąć (1 MB).', '22 stare kopie można usunąć (1 MB).']);
-  assert.equal(say('pl', pl, 'list.summary', 0), '0 kieszeni do dodania, do usunięcia: 0. Zapisuje nową kopię.');
+  assert.deepEqual(ns.map(n => say('pl', pl, 'list.toAdd', n)), ['1 kieszeń do dodania', '2 kieszenie do dodania', '5 kieszeni do dodania', '12 kieszeni do dodania', '22 kieszenie do dodania']);
+  assert.equal(interpolate(pl['list.summary'], { what: say('pl', pl, 'list.toRemove', 2) }), '2 kieszenie do usunięcia. Zastosuj zapisuje nową kopię.');
   assert.equal(say('pl', pl, 'result.pruned', 104), '104 starsze kopie zostały usunięte z folderu wtyczki.');
   assert.deepEqual(ns.map(n => say('en', en, 'load.objects', n)), ['1 object', '2 objects', '5 objects', '12 objects', '22 objects']);
 });
@@ -102,22 +103,25 @@ test('Polish plurals: one, few and many (1, 2, 5, 12, 22); other languages keep 
 test('the Apply result and the copy counts agree with their number in every language', () => {
   const say = (lang: string, table: Record<string, string>, base: string, n: number) =>
     interpolate(table[pluralKey(lang, base, n, k => k in table)], { n, size: '1 MB' });
-  const body = (lang: string, table: Record<string, string>, added: number, removed: number) =>
-    interpolate(table['result.body'], { name: 'a.3mf', added: say(lang, table, 'result.added', added), removed: say(lang, table, 'result.removed', removed) });
+  const named = (lang: string, table: Record<string, string>, base: string, n: number) =>
+    interpolate(table[pluralKey(lang, base, n, k => k in table)], { n, name: 'Tile' });
   const all = { en, ...TABLES } as Record<string, Record<string, string>>;
-  // Portuguese counts 0 as one (CLDR), hence "0 removido".
-  assert.deepEqual(Object.entries(all).map(([lang, table]) => body(lang, table, 1, 0)), [
-    'a.3mf: 1 pocket added, 0 removed.', 'a.3mf: 1 bolso adicionado, 0 removido.', 'a.3mf: 1 alojamiento añadido, 0 quitados.',
-    'a.3mf: 1 Tasche hinzugefügt, 0 entfernt.', 'a.3mf：添加了 1 个凹槽，移除了 0 个。', 'a.3mf: dodano 1 kieszeń, usunięto 0.']);
-  assert.deepEqual(Object.entries(all).map(([lang, table]) => body(lang, table, 2, 1)), [
-    'a.3mf: 2 pockets added, 1 removed.', 'a.3mf: 2 bolsos adicionados, 1 removido.', 'a.3mf: 2 alojamientos añadidos, 1 quitado.',
-    'a.3mf: 2 Taschen hinzugefügt, 1 entfernt.', 'a.3mf：添加了 2 个凹槽，移除了 1 个。', 'a.3mf: dodano 2 kieszenie, usunięto 1.']);
-  assert.equal(say('pl', pl, 'result.added', 5), 'dodano 5 kieszeni');
+  // The result is said in whole sentences: what was added to the copy of the project, then (only when there is any)
+  // what was removed. No file name, and never "0 removed".
+  assert.deepEqual(Object.entries(all).map(([lang, table]) => named(lang, table, 'result.added', 1)), [
+    '1 pocket added to a new copy of Tile.', '1 bolso adicionado a uma nova cópia de Tile.', '1 alojamiento añadido a una nueva copia de Tile.',
+    '1 Tasche zu einer neuen Kopie von Tile hinzugefügt.', '已在 Tile 的新副本中添加 1 个凹槽。', 'Dodano 1 kieszeń do nowej kopii projektu Tile.']);
+  assert.deepEqual(Object.entries(all).map(([lang, table]) => named(lang, table, 'result.alsoRemoved', 2)), [
+    '2 pockets removed.', '2 bolsos removidos.', '2 alojamientos quitados.', '2 Taschen entfernt.', '已移除 2 个凹槽。', 'Usunięto 2 kieszenie.']);
+  assert.equal(named('pl', pl, 'result.added', 5), 'Dodano 5 kieszeni do nowej kopii projektu Tile.');
+  assert.equal(named('en', en, 'result.removedOnly', 1), '1 pocket removed in a new copy of Tile.');
+  // What goes in at a pause: a count and the insert, never "2 × Ø6 × 3 mm" with the same sign twice.
+  assert.deepEqual([1, 2].map(n => interpolate(en[n === 1 ? 'pause.item_one' : 'pause.item_other'], { n, label: 'Ø6 × 3 mm disc' })), ['1 pc Ø6 × 3 mm disc', '2 pcs Ø6 × 3 mm disc']);
   assert.deepEqual(['copies.cleared', 'copies.failed', 'copies.clearText'].map(k => say('en', en, k, 1)), [
     'Deleted 1 old copy, 1 MB freed.', '1 copy could not be deleted; it may be open in another program.',
     '1 old project copy (1 MB) will be deleted from the plugin folder. Copies OrcaSlicer may have open are kept.']);
   assert.equal(say('pt-BR', ptBR, 'copies.cleared', 1), '1 cópia antiga apagada, 1 MB liberados.');
   // A count goes through a plural message, never straight into one fixed sentence.
   for (const k of Object.keys(en)) if (/\{(n|pockets)\}/.test(en[k as keyof typeof en]) && !/_(one|other)$/.test(k))
-    assert.ok(['obj.instance', 'pause.item', 'err.pocketN'].includes(k), `${k} takes a count without a plural form`);
+    assert.ok(['obj.instance', 'err.pocketN'].includes(k), `${k} takes a count without a plural form`);
 });

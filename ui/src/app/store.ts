@@ -2,6 +2,7 @@ import { reactive } from 'vue';
 import * as bridge from '../core/bridge';
 import { Tracker, message, type Notice } from '../core/tracker';
 import { showToast, type OuiToastTone } from '@orca-plugins/ui-foundation/src/components/toast';
+import { copyText } from '@orca-plugins/ui-foundation/src/components/clipboard';
 import { t, tMaybe, fmt, onLangPref } from '../core/i18n';
 import { en } from '../core/messages';
 import { probeWebGL } from '../core/three-probe';
@@ -16,6 +17,7 @@ export const s = reactive({
   version: '',
   settings: null as Settings | null,
   error: '',
+  errorDetail: '',   // the technical text behind `error`, shown only on request
   // Each failed hello is a new notice (the same text again included). Never below the clock, so a reload of the tab
   // (the closed notices are kept for the session) does not count from 1 again onto a closed one.
   helloFails: 0,
@@ -52,23 +54,47 @@ export const s = reactive({
   opened: '' as '' | 'asked' | 'none',
 });
 
-// Codes whose detail is data (a path, a file or preset name, OrcaSlicer's or Python's own error text), worth showing
-// after the translated sentence. The other details are English sentences that only repeat what err.<code> says.
-const DATA_DETAIL = new Set(['export_failed', 'open_failed', 'internal', 'unknown_command', 'missing_model_file', 'bad_xml',
-  'bad_package', 'not_found', 'unknown_preset', 'exists', 'path_too_long', 'cut_object', 'unsupported_object']);
+// Codes whose detail is a name the user knows (a file of the project, a preset, an object): said after the sentence.
+const NAME_DETAIL = new Set(['missing_model_file', 'unknown_preset', 'cut_object', 'unsupported_object']);
+// Codes whose detail is the machine's own text (a Python exception, OrcaSlicer's error, a storage path): never in the
+// sentence, kept as the error's technical details.
+const TECH_DETAIL = new Set(['internal', 'unknown_command', 'export_failed', 'open_failed', 'bad_xml', 'bad_package', 'not_found',
+  'exists', 'path_too_long']);
 
-/** A plugin error in words: the translated code (err.<code>), with Python's detail after it when that is data. */
+/** A plugin error in words: the translated code (err.<code>), with the name it is about when the detail is one. */
 export function errorText(e: unknown): string {
   if (e instanceof bridge.ReplyError) {
     const key = `err.${e.code}`;
     const blocked = e.code === 'pocket_blocked' && /^pocket (\d+): (\w+)$/.exec(e.detail);   // "pocket 2: no_floor"
     if (blocked) return `${t('err.pocket_blocked')} (${t('err.pocketN', { n: blocked[1] })}: ${tMaybe(`block.${blocked[2]}`, blocked[2])})`;
-    if (key in en && e.detail && !DATA_DETAIL.has(e.code)) console.warn(`embedder: ${e.code}: ${e.detail}`);
-    if (key in en) return t(key as keyof typeof en) + (e.detail && DATA_DETAIL.has(e.code) ? ` (${e.detail})` : '');
-    return e.detail || e.code;
+    if (key in en) return t(key as keyof typeof en) + (e.detail && NAME_DETAIL.has(e.code) ? ` (${e.detail})` : '');
+    return t('err.internal');
   }
-  return message(e);
+  return e instanceof PluginError ? e.message : t('err.internal');
 }
+
+/** What the machine said, for the "technical details" of an error: "internal: KeyError: 'printable_area'". Empty when
+ *  the sentence already says everything. Also written to the console, where a bug report can pick it up. */
+export function errorDetail(e: unknown): string {
+  let detail = '';
+  if (e instanceof bridge.ReplyError) {
+    const known = `err.${e.code}` in en;
+    if (!known || TECH_DETAIL.has(e.code)) detail = e.detail ? `${e.code}: ${e.detail}` : known ? '' : e.code;
+    else if (e.detail && !NAME_DETAIL.has(e.code)) console.warn(`embedder: ${e.code}: ${e.detail}`);
+  } else if (e instanceof PluginError) {
+    detail = e.detail ?? '';
+  } else {
+    detail = message(e);
+  }
+  if (detail) console.warn(`embedder: ${detail}`);
+  return detail;
+}
+
+/** An error as the page says it: the sentence as its message, the technical text beside it. */
+export class PluginError extends Error {
+  constructor(message: string, readonly detail?: string) { super(message); }
+}
+export const pluginError = (e: unknown): PluginError => new PluginError(errorText(e), errorDetail(e) || undefined);
 
 // The tracker's notices are the page's toasts: the first sentence is the title. An unknown outcome is a warning
 // that stays until closed, like an error: the user has to know the command may or may not have happened. Those two
@@ -78,30 +104,43 @@ export function toast(n: Notice): void {
   const [title, rest] = splitLead(n.text);
   const lasting = n.kind === 'error' || n.kind === 'unknown';
   const body = [rest, lasting ? fmt.time(Date.now() / 1000) : ''].filter(Boolean).join(' · ');
-  showToast({ tone: TONE[n.kind], title, body: body || undefined, key: n.key && 'cmd:' + n.key, timeout: n.kind === 'unknown' ? 0 : undefined });
+  // An error with technical text behind it offers that text to copy (for a bug report); it is never in the sentence.
+  const detail = n.detail;
+  const action = detail ? { label: t('err.copyDetails'), run: () => { void copyToClipboard(detail); } } : undefined;
+  showToast({ tone: TONE[n.kind], title, body: body || undefined, key: n.key && 'cmd:' + n.key, timeout: n.kind === 'unknown' ? 0 : undefined, action });
+}
+
+export async function copyToClipboard(text: string): Promise<void> {
+  showToast((await copyText(text)) ? { tone: 'success', title: t('common.copied') } : { tone: 'warn', title: t('common.notCopied'), body: text, timeout: 0 });
 }
 
 export const tracker = new Tracker(
-  (cmd, args) => bridge.command(cmd, args).catch(e => { throw new Error(errorText(e)); }),
+  (cmd, args) => bridge.command(cmd, args).catch(e => { throw pluginError(e); }),
   (key, params) => t(key, params), toast);
-bridge.setErrorSink(e => tracker.notify('error', t('msg.plugin', { error: message(e) })));
+bridge.setErrorSink(e => tracker.notify('error', t('msg.plugin'), undefined, errorDetail(e)));
+
+/** A step that failed outside the tracker (a mesh pull, a plan): said as its commands are. */
+export function notifyFailed(action: string, e: unknown): void {
+  tracker.notify('error', t('msg.failed', { action, error: errorText(e) }), undefined, errorDetail(e));
+}
 
 export async function hello(): Promise<void> {
   try {
     const r: Hello = await bridge.command('hello');
     s.version = r.version;
     s.settings = r.settings;
-    s.error = '';
+    s.error = s.errorDetail = '';
     // A preset chosen before the settings came (presets listed after a failed hello): its kept shape now applies.
     if (s.pocketShape == null && !s.insert.custom && s.selected == null) s.pocketShape = rememberedShape(r.settings.pocket_shapes, s.insert.preset);
   } catch (e) {
     s.error = errorText(e);
+    s.errorDetail = errorDetail(e);
     s.helloFails = Math.max(s.helloFails + 1, Date.now());
   }
 }
 
 export async function loadPresets(): Promise<void> {
-  const r = await tracker.run<{ builtin: Preset[]; user: Preset[] }>({ key: 'presets', label: t('act.presets'), cmd: 'presets.list' });
+  const r = await tracker.run<{ builtin: Preset[]; user: Preset[] }>({ key: 'presets', label: t('act.presets'), cmd: 'presets.list', background: true });
   if (!r.ok) return;
   s.builtin = r.result.builtin;
   s.user = r.result.user;
@@ -111,8 +150,9 @@ export async function loadPresets(): Promise<void> {
   }
 }
 
+/** Settings are saved as they change: no toast for it, and a failure is said by the Settings page's own status line. */
 export async function saveSettings(values: Partial<Settings>): Promise<boolean> {
-  const r = await tracker.run<Settings>({ key: 'settings', label: t('act.settings'), cmd: 'settings.save', args: { settings: values }, okText: t('settings.saved') });
+  const r = await tracker.run<Settings>({ key: 'settings', label: t('act.settings'), cmd: 'settings.save', args: { settings: values }, quiet: true, background: true });
   if (r.ok) s.settings = r.result;
   return r.ok;
 }
@@ -160,7 +200,7 @@ export async function choosePocketShape(shape: PocketShape): Promise<void> {
     do {
       want = wantedShapes;
       const r = await tracker.run<Settings>({ key: 'pocket-shape', label: t('act.settings'), cmd: 'settings.save',
-        args: { settings: { pocket_shapes: want } } });
+        args: { settings: { pocket_shapes: want } }, background: true });
       if (!r.ok) break;
       s.settings = r.result;
     } while (wantedShapes !== want);

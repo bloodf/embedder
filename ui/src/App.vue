@@ -17,13 +17,13 @@ const tabs = computed(() => [
   { value: 'embed', label: t('nav.embed'), icon: magnet },
   { value: 'settings', label: t('nav.settings'), icon: settings },
 ]);
-// The page's one state: what the plugin holds right now. Nothing else on the page repeats or contradicts it.
-const state = computed<{ kind: OuiState; label: string }>(() =>
+// The bar's chip is for what is out of the ordinary: the plugin not answering, a load under way, a copy just written.
+// No project, or a project loaded, has none: the page (or the project line next to it) already says so.
+const state = computed<{ kind: OuiState; label: string } | null>(() =>
   s.error ? { kind: 'error', label: t('state.error') }
   : s.loading ? { kind: 'busy', label: t('state.loading') }
   : s.result ? { kind: 'ok', label: t('state.applied') }
-  : s.project ? { kind: 'ok', label: t('state.loaded') }
-  : { kind: 'idle', label: t('state.none') });
+  : null);
 </script>
 
 <template>
@@ -37,9 +37,9 @@ const state = computed<{ kind: OuiState; label: string }>(() =>
         <circle class="em-mark-insert" cx="12" cy="12" r="3" /></svg>
     </template>
     <template #status>
-      <OuiStatus :state="state.kind" data-test="state">{{ state.label }}</OuiStatus>
+      <OuiStatus v-if="state" :state="state.kind" data-test="state">{{ state.label }}</OuiStatus>
       <span v-if="s.project" class="oui-truncate em-project" data-test="project">
-        <span data-test="project-name">{{ s.project.name }}</span> · {{ t('load.plate', { plate: s.project.plate, plates: s.project.plates }) }} · {{ tn('load.objects', s.project.objects.length) }}
+        <strong data-test="project-name">{{ s.project.name }}</strong> · {{ t('load.plate', { plate: s.project.plate, plates: s.project.plates }) }} · {{ tn('load.objects', s.project.objects.length) }}
       </span>
     </template>
     <template v-if="s.project && !s.loading" #actions>
@@ -69,21 +69,18 @@ html:lang(zh-CN) { --oui-font: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK 
 /* A classic scrollbar (Windows) appearing when the page grows must not narrow the page and flip the Embed layout. */
 html { scrollbar-gutter: stable; }
 .em-mark-insert { fill: var(--em-ink); }
-/* Narrow: the state gives way so the name, the state and Load again stay on one line over the tabs; under 520 px the
-   project line (its name is the 3D view's title) leaves and the chip stays. */
-@container oui-appbar (max-width: 760px) {
-  .oui-appbar-row > .oui-spacer { display: none; }
-  .oui-appbar-row > .oui-appbar-status { flex: 1 1 0; justify-content: flex-end; }
-}
+/* Under 520 px the project line (its name is the 3D view's title) leaves and the chip stays. */
 @container oui-appbar (max-width: 520px) { .em-project { display: none; } }
+/* The view takes the page's height under the notices: the Embed panels fill it as one screen, and Settings keeps its
+   status line along the bottom edge. */
+.em { grid-template-rows: auto 1fr; }
 .em-view { display: grid; gap: var(--oui-s3); min-width: 0; }
+.em-project > strong { font-weight: 700; color: var(--oui-text); }
 
 /* Shared by the Embed panels and Settings: what kind of insert a thing is, as a dot (in a line of text) or a tile (on a row). */
 .em-kind { flex: none; display: inline-grid; place-items: center; width: 10px; height: 10px; border-radius: 50%; color: var(--em-magnet); background: currentColor; }
 .em-kind[data-kind='nfc'] { color: var(--em-nfc); border-radius: 2px; }
-.em-kind.em-kind-lg { width: 28px; height: 28px; border-radius: var(--oui-radius); background: color-mix(in srgb, currentColor 16%, transparent); }
-.em-rows { list-style: none; padding: 0; }
-.em-rows > li { display: flex; align-items: center; gap: var(--oui-s3); min-height: 52px; padding: var(--oui-s2) var(--oui-s2) var(--oui-s2) var(--oui-s4); border-bottom: 1px solid var(--oui-border); }
+.em-kind.em-kind-lg { width: 28px; height: 28px; border-radius: var(--oui-radius); background: color-mix(in srgb, currentColor 16%, transparent); font-weight: 700; }
 .em-row-id { flex: 1 1 0; display: grid; gap: 1px; min-width: 0; }
 .em-row-id > .oui-strong { overflow-wrap: anywhere; }
 .em-note { display: flex; align-items: flex-start; gap: 6px; }

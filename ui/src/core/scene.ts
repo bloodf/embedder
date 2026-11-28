@@ -3,7 +3,7 @@
 // WebGL is not available.
 import {
   AmbientLight, BufferAttribute, BufferGeometry, Color, DirectionalLight, DoubleSide, EdgesGeometry, GridHelper, LineBasicMaterial, LineSegments,
-  Mesh, MeshStandardMaterial, PerspectiveCamera, Raycaster, Scene, Vector2, Vector3, WebGLRenderer, type Material, type Object3D,
+  CanvasTexture, Mesh, MeshStandardMaterial, PerspectiveCamera, Raycaster, Scene, Sprite, SpriteMaterial, Vector2, Vector3, WebGLRenderer, type Material, type Object3D,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { anchorOf, boundsOf, fitCamera, nearest, normalAt, nudge, partMesh, pick, slide, toNdc, toScreen, type Hit } from './pick';
@@ -13,7 +13,7 @@ import type { PartMesh } from './mesh';
 export interface Preview { positions: number[]; indices: number[] }
 /** The pocket in hand: its last planned shape, the face that was planned on, and how the plan came out. */
 export interface InHand { preview: Preview; base: Hit; tone: 'ok' | 'warn' | 'blocked' }
-export interface StagedMark extends Preview { kind: 'magnet' | 'nfc' | 'nut'; key: number; base: Hit }
+export interface StagedMark extends Preview { kind: 'magnet' | 'nfc' | 'nut'; key: number; base: Hit; /** Its number in the list, drawn on it. */ n?: number }
 export interface SceneEvents {
   /** A click on a face; `onHand`: on the pocket in hand. */
   pick(hit: Hit, onHand: boolean): void;
@@ -49,6 +49,7 @@ function disposeAll(objects: Object3D[]): void {
     o.traverse(c => {
       const drawn = c as Partial<Mesh>;
       drawn.geometry?.dispose();
+      (drawn.material as (Material & { map?: { dispose(): void } | null }) | undefined)?.map?.dispose();
       (drawn.material as Material | undefined)?.dispose();
     });
   }
@@ -61,6 +62,26 @@ function previewMesh(p: Preview, color: string, opacity: number): Mesh {
   g.computeVertexNormals();
   // drawn over the part (no depth test), so a pocket inside the body stays visible
   return new Mesh(g, new MeshStandardMaterial({ color, transparent: true, opacity, depthTest: false, side: DoubleSide }));
+}
+
+/** A pocket's number in the list, as a small disc that keeps its size on screen: the same numeral its row carries. */
+function numberTag(n: number, at: Vector3, ink: string, paper: string): Sprite {
+  const px = 64, c = document.createElement('canvas');
+  c.width = c.height = px;
+  const g = c.getContext('2d');
+  if (g) {
+    g.fillStyle = paper;
+    g.beginPath(); g.arc(px / 2, px / 2, px / 2 - 2, 0, 2 * Math.PI); g.fill();
+    g.fillStyle = ink;
+    g.font = `700 ${n > 9 ? 34 : 40}px system-ui, sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(n), px / 2, px / 2 + 2);
+  }
+  const tag = new Sprite(new SpriteMaterial({ map: new CanvasTexture(c), depthTest: false, sizeAttenuation: false }));
+  tag.position.copy(at);
+  tag.scale.setScalar(0.045);
+  tag.renderOrder = 3;
+  return tag;
 }
 
 const sameHit = (a: Hit, b: Hit) => a.part === b.part && a.tri === b.tri && a.point.every((v, i) => v === b.point[i]);
@@ -240,7 +261,12 @@ export function createScene(host: HTMLElement, events: SceneEvents): SceneApi {
       disposeAll(marks.map(m => m.mesh));
       const kind = { magnet: css('--em-magnet', '#8c4b08'), nfc: css('--em-nfc', '#6541a6'), nut: css('--em-nut', '#2b6cb0') };
       const tone = { ok: css('--oui-primary-mark', '#009688'), warn: css('--oui-warning', '#c08a00'), blocked: css('--oui-danger', '#b3261e') };
-      marks = staged.map(p => ({ id: p.key, mesh: previewMesh(p, kind[p.kind], 0.85), at: anchorOf(p.positions, targets, p.base) }));
+      const ink = css('--oui-text', '#101010'), paper = css('--oui-surface', '#fff');
+      marks = staged.map(p => {
+        const mesh = previewMesh(p, kind[p.kind], 0.85), at = anchorOf(p.positions, targets, p.base);
+        if (p.n && at) mesh.add(numberTag(p.n, at, ink, paper));
+        return { id: p.key, mesh, at };
+      });
       inHand = null;
       if (current) {
         const mesh = previewMesh(current.preview, tone[current.tone], 0.9);

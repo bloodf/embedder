@@ -60,6 +60,18 @@ async function tab(name) { await click(q('[data-tab="' + name + '"]')); }
 /** The rows of a list as [name, second line] pairs. */
 const rows = name => qa('[data-test=' + name + '] li').map(li => qa('.em-row-id > *', li).map(text));
 const notes = () => text(byTest('plan-note'));
+/** Pick an option of a list by its words. */
+async function choose(select, label) {
+  await click(select);
+  await until(() => qa('[role=option]').some(o => text(o) === label), 'option ' + label);
+  await click(qa('[role=option]').find(o => text(o) === label));
+}
+/** A size of one's own: the last choice of the insert list. */
+async function custom() {
+  await click(byTest('preset'));
+  await until(() => byTest('custom'), 'the last choice of the list');
+  await click(byTest('custom').closest('[role=option]'));
+}
 /** The toasts as one line each (title, then the rest), and what the alert banners say. */
 const toastText = el => [q('.oui-toast-text > strong', el), q('.oui-toast-body', el)].map(text).filter(Boolean).join(' ');
 const toasts = () => qa('.oui-toasts .oui-toast');
@@ -168,10 +180,9 @@ test('hello is the first command; the version shows once it answers', `
   eq(sent()[0].cmd, 'hello', 'first message');
   eq(last('cmd', 'hello').args, {}, 'hello has no arguments');
   await ready();
-  eq(text(byTest('state')), 'No project', 'the bar says what the plugin holds');
+  assert(!byTest('state'), 'no chip in the bar while nothing is out of the ordinary');
   await tab('settings');
-  eq(text(byTest('version')), '0.1.0', 'version shown under Settings, About');
-  await reveal(byTest('version'));
+  eq(text(byTest('version')), '0.1.0', 'version shown under Settings, General');
   assert(byTest('version').getClientRects().length, 'version visible');
 `);
 
@@ -199,12 +210,18 @@ test('an error reply with a code does not break the page', `
   await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
   assert(byTest('embed-empty'), 'page still usable');
   eq(text(byTest('state')), 'Not ready', 'the bar says so');
-  assert(alerts().includes('Internal plugin error (boom)'), 'and why: ' + alerts());
+  assert(alerts().includes('Embedder could not start. Restart OrcaSlicer.'), 'and what to do: ' + alerts());
+  assert(!document.body.innerText.includes('boom'), 'what Python said is not in sight');
+  assert(byTest('load').disabled && byTest('load').getAttribute('aria-describedby') === 'em-hello-error', 'Load project is off and points at the reason');
+  const details = q('[data-test=hello-error] details');
+  assert(!details.open && text(q('summary', details)) === 'Technical details', 'the technical details are closed');
+  eq(q('.oui-details-text', details).textContent.trim(), 'internal: boom', 'and hold what Python said, for whoever asks');
+  assert(btn('Copy details', details), 'with a way to copy them into a report');
   await click(byTest('hello-retry'));
   await until(() => cmds('hello').length === 2, 'asks again');
   await reply(last('cmd', 'hello'), {version: '0.1.0', settings: SETTINGS});
   assert(!byTest('hello-error'), 'the error goes once the plugin answers');
-  eq(text(byTest('state')), 'No project', 'state after the answer');
+  assert(!byTest('state') && !byTest('load').disabled, 'the chip goes too, and Load project is on again');
 `);
 
 test('Portuguese from the host language', `
@@ -245,9 +262,15 @@ test('German decimals: "1.5" typed or pasted into a millimetre field is one and 
   field.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
   field.blur(); await settle();
   eq(field.value, '0,8 mm', 'pasted with a point');
-  await click(byTest('settings-save'));
-  await until(() => last('cmd', 'settings.save'), 'saved');
-  eq(last('cmd', 'settings.save').args.settings.cover_magnet, 0.8, 'the number sent');
+  // saved as it changes: answer each save as the plugin would, until the pasted value is the one sent
+  const seen = new Set();
+  for (;;) {
+    await until(() => cmds('settings.save').some(m => !seen.has(m.id)), 'a save');
+    const m = cmds('settings.save').find(x => !seen.has(x.id));
+    seen.add(m.id);
+    if (m.args.settings.cover_magnet === 0.8) break;
+    await reply(m, {...SETTINGS, ...m.args.settings});
+  }
 `, { lang: 'de', intl: 'de-DE' });
 
 test('Chinese input: a full-width 。 or ． typed into a millimetre field is the decimal point', `
@@ -276,7 +299,7 @@ test('where a WebView cannot build a paste event, the field keeps its own paste'
 
 test('Spanish decimals in a custom size: "2.5" typed is two and a half', `
   await loaded();
-  await click(q('#f-custom'));
+  await custom();
   await type(q('#f-d'), '2.5'); q('#f-d').blur(); await settle();
   eq(q('#f-d').value, '2,5 mm', 'shown with a comma');
   await place(null);
@@ -331,7 +354,7 @@ test('load shows the progress of reading the project', `
   assert(!byTest('loading'), 'progress gone');
   eq(text(byTest('project-name')), 'cube', 'project name');
   eq(text(byTest('project')), 'cube · plate 1 of 2 · 2 objects', 'project line in the bar');
-  eq(text(byTest('state')), 'Project loaded', 'state');
+  assert(!byTest('state'), 'a loaded project has no state chip: the project line says it');
 `);
 
 test('meshes are pulled one chunk at a time, for the selected object only', `
@@ -352,13 +375,14 @@ test('placing sends a plan request; the preview is listed and staged with its pa
   eq(Object.keys(a).sort(), ['job', 'mode', 'object', 'part', 'point', 'preset', 'tri'], 'no unset options sent');
   assert(text(byTest('plan-pause')).includes('19'), 'pause shown: ' + text(byTest('plan')));
   assert(!q('#em-plan-state').classList.contains('oui-on-band') && !q('#em-plan-state').dataset.tone, 'a planned pocket is a neutral block (ui-foundation 5: no accent fill)');
-  assert(byTest('staged-empty') && byTest('apply').disabled, 'nothing staged yet');
+  assert(byTest('staged-empty') && byTest('apply').disabled && !byTest('summary'), 'nothing staged yet, and no "0 pockets" line');
   await click(byTest('add'));
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'one row: the name, then where and how on its second line');
+  eq(qa('[data-test=row-n]').map(text), ['1'], 'numbered, so two pockets alike can be told apart');
   eq(text(byTest('staged-count')), '1', 'count in the panel header');
   eq(text(q('#em-pauses-l')), 'The print will pause', 'pause heading');
-  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × Ø6 × 3 mm disc'], 'pause summary');
-  eq(text(byTest('summary')), '1 pocket to add, 0 to remove. Writes a new copy.', 'what Apply will do');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 pc Ø6 × 3 mm disc'], 'pause summary');
+  eq(text(byTest('summary')), '1 pocket to add. Apply writes a new copy.', 'what Apply will do; nothing about removals when there are none');
   assert(byTest('add').disabled && byTest('plan-empty'), 'Add waits for the next face');
   const again = await place(null);
   eq(again.args.others.length, 1, 'staged pockets go along for the proximity check');
@@ -521,15 +545,15 @@ test('a closed banner shows again after its condition clears and returns (same k
   await until(() => byTest('blocks'), 'the same block back: the banner shows again');
 `);
 
-test('the start error shows again when hello fails again with the same text', `
+test('the start error stays until the plugin answers: it cannot be closed while Load project is off', `
   await until(() => last('cmd', 'hello'), 'hello sent');
   await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
+  assert(byTest('hello-error') && !q('[data-test=hello-error] .oui-banner-close'), 'no close button');
   await click(byTest('hello-retry'));
   await until(() => cmds('hello').length === 2, 'asks again');
-  await click(q('[data-test=hello-error] .oui-banner-close'));
-  assert(!byTest('hello-error'), 'closed while the retry is out');
-  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom'});
-  await until(() => byTest('hello-error'), 'the same failure again: the banner is back');
+  await fail(last('cmd', 'hello'), {code: 'internal', detail: 'boom again'});
+  assert(byTest('hello-error') && byTest('load').disabled, 'the same failure again: still said, Load still off');
+  eq(q('[data-test=hello-error] .oui-details-text').textContent.trim(), 'internal: boom again', 'the details are those of the last failure');
 `);
 
 test('a second apply to the same path shows its result; a closed waiting notice shows for the next send', `
@@ -545,14 +569,14 @@ test('a second apply to the same path shows its result; a closed waiting notice 
   await click(q('[data-test=result-banner] .oui-banner-close'));
   assert(!byTest('result-banner'), 'result closed');
 
-  await click(byTest('open'));
+  await click(byTest('saved-open'));
   await until(() => byTest('waiting'), 'waiting for OrcaSlicer');
   await click(q('[data-test=waiting] .oui-banner-close'));
   assert(!byTest('waiting'), 'waiting closed');
   await reply(last('cmd', 'project.open'), {open: 'asked'});
   await settle();
   assert(!byTest('waiting'), 'the answer came: no waiting notice');
-  await click(byTest('open'));
+  await click(byTest('saved-open'));
   await until(() => byTest('waiting'), 'sent again: the waiting notice is back');
   await reply(last('cmd', 'project.open'), {open: 'asked'});
 
@@ -569,7 +593,7 @@ test('a second apply to the same path shows its result; a closed waiting notice 
   await until(() => byTest('result-banner'), 'a second apply to the same path: its result shows');
 `);
 
-test('a toast sits bottom-left with a Close button, and goes when closed', `
+test('a toast sits bottom-right with a Close button, and goes when closed', `
   await ready();
   await tab('settings');
   await until(() => last('cmd', 'copies.status'), 'status asked');
@@ -584,9 +608,9 @@ test('a toast sits bottom-left with a Close button, and goes when closed', `
   eq(el.getAttribute('role'), 'status', 'a success is polite');
   await until(() => !document.getAnimations().some(a => a.playState === 'running'), 'the toast is in');
   const r = el.getBoundingClientRect();
-  assert(r.left <= 24 && r.right < innerWidth / 2 + 200, 'left: ' + JSON.stringify(r));
+  assert(innerWidth - r.right <= 24 && r.left > innerWidth / 2 - 200, 'right: ' + JSON.stringify(r));
   const gap = () => q('.oui-settings-foot').getBoundingClientRect().top - el.getBoundingClientRect().bottom;
-  await until(() => gap() >= 0 && gap() <= 24, 'at the bottom, just above the save bar');
+  await until(() => gap() >= 0 && gap() <= 24, 'at the bottom, just above the status line of Settings');
   const close = q('.oui-toast-close', el);
   eq(close.getAttribute('aria-label'), 'Close', 'the X is named');
   await click(close);
@@ -601,12 +625,13 @@ test('warnings are shown in words', `
   assert(w[0].includes('thinner than two layers') && w[1].includes('within 10 mm'), 'texts: ' + w);
 `);
 
-test('hold warnings say advisory estimate, not a guarantee', `
+test('hold warnings are one short sentence each, and say to test the hold', `
   await loaded();
   await place({...PLAN, warnings: ['weak_magnet_hold', 'hold_uncertain']});
   const w = qa('[data-test=plan-warning]').map(text);
   eq(w.length, 2, 'two warnings');
-  assert(w[0].includes('not a guarantee') && w[1].includes('no safety guarantee'), 'texts: ' + w);
+  eq(w, ['These magnets may not hold this model. Use larger or stronger magnets, or more of them, and test the hold.',
+    'Hold strength is a rough estimate for this model. Test it before you rely on it.'], 'texts');
 `);
 
 test('apply writes a copy with the staged and removed pockets; open asks OrcaSlicer', `
@@ -620,21 +645,50 @@ test('apply writes a copy with the staged and removed pockets; open asks OrcaSli
   eq(last('cmd', 'project.apply').args, {job: 'j1', pockets: [pocket], remove: ['9']}, 'apply arguments');
   const path = '/storage/cube-embedder-20261114-120000-j1.3mf';
   await reply(last('cmd', 'project.apply'), {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 1, removed: 1,
-    pauses: [{top_z: 19, extra: 'Embedder: insert 1 x 6x3 magnet'}], warnings: ['existing_gcode_at_layer'], pruned: 2});
+    pauses: [{top_z: 19, extra: 'Embedder: insert 1 x 6x3 magnet (N up)', items: [{label: '6x3 magnet', polarity: 'N', n: 1}]}], warnings: ['existing_gcode_at_layer'], pruned: 2});
   eq(text(byTest('result-pruned')), '2 older copies were deleted from the plugin folder.', 'pruned shown');
-  assert(text(byTest('result')).includes('1 pocket added, 1 removed'), 'result: ' + text(byTest('result')));
+  eq(text(byTest('result-banner')), 'New copy written. 1 pocket added to a new copy of cube. 1 pocket removed.', 'what was done, by the project name');
+  eq(text(q('[data-test=result] .oui-saved-title')), 'cube', 'the card is named after the project');
+  assert(text(byTest('result-pauses')).includes('1 pc Ø6 × 3 mm disc (N up)') && !text(byTest('result')).includes('Embedder: insert'), 'the pause in the page words, not the G-code comment: ' + text(byTest('result-pauses')));
   assert(text(byTest('result')).includes('Save Project As'), 'save-as note');
   assert(text(byTest('result')).includes('Your own custom G-code'), 'apply warning');
-  eq(text(byTest('result-path')), path, 'path shown');
+  assert(!byTest('saved-path') && !text(byTest('result')).includes('cube-embedder') && !text(byTest('result')).includes('/storage'), 'no file name and no folder while all is well: ' + text(byTest('result')));
   assert(!byTest('apply') && !byTest('viewer') && !byTest('no3d') && !byTest('preset'), 'the job is over: no more staging on this copy');
   assert(text(byTest('result')).includes('Load project'), 'result asks for a new load: ' + text(byTest('result')));
-  await click(byTest('open'));
+  await click(byTest('saved-open'));
   await until(() => last('cmd', 'project.open'), 'open sent');
   eq(last('cmd', 'project.open').args, {path}, 'open arguments');
   await reply(last('cmd', 'project.open'), {open: 'asked'});
-  assert(text(byTest('opened')).includes('asked to open'), 'opened: ' + text(byTest('opened')));
-  await click(byTest('reload'));
+  assert(text(q('.oui-saved-status')).includes('asked to open') && !byTest('saved-path'), 'opened: ' + text(q('.oui-saved-status')));
+  eq([text(byTest('result-reload')), text(byTest('reload'))], ['Load project again', 'Load project again'], 'the way on is on the card, named as in the bar');
+  await click(byTest('result-reload'));
   await until(() => cmds('project.load').length === 2, 'loads again');
+`);
+
+test('when OrcaSlicer cannot be asked to open the copy, the result says where the file is', `
+  await loaded();
+  eq(rows('existing'), [['Ø6 × 3 mm disc', 'Embedded']], 'a pocket the project already holds, as a row');
+  eq(q('#rm-9').getAttribute('aria-label'), 'Remove Ø6 × 3 mm disc (Embedded)', 'its bin says what it removes');
+  q('#rm-9').focus();
+  await click(q('#rm-9'));
+  eq(rows('existing'), [['Ø6 × 3 mm disc', 'Will be removed in the new copy']], 'marked: the row says what will happen');
+  eq([text(q('#rm-9')), q('#rm-9').getAttribute('aria-label')], ['Undo', 'Keep Ø6 × 3 mm disc'], 'with the way back where the bin was');
+  assert(document.activeElement === q('#rm-9'), 'and the focus still on it');
+  await click(q('#rm-9'));
+  assert(!byTest('summary') && byTest('apply').disabled, 'Undo takes the removal back');
+  await click(q('#rm-9'));
+  eq(text(byTest('summary')), '1 pocket to remove. Apply writes a new copy.', 'a removal alone');
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  const path = '/storage/cube-embedder-20261114-120000-j1.3mf';
+  await reply(last('cmd', 'project.apply'), {path, name: 'cube-embedder-20261114-120000-j1.3mf', pockets: 0, removed: 1, pauses: [], warnings: [], pruned: 0});
+  eq(text(byTest('result-banner')), 'New copy written. 1 pocket removed in a new copy of cube.', 'a removal alone is said as one');
+  await click(byTest('saved-open'));
+  await until(() => last('cmd', 'project.open'), 'open sent');
+  await reply(last('cmd', 'project.open'), {open: 'none'});
+  assert(text(q('.oui-saved-status')).includes('could not be started'), 'said: ' + text(q('.oui-saved-status')));
+  eq(text(byTest('saved-path')), path, 'now the path is shown');
+  eq(text(byTest('saved-copy')), 'Copy path', 'with a button to copy it');
 `);
 
 test('a stale job error tells the user to load again', `
@@ -648,8 +702,9 @@ test('a stale job error tells the user to load again', `
 
 test('without WebGL the page says so and keeps the face form', `
   await loaded();
-  assert(text(byTest('no3d')).includes('not available'), 'notice: ' + text(byTest('no3d')));
-  eq(qa('[data-test=no3d] .oui-empty .oui-tile svg').length, 1, 'its icon tile');
+  eq(text(q('[data-test=no3d] .oui-panel-title')), 'Place without the 3D view', 'the panel says what it is, once');
+  assert(text(byTest('no3d')).includes('Choose the face') && !text(byTest('no3d')).includes('not available'), 'then how, not the same thing again: ' + text(byTest('no3d')));
+  assert(byTest('no3d').getBoundingClientRect().height < 200, 'as tall as its one row, not a screen of empty panel');
   assert(!byTest('viewer'), 'no 3D view');
   eq(text(byTest('plan-empty')), 'Choose a face and press Place.', 'the plan asks for the face form');
 `);
@@ -658,11 +713,12 @@ test('settings show the saved values and the user presets', `
   await ready();
   await tab('settings');
   eq(q('#set-xy_clearance').value, '0.2 mm', 'clearance shown');
-  assert(byTest('settings-save').disabled, 'nothing to save yet');
+  assert(!byTest('settings-save') && !byTest('settings-discard'), 'no Save or Discard: settings are saved as they change');
+  eq(text(q('.oui-settings-foot')), 'Changes are saved as you make them.', 'and one line says so');
   assert(byTest('presets-empty'), 'no user presets');
 `);
 
-test('saving settings plans the staged pockets again; one that no longer fits is dropped, saying so', `
+test('a changed setting is saved by itself and plans the staged pockets again; one that no longer fits is dropped, saying so', `
   await loaded();
   const m = await place(PLAN);
   await click(byTest('add'));
@@ -670,12 +726,11 @@ test('saving settings plans the staged pockets again; one that no longer fits is
   await reply(lid, {...PLAN, label: 'Lid magnet'});
   await click(byTest('add'));
   await tab('settings');
+  const before = cmds('pocket.plan').length;
   await type(q('#set-xy_clearance'), '0.4');
   q('#set-xy_clearance').blur();
-  await settle();
-  const before = cmds('pocket.plan').length;
-  await click(byTest('settings-save'));
-  await until(() => last('cmd', 'settings.save'), 'save sent');
+  await until(() => last('cmd', 'settings.save'), 'saved without a Save button');
+  eq(last('cmd', 'settings.save').args.settings.xy_clearance, 0.4, 'the new clearance');
   await reply(last('cmd', 'settings.save'), {...SETTINGS, xy_clearance: 0.4});
   await until(() => cmds('pocket.plan').length > before, 'first staged pocket planned again');
   const { job, ...pocket } = m.args;
@@ -741,7 +796,8 @@ test('removing one auto fridge pocket plans the rest of that object again', `
   eq(m.args.fridge, true, 'with its fridge marker');
   await reply(m, {...weak, warnings: ['weak_magnet_hold']});
   await settle();
-  assert(text(byTest('staged')).includes('not a guarantee'), 'the advisory shows on the pocket left: ' + text(byTest('staged')));
+  eq(qa('[data-test=hold-warning]').map(text), ['Cube: These magnets may not hold this model. Use larger or stronger magnets, or more of them, and test the hold.'], 'the advisory shows for the pocket left, once, above the rows');
+  eq(qa('[data-test=row-hold]').length, 1, 'and its row carries the mark');
 `);
 
 test('a failed re-plan of the fridge pockets left never keeps the old plan as enough', `
@@ -757,7 +813,95 @@ test('a failed re-plan of the fridge pockets left never keeps the old plan as en
   await until(() => cmds('pocket.plan').length > before, 'the remaining fridge pocket is planned again');
   await fail(last('cmd', 'pocket.plan'), {code: 'internal', detail: 'boom'});
   await settle();
-  assert(text(byTest('staged')).includes('no safety guarantee'), 'the row says the hold is unknown: ' + text(byTest('staged')));
+  assert(text(byTest('hold-warnings')).includes('rough estimate'), 'the list says the hold is unknown: ' + text(byTest('hold-warnings')));
+`);
+
+test('auto fridge says its hold advisory once for the object, not on every row; a pocket keeps its own warnings', `
+  await loaded();
+  await click(byTest('auto-fridge-auto'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'auto_fridge sent');
+  eq([last('cmd', 'pocket.auto_fridge').args.object, last('cmd', 'pocket.auto_fridge').args.count], [0, 'auto'], 'the selected object, as many as it takes');
+  const mk = x => ({object: 0, part: 0, tri: 0, point: [x, 110, 0], preset: 'magnet-disc-6x3', mode: 'embedded', fridge: true});
+  const plan = extra => ({...PLAN, face: 'bottom', pause_z: 3.8, warnings: ['hold_uncertain', ...extra]});
+  await reply(last('cmd', 'pocket.auto_fridge'), {count: 4, items: [{args: mk(96), plan: plan([])}, {args: mk(104), plan: plan(['thin_cover'])},
+    {args: mk(110), plan: plan([])}, {args: mk(116), plan: plan([])}]});
+  await settle();
+  eq(rows('staged').length, 4, 'four pockets');
+  eq(qa('[data-test=hold-warning]').map(text), ['Cube: Hold strength is a rough estimate for this model. Test it before you rely on it.'], 'said once, naming the object (the plate has two)');
+  eq(qa('[data-test=row-hold]').length, 4, 'each row it covers carries a mark');
+  assert(qa('[data-test=row-hold] .oui-sr').every(e => text(e).startsWith('Hold strength is a rough estimate')), 'and says the sentence to a screen reader');
+  eq(qa('[data-test=row-warning]').map(text), ['The cover is thinner than two layers; the insert may show through.'], 'the warning of one pocket stays on its row');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 3.80 mm: insert 4 pcs Ø6 × 3 mm disc'], 'a count and the insert, not the same sign twice');
+`);
+
+test('fridge magnets for all objects: the tick sends every object with the count chosen', `
+  await loaded();
+  assert(byTest('auto-fridge').closest('.em-list') && !q('.em-form [data-test=auto-fridge]'), 'the action sits with the list it fills, not among the settings of a pocket');
+  eq(qa('[data-test=auto-fridge] button').map(b => text(b) + '|' + (b.getAttribute('aria-label') || '')), ['Auto|Auto', '1|1 magnet', '2|2 magnets', '4|4 magnets'], 'the counts, named for a screen reader');
+  await click(q('#f-fridge-all'));
+  await click(byTest('auto-fridge-4'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'sent');
+  eq([last('cmd', 'pocket.auto_fridge').args.object, last('cmd', 'pocket.auto_fridge').args.count], ['all', 4], 'all objects, four each');
+`);
+
+for (const [width, cols] of [[1280, 'three columns'], [960, 'two columns']]) {
+  test(`${cols}: after a click on a face the plan, its warnings, Add pocket and Apply are in the window and the page is one screen`, `
+  await loaded({...PROJECT, blocks: ['by_object']});
+  await place({...PLAN, warnings: ['thin_cover', 'nfc_near_magnet', 'breaks_surface']});
+  const box = el => el.getBoundingClientRect();
+  const inWindow = el => box(el).height > 0 && box(el).top >= 0 && box(el).bottom <= innerHeight;
+  assert(byTest('blocks'), 'with a banner above the panels');
+  eq(text(byTest('blocks')), 'Embedded pockets are off for this plate. Because the print sequence is By object, and OrcaSlicer ignores pauses then. Open pockets still work.', 'which reads as one explanation');
+  assert(inWindow(byTest('add')) && !byTest('add').disabled && !byTest('add').classList.contains('p-button-secondary'), 'Add pocket, the one thing to press, as the main button');
+  assert(qa('[data-test=plan-warning]').length === 3 && qa('[data-test=plan-warning]').every(inWindow), 'every warning of the pocket');
+  assert(box(qa('[data-test=plan-warning]')[2]).bottom <= box(byTest('plan-label')).top, 'the warnings come before the facts');
+  assert(inWindow(byTest('plan-pause')) && inWindow(byTest('plan-cover')), 'where it pauses and what covers it');
+  eq(qa('#em-plan-state dt').map(text), ['Insert', 'Pause', 'Cover'], 'three facts');
+  assert(!byTest('plan-more').open && text(q('summary', byTest('plan-more'))) === 'Dimensions', 'the geometry is behind Dimensions');
+  assert(inWindow(byTest('apply')), 'Apply');
+  assert(${width === 1280} ? box(byTest('no3d')).right <= box(q('.em-list')).left : box(byTest('no3d')).bottom <= box(q('.em-list')).top && box(byTest('no3d')).left >= box(q('.em-form')).right,
+    '${cols}: ' + ${JSON.stringify(width === 1280 ? 'the list beside the view' : 'the list under the view, beside the form')});
+  eq(document.documentElement.scrollHeight, innerHeight, 'the page is one screen: nothing is a scroll away');
+  // the list: what the project already holds comes first, and nothing is laid over the footer
+  const parts = ['existing', 'staged-empty', 'auto-fridge'].map(n => box(byTest(n)));
+  assert(parts[0].bottom <= parts[1].top && parts[1].bottom <= parts[2].top, 'the project pockets, then the empty line, then fridge magnets: none over another');
+  const body = q('.em-list > .oui-panel-body'), foot = q('.em-list > .oui-panel-foot');
+  assert(box(body).bottom <= box(foot).top + 1 && getComputedStyle(body).overflowY === 'auto', 'the list scrolls above its footer, never under it');
+  assert(!byTest('summary'), 'and the footer does not count zero pockets');
+`, { width });
+}
+
+test('a command that answers at once is never said to be still working; one that takes long is, after a moment', `
+  await loaded();
+  let seen = 0;
+  const obs = new MutationObserver(() => { if (byTest('waiting')) seen++; });
+  obs.observe(document.body, { subtree: true, childList: true });
+  await click(byTest('auto-fridge-2'));
+  await until(() => last('cmd', 'pocket.auto_fridge'), 'sent');
+  await reply(last('cmd', 'pocket.auto_fridge'), {count: 0, items: []});
+  await tab('settings');
+  await until(() => last('cmd', 'copies.status'), 'the copies check, which nobody asked for by name');
+  await sleep(900);
+  eq(seen, 0, 'no banner came and went, and none for a background read');
+  await tab('embed');
+  await click(byTest('auto-fridge-2'));
+  await sleep(250);
+  assert(!byTest('waiting'), 'not at once');
+  await until(() => byTest('waiting'), 'said once it takes long');
+  obs.disconnect();
+  eq(text(byTest('waiting')), 'Still working: Placing bottom magnet pockets…', 'in plain words');
+`);
+
+test('a failed command says so in words; what Python said is offered to copy, never shown', `
+  await loaded();
+  await click(q('#rm-9'));
+  await click(byTest('apply'));
+  await until(() => last('cmd', 'project.apply'), 'apply sent');
+  await fail(last('cmd', 'project.apply'), {code: 'internal', detail: 'KeyError: printable_area'});
+  assert(alerts().includes('Apply failed: Embedder ran into an unexpected problem'), 'alert: ' + alerts());
+  assert(!document.body.innerText.includes('KeyError'), 'no exception text on the page');
+  await click(btn('Copy details', q('.oui-toasts')));
+  await until(() => toasts().some(t => /^Copied\\.|^Could not copy\\./.test(toastText(t))), 'the copy is confirmed, or the text is given to copy by hand');
 `);
 
 test('the list says which inserts to have ready, open pockets and copies included', `
@@ -767,7 +911,7 @@ test('the list says which inserts to have ready, open pockets and copies include
   await place({...PLAN, mode: 'open', pause_z: null, label: '25 mm NFC sticker', kind: 'nfc'});
   await click(byTest('add'));
   eq(text(q('#em-inserts-l')), 'Have ready at the printer', 'inserts heading');
-  eq(qa('[data-test=inserts] li').map(text), ['2 × Ø6 × 3 mm disc', '1 × Ø25 mm sticker'], 'inserts lines');
+  eq(qa('[data-test=inserts] li').map(text), ['2 Ø6 × 3 mm disc', '1 Ø25 mm sticker'], 'inserts lines: the count as a chip, then the insert');
   eq(qa('[data-test=inserts] .em-kind').map(e => e.dataset.kind), ['magnet', 'nfc'], 'each with the mark of its kind');
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Ø25 mm sticker', 'Cube · top · open']], 'rows');
 `);
@@ -822,15 +966,15 @@ test('the cover row and Save as preset carry their icons', `
   await place(PLAN);
   const cover = qa('[data-test=plan] dt').find(d => text(d) === 'Cover');
   assert(cover && q('svg.oui-icon', cover), 'layers icon on the cover row');
-  await click(q('#f-custom'));
+  await custom();
   const save = byTest('save-preset');
   assert(q('svg.oui-icon', save) && text(save) === 'Save as preset', 'save icon on Save as preset: ' + text(save));
 `);
 
 test('a custom size is saved as a preset through a dialog with one field; going back saves nothing', `
   await loaded();
-  await click(q('#f-custom'));
-  assert(byTest('custom-dims') && !byTest('preset'), 'custom fields replace the preset list');
+  await custom();
+  assert(byTest('custom-dims') && text(byTest('preset')) === 'Custom size…', 'the fields open under the list, which names the choice');
   await type(q('#f-d'), '12'); q('#f-d').blur(); await settle();
   byTest('save-preset').focus();
   await click(byTest('save-preset'));
@@ -838,7 +982,7 @@ test('a custom size is saved as a preset through a dialog with one field; going 
   assert(dialogText().includes('Give this size a name'), 'dialog text: ' + dialogText());
   assert(q('[data-dlg=confirm]').disabled, 'no name, no save');
   await no();
-  assert(!last('cmd', 'presets.save'), 'nothing saved when the answer is Go back');
+  assert(!last('cmd', 'presets.save'), 'nothing saved when the answer is Cancel');
   await until(() => document.activeElement === byTest('save-preset'), 'focus returns to the button that asked');
   await click(byTest('save-preset'));
   await until(() => q('#dlg-input'), 'dialog again');
@@ -860,11 +1004,12 @@ test('deleting a preset asks first, with the way back focused', `
   const mine = {id: 'user-1', name: 'Fridge 12', kind: 'nfc', shape: 'block', l: 30, w: 20, t: 1, builtin: false};
   await reply(last('cmd', 'presets.list'), {...PRESETS, user: [mine]});
   await tab('settings');
-  eq(rows('user-presets'), [['Fridge 12', 'NFC tag · 30.00 × 20.00 × 1.00 mm']], 'the preset row');
+  eq(rows('user-presets'), [['Fridge 12', 'NFC tag · 30 × 20 × 1 mm block']], 'the preset row, its size written as in the picker');
   await click(btn('Delete Fridge 12'));
   await until(dialogOpen, 'dialog');
   assert(dialogText().includes('"Fridge 12" will be removed'), 'what will happen: ' + dialogText());
-  await until(() => document.activeElement === q('[data-dlg=cancel]'), 'focus starts on Go back');
+  await until(() => document.activeElement === q('[data-dlg=cancel]'), 'focus starts on the way out');
+  eq(text(q('[data-dlg=cancel]')), 'Cancel', 'which is called Cancel');
   assert(q('[data-dlg=confirm]').classList.contains('p-button-danger') && text(q('[data-dlg=confirm]')) === 'Delete', 'the action is named on the red button');
   await press('Escape');
   await until(() => !dialogOpen(), 'Escape closes');
@@ -877,72 +1022,74 @@ test('deleting a preset asks first, with the way back focused', `
   assert(byTest('presets-empty'), 'list empty again');
 `);
 
-test('unsaved settings are named in the save bar and can be discarded', `
+test('settings are saved as they change: one status line, Retry when saving fails, the last change always lands', `
   await ready();
   await tab('settings');
-  assert(byTest('settings-save').disabled && byTest('settings-discard').disabled, 'nothing changed yet');
   await type(q('#set-cover_nfc'), '0.8');
   q('#set-cover_nfc').blur();
-  await settle();
-  assert(text(q('.oui-settings-foot')).includes('Unsaved changes') && text(q('.oui-settings-foot')).includes('Cover over NFC tags'), 'bar: ' + text(q('.oui-settings-foot')));
-  assert(!byTest('settings-save').disabled, 'can save');
-  await click(byTest('settings-discard'));
-  eq(q('#set-cover_nfc').value, '0.6 mm', 'value back');
-  assert(byTest('settings-save').disabled && !text(q('.oui-settings-foot')).includes('Unsaved'), 'bar quiet again');
-  assert(!last('cmd', 'settings.save'), 'nothing was sent');
-  eq(qa('.oui-settings-link').map(text), ['Fit and covers', 'Fridge magnets', 'My presets', 'Old project copies', 'Language', 'About'], 'section index');
+  await until(() => last('cmd', 'settings.save'), 'saved by itself');
+  eq(last('cmd', 'settings.save').args.settings.cover_nfc, 0.8, 'the new value');
+  await sleep(700);
+  assert(!byTest('waiting'), 'a save is never announced as a command still working');
+  await fail(last('cmd', 'settings.save'), {code: 'internal', detail: 'disk full'});
+  await until(() => byTest('settings-failed'), 'the failure is said on the status line');
+  assert(!toasts().length && !document.body.innerText.includes('disk full'), 'once, and without what Python said');
+  eq(q('#set-cover_nfc').value, '0.8 mm', 'what was typed is kept');
+  await click(byTest('settings-retry'));
+  await until(() => cmds('settings.save').length === 2, 'sent again');
+  // a change made while that save is out goes after it
+  await type(q('#set-cover_nfc'), '0.9');
+  q('#set-cover_nfc').blur();
+  await sleep(600);
+  eq(cmds('settings.save').length, 2, 'one save out at a time');
+  await reply(last('cmd', 'settings.save'), {...SETTINGS, cover_nfc: 0.8});
+  await until(() => cmds('settings.save').length === 3, 'the newer value follows');
+  eq(last('cmd', 'settings.save').args.settings.cover_nfc, 0.9, 'the last change');
+  await reply(last('cmd', 'settings.save'), {...SETTINGS, cover_nfc: 0.9});
+  await until(() => byTest('settings-saved'), 'saved');
+  eq([text(byTest('settings-saved')), q('#set-cover_nfc').value], ['Saved', '0.9 mm'], 'the line says so and the field keeps the last value');
 `);
 
-test('settings pages: wide, the list beside one page; a pick moves focus to its heading and is kept for next time', `
+test('settings are one page: every section is in sight, with no list of pages', `
   await ready();
   await tab('settings');
-  const link = id => q('.oui-settings-link[data-section="' + id + '"]');
-  const shown = () => qa('.oui-settings-body .oui-formsection').filter(e => !e.hidden).map(e => e.id);
-  assert(q('.oui-settings-nav').getClientRects().length && q('.oui-settings-body').getClientRects().length, 'list and page side by side');
-  assert(!byTest('settings-back').getClientRects().length, 'no Back when wide');
-  eq(shown(), ['set-fit'], 'first page');
-  await click(link('set-language'));
-  eq(shown(), ['set-language'], 'one page at a time');
-  eq(document.activeElement, q('#set-language .oui-panel-title'), 'focus on the page heading');
-  eq(text(document.activeElement), 'Language', 'heading is the page name');
-  eq(Object.entries(localStorage).filter(([k]) => k.startsWith('oui-settings:')).map(([, v]) => v), ['set-language'], 'last page remembered');
-  location.hash = '#set-about';
-  await settle();
-  eq(shown(), ['set-about'], 'an address link opens its page');
-  eq(document.activeElement, q('#set-about .oui-panel-title'), 'and focuses its heading');
-`);
-
-test('settings pages: narrow, the list then one page with Back', `
-  await ready();
-  await tab('settings');
-  const link = id => q('.oui-settings-link[data-section="' + id + '"]');
   const visible = el => !!el && el.getClientRects().length > 0;
-  assert(visible(link('set-about')) && !visible(q('.oui-settings-body')), 'the list alone');
-  eq(qa('.oui-settings-link').map(e => e.getBoundingClientRect().left).every((x, _, a) => x === a[0]), true, 'a vertical list');
-  await click(link('set-about'));
-  assert(!visible(q('.oui-settings-nav')) && visible(q('#set-about')) && visible(byTest('settings-back')), 'the page alone, with Back');
-  eq(document.activeElement, q('#set-about .oui-panel-title'), 'focus on the page heading');
-  assert(visible(q('.oui-settings-foot')), 'the save bar stays');
-  await click(byTest('settings-back'));
-  assert(visible(link('set-about')) && !visible(q('.oui-settings-body')), 'back to the list');
-  eq(document.activeElement, link('set-about'), 'focus back on that page in the list');
+  eq(qa('#em-view-settings .oui-panel-title').filter(visible).map(text), ['Pockets', 'My presets', 'Old project copies', 'General'], 'four sections, all shown');
+  assert(!q('.oui-settings-nav') && !q('.oui-settings-link') && !byTest('settings-back'), 'nothing to pick a page from');
+  assert(visible(byTest('lang')) && visible(byTest('version')) && visible(byTest('copies-clear')), 'language, version and old copies without a click');
+  const [left, right] = [q('#set-xy_clearance'), byTest('lang')].map(e => e.getBoundingClientRect());
+  assert(right.left > left.right, 'two columns when there is room');
+  const bar = q('.oui-settings-foot').getBoundingClientRect();
+  assert(Math.abs(bar.bottom - innerHeight) <= 1, 'the status line is along the bottom edge: ' + bar.bottom);
+`);
+
+test('settings in a narrow window: one column, the status line stays, nothing overflows', `
+  await ready();
+  await tab('settings');
+  const [first, second] = [q('#set-xy_clearance'), byTest('lang')].map(e => e.getBoundingClientRect());
+  assert(second.top > first.bottom, 'one column');
+  const bar = q('.oui-settings-foot').getBoundingClientRect();
+  assert(bar.height > 0 && bar.bottom <= innerHeight + 1, 'the status line is in the window: ' + bar.bottom);
   assert(document.documentElement.scrollWidth <= innerWidth, 'nothing overflows');
 `, { width: 480 });
 
-test('settings pages: a page with a missing value is flagged in the list', `
+test('a setting left empty is flagged on its row and nothing is saved until it has a value', `
   await ready();
   await tab('settings');
-  const fit = q('.oui-settings-link[data-section="set-fit"]');
   await type(q('#set-cover_nfc'), '');
   q('#set-cover_nfc').blur();
   await settle();
-  await click(q('.oui-settings-link[data-section="set-about"]'));
-  eq(fit.dataset.state, 'error', 'flag on Fit and covers');
-  eq(fit.getAttribute('aria-label'), 'Fit and covers, has a value to fix', 'said in words');
-  assert(byTest('settings-save').disabled, 'save stays off, as before');
-  await click(byTest('settings-discard'));
-  eq(fit.dataset.state, undefined, 'flag gone');
-  eq(fit.getAttribute('aria-label'), null, 'name back to the label');
+  const row = q('#set-cover_nfc').closest('.oui-formrow');
+  eq(text(q('[role=alert]', row)), 'Enter a value.', 'said on the row');
+  await type(q('#set-xy_clearance'), '0.3');
+  q('#set-xy_clearance').blur();
+  await sleep(700);
+  assert(!last('cmd', 'settings.save'), 'nothing is saved with a value missing');
+  await type(q('#set-cover_nfc'), '0.7');
+  q('#set-cover_nfc').blur();
+  await until(() => last('cmd', 'settings.save'), 'saved once every value is there');
+  eq([last('cmd', 'settings.save').args.settings.cover_nfc, last('cmd', 'settings.save').args.settings.xy_clearance], [0.7, 0.3], 'both changes');
+  assert(!q('[role=alert]', row), 'flag gone');
 `);
 
 test('the language choice is sent to the plugin and the page follows it', `
@@ -955,7 +1102,7 @@ test('the language choice is sent to the plugin and the page follows it', `
   eq(last('ui_language').value, 'pt-BR', 'choice sent');
   eq(document.documentElement.lang, 'pt-BR', 'document language');
   eq(text(q('[data-tab=embed]')), 'Embutir', 'tabs follow');
-  eq(text(byTest('state')), 'Sem projeto', 'state follows');
+  assert(text(byTest('embed-empty')).includes('Nenhum projeto carregado'), 'the page follows');
 `);
 
 test('three columns side by side: the form, the view and the list fill the window', `
@@ -965,8 +1112,8 @@ test('three columns side by side: the form, the view and the list fill the windo
   eq([Math.round(form.width), Math.round(list.width)], [320, 380], 'side columns');
   assert(form.right < view.left && view.right < list.left, 'in reading order: form, view, list');
   eq([form.top, list.top], [view.top, view.top], 'on one line');
-  eq(Math.round(view.height), innerHeight - 88, 'the view takes the window height under the bar');
-  assert(form.bottom >= view.bottom - 1 && list.bottom >= view.bottom - 1, 'the side panels reach as far');
+  assert(form.height > innerHeight - 110 && Math.round(form.bottom) === Math.round(list.bottom) && list.bottom < innerHeight, 'the panels take the window height under the bar: ' + form.height);
+  eq(document.documentElement.scrollHeight, innerHeight, 'and the page is one screen');
   // A classic scrollbar keeps its gutter reserved (scrollbar-gutter: stable) even while the page does not scroll; the
   // root's clientWidth then still counts the gutter, so the content is at most that wide, and narrower by the gutter.
   const root = document.documentElement;
@@ -996,7 +1143,9 @@ test('one column when the window is narrow, in the order form, view, list; nothi
   eq(document.documentElement.scrollWidth, room, 'nothing wider than the window');
   const bar = r('.oui-appbar');
   assert(r('.oui-appbar-tabs').top > r('.oui-appbar-id').top && bar.height < 110, 'tabs drop to a second line');
-  for (const b of qa('button').filter(b => b.getClientRects().length)) assert(b.scrollWidth <= b.clientWidth + 1, 'label fits its button: ' + text(b));
+  for (const b of qa('button').filter(b => b.getClientRects().length && text(b))) assert(b.scrollWidth <= b.clientWidth + 1, 'label fits its button: ' + text(b));
+  const bin = q('#rm-9').getBoundingClientRect(), icon = q('#rm-9 svg').getBoundingClientRect();
+  assert(icon.left >= bin.left && icon.right <= bin.right && bin.right <= r('.em-list').right, 'and an icon button holds its icon, inside the panel');
 `, { width: 480, lang: 'pt_BR' });
 
 // ------------------------------------------------------------------ moving pockets
@@ -1007,7 +1156,7 @@ test('a pocket of the list taken in hand is changed by the form in place; a chan
   await place({...PLAN, label: 'Second'});
   await click(byTest('add'));
   eq(text(byTest('staged-help')), 'Select a pocket to change it.', 'without the 3D view there is no dragging to offer');
-  const picks = () => qa('[data-test=row-pick]');
+  const picks = () => qa('.oui-listrow-pick');
   const pressed = () => picks().map(b => b.getAttribute('aria-pressed'));
   eq(pressed(), ['false', 'false'], 'nothing in hand at first');
   const before = cmds('pocket.plan').length;
@@ -1025,7 +1174,7 @@ test('a pocket of the list taken in hand is changed by the form in place; a chan
   await reply(m, {...PLAN, mode: 'open', pause_z: null, label: 'Second'});
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm'], ['Second', 'Cube · top · open']], 'its row follows');
   eq(text(byTest('staged-count')), '2', 'no pocket was added');
-  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 × Ø6 × 3 mm disc'], 'the pauses follow too');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 19.00 mm: insert 1 pc Ø6 × 3 mm disc'], 'the pauses follow too');
   await click(qa('[data-test=mode] button').find(b => text(b) === 'Embedded'));
   await until(() => cmds('pocket.plan').length > before + 1, 'planned again');
   await reply(last('cmd', 'pocket.plan'), {blocked: {code: 'no_floor', detail: ''}, preview: null, mode: 'embedded'});
@@ -1037,7 +1186,7 @@ test('a pocket of the list taken in hand is changed by the form in place; a chan
   eq(pressed(), ['false', 'false'], 'Done lets go of it');
   assert(byTest('add') && byTest('plan-empty') && text(q('.em-form .oui-panel-title')) === 'New pocket', 'the form is for a new pocket again');
   await click(picks()[0]);
-  await click(btn('Remove Ø6 × 3 mm disc'));
+  await click(btn('Remove 1 · Ø6 × 3 mm disc'));
   assert(byTest('add') && !byTest('done') && text(byTest('staged-count')) === '1', 'removing the pocket in hand lets go of it');
   await click(picks()[0]);
   await place(PLAN);
@@ -1055,7 +1204,7 @@ test('a click on a pocket selects it, a click on its row too; Escape and a click
   assert(Math.abs(m.args.point[2] - 20) < 1e-3 && dist(m.args.point, [100, 100, 20]) < 3, 'the spot is on the top face: ' + m.args.point);
   await click(byTest('add'));
   eq(text(byTest('staged-help')), 'Select a pocket to change it. Drag it in the 3D view to move it.', 'the list says how');
-  const pressed = () => byTest('row-pick').getAttribute('aria-pressed');
+  const pressed = () => q('.oui-listrow-pick').getAttribute('aria-pressed');
   eq(pressed(), 'false', 'on the list, not in hand');
   eq(await clickAt(TOP_A), null, 'a click on a pocket places nothing');
   eq(pressed(), 'true', 'it takes the pocket in hand, and its row shows it');
@@ -1064,11 +1213,11 @@ test('a click on a pocket selects it, a click on its row too; Escape and a click
   await press('Escape');
   eq(pressed(), 'false', 'Escape lets go');
   assert(byTest('add') && byTest('plan-empty'), 'back to a new pocket');
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   eq(pressed(), 'true', 'the row takes it in hand as well');
   eq(await clickAt(NOTHING), null, 'beside the part there is nothing to place');
   eq(pressed(), 'false', 'a click on nothing lets go');
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   const fresh = await clickAt(FRONT);
   assert(fresh && Math.abs(fresh.args.point[1] - 90) < 1e-3, 'a click on a face places a new pocket there: ' + (fresh && fresh.args.point));
   eq([pressed(), text(byTest('staged-count')), fresh.args.others.length], ['false', '1', 1], 'the pocket that was in hand is let go, not moved');
@@ -1114,7 +1263,7 @@ test('a pocket of the list dropped where it cannot be made goes back; a good dro
   const m = await place3d(TOP_A);
   await click(byTest('add'));
   await dragTo(TOP_A, TOP_B);
-  eq(byTest('row-pick').getAttribute('aria-pressed'), 'true', 'dragging a pocket of the list takes it in hand');
+  eq(q('.oui-listrow-pick').getAttribute('aria-pressed'), 'true', 'dragging a pocket of the list takes it in hand');
   assert(!open('pocket.plan')[0].args.others, 'it is not checked against itself');
   await answerPlans(planAt);
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the list waits for the release');
@@ -1123,7 +1272,7 @@ test('a pocket of the list dropped where it cannot be made goes back; a good dro
   await answerPlans(() => TILTED);
   assert(notes().includes('The pocket stays as it was: the face is tilted'), 'the refusal is said: ' + notes());
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 19.00 mm']], 'the pocket is where it was');
-  assert(text(byTest('plan-pause')).includes('19') && byTest('row-pick').getAttribute('aria-pressed') === 'true', 'still in hand, as it was');
+  assert(text(byTest('plan-pause')).includes('19') && q('.oui-listrow-pick').getAttribute('aria-pressed') === 'true', 'still in hand, as it was');
   await dragTo(TOP_A, TOP_B);
   await answerPlans(planAt);
   await drop(TOP_B);
@@ -1131,7 +1280,7 @@ test('a pocket of the list dropped where it cannot be made goes back; a good dro
   const final = open('pocket.plan')[0];
   await answerPlans(args => planAt(args, {pause_z: 12.4}));
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row follows the move');
-  eq(qa('[data-test=pauses] li').map(text), ['Z 12.40 mm: insert 1 × Ø6 × 3 mm disc'], 'and so do the pauses');
+  eq(qa('[data-test=pauses] li').map(text), ['Z 12.40 mm: insert 1 pc Ø6 × 3 mm disc'], 'and so do the pauses');
   assert(!notes().includes('stays as it was'), 'the refusal is gone: ' + notes());
   eq(text(byTest('staged-count')), '1', 'no pocket was added');
   await click(byTest('apply'));
@@ -1152,8 +1301,8 @@ test('arrow keys step the pocket in hand along its face, R turns it, Delete remo
   let step = await answerPlans(planAt);
   assert(Math.abs(dist(step.args.point, m.args.point) - 0.5) < 1e-3 && step.args.point[0] > m.args.point[0], 'half a millimetre to the right: ' + step.args.point);
   assert(Math.abs(step.args.point[2] - 20) < 1e-3, 'along the face');
-  assert(text(byTest('plan-at')) !== where, 'the position line, a live region, follows: ' + text(byTest('plan-at')));
-  eq(q('[data-test=plan]').getAttribute('aria-live'), 'polite', 'so a move is announced');
+  assert(text(byTest('plan-at')) !== where, 'the position follows: ' + text(byTest('plan-at')));
+  assert(byTest('plan-at-live').getAttribute('aria-live') === 'polite' && text(byTest('plan-at-live')).endsWith(text(byTest('plan-at'))), 'and is said in a live region, so a move is announced');
   const from = step.args.point;
   await press('ArrowUp', true);
   await until(() => open('pocket.plan').length === 1, 'the big step is planned');
@@ -1188,7 +1337,7 @@ test('arrow keys step the pocket in hand along its face, R turns it, Delete remo
   step = await answerPlans(planAt);
   assert(!('spin' in step.args), 'Shift+R turns it back');
   await click(byTest('add'));
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   stage().focus();
   await press('ArrowLeft');
   await until(() => open('pocket.plan').length === 1, 'a pocket of the list steps too');
@@ -1208,17 +1357,17 @@ test('a pocket of the list let go before its move is planned still moves; a move
   await drop(TOP_B);
   await until(() => open('pocket.plan').length === 1, 'the release plans');
   await press('Escape');
-  eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'Escape let go of it before the answer came');
+  eq(q('.oui-listrow-pick').getAttribute('aria-pressed'), 'false', 'Escape let go of it before the answer came');
   await answerPlans(args => planAt(args, {pause_z: 12.4}));
   eq(rows('staged'), [['Ø6 × 3 mm disc', 'Cube · top · embedded · pause at Z 12.40 mm']], 'the row moved all the same');
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   stage().focus();
   await press('ArrowLeft');
   await until(() => open('pocket.plan').length === 1, 'the step is planned');
   await click(byTest('done'));
   await answerPlans(args => planAt(args, {pause_z: 7.2}));
   eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'Done before the answer keeps the step');
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   stage().focus();
   await press('ArrowLeft');
   await until(() => open('pocket.plan').length === 1, 'the step is planned');
@@ -1226,7 +1375,7 @@ test('a pocket of the list let go before its move is planned still moves; a move
   await answerPlans(() => TILTED);
   eq(rows('staged')[0][1], 'Cube · top · embedded · pause at Z 7.20 mm', 'a step that cannot be made leaves the row');
   assert(toasts().map(toastText).join(' | ').includes('The pocket stays as it was: the face is tilted'), 'and says so: ' + toasts().map(toastText));
-  eq(byTest('row-pick').getAttribute('aria-pressed'), 'false', 'without taking it back in hand');
+  eq(q('.oui-listrow-pick').getAttribute('aria-pressed'), 'false', 'without taking it back in hand');
 `, { gl: true });
 
 test('Add pocket waits for the plan of where the pocket is; the plan is announced when the drag ends', `
@@ -1239,12 +1388,12 @@ test('Add pocket waits for the plan of where the pocket is; the plan is announce
   await answerPlans(planAt);
   assert(!byTest('add').disabled, 'then it can');
   await dragTo(TOP_A, TOP_B);
-  eq(q('[data-test=plan]').getAttribute('aria-live'), 'off', 'the plan is not read out on every move of a drag');
+  eq([q('#em-plan-state'), byTest('plan-at-live')].map(e => e.getAttribute('aria-live')), ['off', 'off'], 'the plan is not read out on every move of a drag');
   await answerPlans(planAt);
   assert(byTest('add').disabled, 'nor while dragging');
   await drop(TOP_B);
   await until(() => open('pocket.plan').length === 1, 'the release plans');
-  eq(q('[data-test=plan]').getAttribute('aria-live'), 'polite', 'the plan of the drop is read out');
+  eq(q('#em-plan-state').getAttribute('aria-live'), 'polite', 'the plan of the drop is read out');
   assert(byTest('add').disabled, 'nor before the release is planned');
   const final = await answerPlans(planAt);
   await click(byTest('add'));
@@ -1288,7 +1437,7 @@ test('a click beside the pocket of the list in hand starts a new pocket without 
   await loaded3d();
   await place3d(TOP_A);
   await click(byTest('add'));
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   assert(await clickAt(FRONT), 'a new pocket is planned');
   const p = spot(FRONT);
   await pointer('mouseMoved', p.x + 1, p.y);
@@ -1304,9 +1453,9 @@ test('a click on the pocket of the list in hand keeps it in hand; on a new pocke
   await loaded3d();
   const m = await place3d(TOP_A);
   await click(byTest('add'));
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   eq(await clickAt(TOP_A), null, 'nothing is planned');
-  eq([byTest('row-pick').getAttribute('aria-pressed'), text(byTest('staged-count'))], ['true', '1'], 'it stays in hand, and no pocket is added');
+  eq([q('.oui-listrow-pick').getAttribute('aria-pressed'), text(byTest('staged-count'))], ['true', '1'], 'it stays in hand, and no pocket is added');
   assert(byTest('done'), 'Done is still offered');
   await click(byTest('done'));
   const fresh = await place3d(FRONT);
@@ -1325,7 +1474,7 @@ test('a pocket of the list let go twice before the answers come takes the newest
   await press('Escape');
   await until(() => open('pocket.plan').length === 2, 'letting go plans the drop for the row');
   const first = last('cmd', 'pocket.plan');
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   stage().focus();
   await press('ArrowLeft');
   await until(() => open('pocket.plan').length === 3, 'the step is planned');
@@ -1345,7 +1494,7 @@ test('a move planned for its row after letting go says nothing when it fails aft
   await loaded3d();
   await place3d(TOP_A);
   await click(byTest('add'));
-  await click(byTest('row-pick'));
+  await click(q('.oui-listrow-pick'));
   stage().focus();
   await press('ArrowLeft');
   await until(() => open('pocket.plan').length === 1, 'the step is planned');
@@ -1391,17 +1540,17 @@ test('in one column the view stays put under the pointer while the plan above it
   assert(q('.em-form').getBoundingClientRect().bottom <= q('.em-stage-panel').getBoundingClientRect().top, 'the form is above the view');
   const at = top(), empty = plan();
   await place3d(FRONT);
-  assert(plan() > empty + 100, 'the plan above the view grew: ' + empty + ' to ' + plan());
+  assert(plan() > empty + 50, 'the plan above the view grew: ' + empty + ' to ' + plan());
   await still(at, 'and the view did not move under the pointer');
   await click(byTest('add'));
   canvas().scrollIntoView({ block: 'center' });
   await settle();
   const held = top(), short = plan();
   await dragTo(FRONT, [0.05, 0.02]);
-  assert(byTest('row-pick').getAttribute('aria-pressed') === 'true' && plan() > short + 100, 'the drag took the pocket in hand, and its plan is shown above');
+  assert(q('.oui-listrow-pick').getAttribute('aria-pressed') === 'true' && plan() > short + 50, 'the drag took the pocket in hand, and its plan is shown above');
   await still(held, 'the view stays where the drag began');
   await answerPlans(() => TILTED);
-  assert(byTest('plan-blocked') && plan() < short + 100, 'a blocked spot makes the plan short again');
+  assert(byTest('plan-blocked') && plan() < short + 50, 'a blocked spot makes the plan short again');
   await still(held, 'and the pocket does not slip from under the pointer');
   // Every frame as it is drawn: an observer made after the page's own runs after it, once the view was put back.
   const drawn = [];

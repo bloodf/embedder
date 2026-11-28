@@ -31,9 +31,10 @@ export function planArgs(object: number, hit: Hit, insert: InsertChoice, o: Opti
     ...(o.pocketShape ? { pocket_shape: o.pocketShape } : {}), ...(o.polarity ? { polarity: o.polarity } : {}) };
 }
 
-/** Why Embedded is not offered: the object's (or project's) block first, then the last plan's. */
-export function embeddedBlock(obj: ObjectInfo | null, plan: Plan | null): string | null {
+/** Why Embedded is not offered: the object's block first, then one that holds for the whole plate, then the last plan's. */
+export function embeddedBlock(obj: ObjectInfo | null, plan: Plan | null, plate: readonly string[] = []): string | null {
   if (obj?.embedded_block) return obj.embedded_block;
+  if (plate.length) return plate[0];
   return plan?.blocked && plan.mode === 'embedded' ? plan.blocked.code : null;
 }
 
@@ -67,13 +68,39 @@ export function insertsNeeded(staged: readonly Staged[]): InsertCount[] {
   return [...counts.values()].sort((a, b) => (a.kind === b.kind ? a.label.localeCompare(b.label) : a.kind === 'magnet' ? -1 : 1));
 }
 
-export type KindPreview = NonNullable<Plan['preview']> & { kind: Kind; key: number; base: Hit };
+/** Auto fridge's hold advisories: one verdict for all the fridge pockets of an object, so each is said once for the
+ *  object and never once per pocket. */
+export const HOLD_WARNINGS: readonly string[] = ['hold_uncertain', 'weak_magnet_hold', 'excessive_magnet_hold'];
+
+export interface SharedWarning { code: string; objects: number[] }
+
+/** The hold advisories the staged pockets carry: each code once, with the objects it is about, in list order. */
+export function sharedWarnings(staged: readonly Staged[]): SharedWarning[] {
+  const out = new Map<string, number[]>();
+  for (const x of staged) {
+    for (const code of x.plan.warnings ?? []) {
+      if (!HOLD_WARNINGS.includes(code)) continue;
+      const objects = out.get(code) ?? [];
+      if (!objects.includes(x.args.object)) objects.push(x.args.object);
+      out.set(code, objects);
+    }
+  }
+  return [...out.entries()].map(([code, objects]) => ({ code, objects }));
+}
+
+/** A pocket's own warnings (a thin cover, an NFC tag near a magnet): all but the hold advisories. */
+export function ownWarnings(plan: Plan): string[] {
+  return (plan.warnings ?? []).filter(w => !HOLD_WARNINGS.includes(w));
+}
+
+export type KindPreview = NonNullable<Plan['preview']> & { kind: Kind; key: number; base: Hit; n: number };
 
 /** Previews of the staged pockets on one object (the viewer shows one object at a time), each with the insert kind
- *  that colours it, its key in the list and the face it was planned on. `except`: the pocket in hand, drawn apart. */
+ *  that colours it, its key in the list, its number there (1, 2, …: the row and the pocket in the view carry the same)
+ *  and the face it was planned on. `except`: the pocket in hand, drawn apart. */
 export function previewsFor(staged: readonly Staged[], object: number | null, except: number | null = null): KindPreview[] {
-  return staged.flatMap(x => (x.args.object === object && x.key !== except && x.plan.preview
-    ? [{ ...x.plan.preview, kind: x.plan.kind ?? 'magnet', key: x.key, base: hitOf(x.args) }] : []));
+  return staged.flatMap((x, i) => (x.args.object === object && x.key !== except && x.plan.preview
+    ? [{ ...x.plan.preview, kind: x.plan.kind ?? 'magnet', key: x.key, base: hitOf(x.args), n: i + 1 }] : []));
 }
 
 // ---- a pocket of the list taken in hand: the form shows it, and a change plans it again in its place

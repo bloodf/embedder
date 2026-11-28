@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- **The pocket you just placed stays on screen.** After a click on a face, what goes in, where the print pauses, the cover, any warnings and **Add pocket** sit at the bottom of the form, which now scrolls inside its own panel. They used to end up below the window edge. The warnings come first, **Add pocket** turns into the main button once the pocket can be added, and the pocket's size, position and cavity are behind **Dimensions**.
+- **Form, 3D view and list fit one screen** from 860 px wide. In two columns the list sits under the 3D view next to the form, so the staged pockets and **Apply** are in sight while you place. A banner above the panels no longer pushes their bottom edge out of the window.
+- **Fridge magnets on the bottom** moved from the form to the pocket list, where its pockets appear. The buttons read `Auto`, `1`, `2`, `4`, and **All objects** is a tick box.
+- **One hold warning per object.** The advice about magnet hold shows once above the list, naming the object, and each pocket it covers carries a small mark. It used to repeat as four lines on every row. The warnings are shorter.
+- **Pockets are numbered** in the list and on the model, so two pockets of the same insert can be told apart.
+- **The result names the project, not the file.** After Apply the page says "2 pockets added to a new copy of Fridge tile" and shows when the copy was saved. The file name with its time stamp and the storage folder are gone; the path appears only when OrcaSlicer cannot be asked to open the copy, and **Copy path** copies it without showing it. The pause line is written in the page language ("2 pcs Ø6 × 3 mm disc") instead of the comment that goes into the G-code. **Load project again** is on the result card too.
+- **Settings are one page and save by themselves.** The six pages became four sections (Pockets, My presets, Old project copies, General) with no list to pick from. A change is saved a moment after you make it and a line at the bottom says "Saved", or "Couldn't save" with **Retry**. Save and Discard are gone. Preset sizes read as they do in the insert list ("20 × 10 × 3 mm block").
+- **Errors are said in plain words.** "Embedder could not start" now says what to do, and what Python reported is behind **Technical details** with a copy button. A failed command says "Embedder ran into an unexpected problem" and offers **Copy details**. **Load project** is off while Embedder has not started.
+- **No banner for quick commands.** "Still working: …" shows only when a command has been out for more than half a second, and never for the background reads of the preset list and the old copies. It used to flash at the top of the page on every command and push the page down.
+- Pockets already in the project are rows with a bin and **Undo** instead of "Remove …" tick boxes, and they come first while nothing is staged.
+- A custom size is the last choice of the insert list (**Custom size…**) instead of a tick box under it.
+- Wording: "Pocket type" for Embedded/Open, "Polarity mark" (with a note that it does not change the pocket), "Load project again", "Cancel" in dialogs, "2 pcs" instead of "2 ×" next to a size, and the banner for a plate where embedded pockets are off reads as one sentence.
+- The bar shows a state chip only while loading, when Embedder is not ready or after a copy was written. The hint in the 3D view sits on a plate of its own and leaves once a pocket is staged. Without the 3D view, the place form is as tall as its one row.
+
+- Shared UI 5.14.0: the result uses the shared saved-copy card (with **Copy path**), Settings its one-page layout, the lists its rows, and the banners its delay and **Technical details**. Toasts now sit bottom-right.
+
+### Fixed
+- With pockets already in the project and nothing staged, the list's footer text ran through the "Embedder pockets in the project" heading in a 900 px tall window.
+- "pause at Z 3.80 mm" no longer breaks between "Z" and the number.
+- The footer of the list no longer reads "0 pockets to add, 0 to remove".
+- A long project name no longer cuts the "Settings" tab short in a narrow window.
+
 ## [0.10.3] - 2026-11-28
 
 ### Changed

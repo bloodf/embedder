@@ -21,11 +21,11 @@ const closeButton = () => ({ severity: 'secondary', text: true, rounded: true, '
       </div>
     </form>
     <template #footer>
-      <Button :label="dialog.no ?? t('common.goBack')" severity="secondary" data-dlg="cancel" @click="close(dialog.cancelValue)" />
+      <Button :label="dialog.no ?? t('common.cancel')" severity="secondary" data-dlg="cancel" @click="close(dialog.cancelValue)" />
       <Button :label="dialog.yes ?? t('common.ok')" type="submit" form="em-dlg-form" data-dlg="confirm" :disabled="!dialog.inputValue.trim()" />
     </template>
   </Dialog>
-  <OuiConfirm v-else :visible="dialog.visible" :title="dialog.title" :confirm-label="dialog.yes ?? t('common.ok')" :cancel-label="dialog.no ?? t('common.goBack')"
+  <OuiConfirm v-else :visible="dialog.visible" :title="dialog.title" :confirm-label="dialog.yes ?? t('common.ok')" :cancel-label="dialog.no ?? t('common.cancel')"
               :danger="dialog.danger" :draggable="false" :close-button-props="closeButton()" @update:visible="onVisible" @confirm="close(true)" @after-hide="restoreFocus">
     <p class="em-dlg-text">{{ dialog.text }}</p>
   </OuiConfirm>

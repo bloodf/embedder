@@ -364,6 +364,13 @@ class Pauses(unittest.TestCase):
         out, _ = pocket.pauses([a, b], existing=())
         self.assertEqual(out, ((round(a.pause_z, 6), "Embedder: insert 1 x 6x3 magnet, 1 x 5x3 magnet"),))
 
+    def test_items_are_the_same_groups_as_data(self):
+        a = pocket.plan(req(point=(5, 5, 20)), CTX)
+        b = pocket.plan(req(point=(15, 5, 20))._replace(polarity="N"), CTX)
+        o = pocket.plan(req(mode="open"), CTX)
+        self.assertEqual(pocket.pause_items([a, b, o], copies=[2, 1, 1]), {round(a.pause_z, 6): [
+            {"label": "6x3 magnet", "polarity": None, "n": 2}, {"label": "6x3 magnet", "polarity": "N", "n": 1}]})
+
     def test_existing_custom_gcode_at_the_same_layer_is_kept(self):
         a = pocket.plan(req(), CTX)
         out, warnings = pocket.pauses([a], existing=(a.pause_z + 0.00001,))

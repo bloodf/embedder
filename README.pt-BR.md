@@ -87,8 +87,8 @@ O Embedder é um projeto independente, que não é feito nem mantido pela equipe
 | | Formatos com respiro | Um disco fica num hexágono, e um bloco numa caixa com um respiro redondo de 1 mm em cada canto. O ar e a cola que sobra saem, e o inserto desce até o fundo. |
 | | Escolha o formato | Círculo, hexágono, quadrado ou retângulo, cada um o menor que segura o inserto. A escolha fica guardada para a predefinição. |
 | | Fendas em faces laterais | Atrás de uma parede vertical, o inserto fica de pé numa fenda vertical e entra por cima. |
-| | Ímã de geladeira automático | **Ímã de geladeira automático (base)** (`Auto`, `1×`, `2×`, `4×`) encontra a base do objeto selecionado e posiciona bolsos simétricos de ímã ali, longe da borda. **Auto todos os objetos** faz isso para cada objeto da mesa em um clique. |
-| | Nota de polaridade | Marque um bolso de ímã como "N para cima" ou "S para cima". A nota aparece na lista de bolsos e na mensagem de pausa, para você colocar cada ímã do lado certo. |
+| | Ímãs de geladeira na base | Abaixo da lista de bolsos, **Ímãs de geladeira na base** (`Auto`, `1`, `2`, `4`) encontra a base do objeto selecionado e posiciona ali bolsos de ímã igualmente espaçados, longe da borda. Marque **Todos os objetos** para fazer isso em cada objeto da mesa com um clique. |
+| | Marca de polaridade | Marque um bolso de ímã como "N para cima" ou "S para cima". A marca aparece na lista de bolsos e na mensagem de pausa, para você colocar cada ímã do lado certo. |
 | | Centralizar na face | Leva o bolso ao meio da face plana clicada, que é o que uma tampa, uma base ou um azulejo pedem. |
 | | Seus tamanhos | Qualquer disco ou bloco, salvo com um nome e mantido entre as sessões. |
 | | Insertos para deixar à mão | Abaixo da lista de bolsos, por exemplo "2 x 6x3 magnet, 1 x 25 mm NFC sticker", com as alturas em que a impressão vai pausar. Cada cópia do objeto conta. |
@@ -117,8 +117,8 @@ As regras completas dos formatos de bolso, da pausa, dos avisos e dos limites es
 
 1. Abra o projeto no OrcaSlicer e escolha a mesa com a peça.
 2. Abra a aba **Embedder** e clique em **Carregar projeto**.
-3. Em **Inserto**, escolha um tamanho da lista, ou marque **Tamanho personalizado** e informe o seu. Em **Bolso**, escolha **Embutido** ou **Aberto**.
-4. Gire a peça e clique na face onde o inserto vai. Marque **Centralizar na face** para levá-lo ao meio. **Este bolso** mostra o tamanho, a cavidade, a pausa e a cobertura.
+3. Em **Inserto**, escolha um tamanho da lista, ou escolha **Tamanho personalizado…** no fim dela e informe o seu. Em **Tipo de bolso**, escolha **Embutido** ou **Aberto**.
+4. Gire a peça e clique na face onde o inserto vai. Marque **Centralizar na face** para levá-lo ao meio. **Este bolso** mostra o que vai dentro, onde a impressão pausa e a cobertura; **Dimensões** abre o tamanho e a posição.
 5. Clique em **Adicionar bolso**. Adicione outros do mesmo jeito.
 6. Clique em **Aplicar** e depois em **Abrir no OrcaSlicer**. No novo projeto, use **Arquivo > Salvar projeto como** para guardá-lo.
 7. Fatie. Na pré-visualização, a pausa aparece no controle de camadas logo acima de cada bolso embutido.
@@ -216,7 +216,7 @@ Um ímã perto da etiqueta pode impedir a leitura. O Embedder avisa quando um bo
 
 ## 🌍 Idiomas
 
-Inglês, português do Brasil, espanhol, alemão, chinês simplificado e polonês. O Embedder segue o idioma do OrcaSlicer, ou o que você escolher em **Configurações > Idioma**.
+Inglês, português do Brasil, espanhol, alemão, chinês simplificado e polonês. O Embedder segue o idioma do OrcaSlicer, ou o que você escolher em **Configurações > Geral**.
 
 ## 🧩 Mais plugins do bloodf
 

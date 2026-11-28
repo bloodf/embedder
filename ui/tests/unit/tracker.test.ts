@@ -62,3 +62,17 @@ test('{confirmed: false} shows the "sent, waiting" text, not success; {confirmed
   sends[2].resolve(true); await c;
   assert.deepEqual(notices.map(n => [n.kind, n.text]), [['info', 'sent'], ['success', 'done'], ['success', 'done']]);
 });
+
+test('an error carries its technical text beside the sentence; a background command is marked as one', async () => {
+  const { tr, sends, notices } = setup();
+  const a = tr.run({ key: 'apply', label: 'Apply', cmd: 'apply' });
+  assert.equal(tr.pending.get('apply')?.background, undefined, 'a command the user asked for');
+  sends[0].reject(Object.assign(new Error('Something went wrong'), { detail: "internal: KeyError: 'x'" }));
+  await a;
+  assert.deepEqual(notices.map(n => [n.kind, n.detail, /KeyError/.test(n.text)]), [['error', "internal: KeyError: 'x'", false]], 'the detail is beside the text, never in it');
+  const b = tr.run({ key: 'copies', label: 'Copies', cmd: 'copies.status', background: true, quiet: true });
+  assert.equal(tr.pending.get('copies')?.background, true, 'so the page never says it is still working');
+  sends[1].reject(new Error('no'));
+  assert.deepEqual(await b, { ok: false, reason: 'error', error: 'no' });
+  assert.equal(notices.length, 1, 'a quiet command says nothing itself');
+});
