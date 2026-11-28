@@ -140,7 +140,8 @@ window.orca = {
 };
 document.addEventListener('securitypolicyviolation', e => __t.violations.push(e.violatedDirective + ' ' + e.blockedURI));
 window.addEventListener('unhandledrejection', e => __t.rejections.push(String(e.reason && e.reason.message || e.reason)));
-window.addEventListener('error', e => __t.errors.push(String(e.message)));
+// Chrome's own note that a ResizeObserver callback changed layout (the view keeps its place by scrolling there); not a page error.
+window.addEventListener('error', e => { if (!/^ResizeObserver loop/.test(e.message)) __t.errors.push(String(e.message)); });
 `;
 
 /** Scenario helpers, evaluated in the page before each scenario body. */
