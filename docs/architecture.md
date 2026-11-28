@@ -100,7 +100,7 @@ Plugin to page:
 | `project.load` | | the job description below (asynchronous) |
 | `mesh.chunk` | `job`, `object`, `part`, `kind` (`pos` or `idx`), `i` | `{i, chunks, bytes, data}` (base64) |
 | `pocket.plan` | see below | the planned pocket or a block |
-| `pocket.auto_fridge` | `job`, `object` (an index, or `"all"`: each object once), `count` (`auto` or an integer), `spread`, optional `magnet_grade` / `fridge_surface` overrides, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
+| `pocket.auto_fridge` | `job`, `object` (an index, or `"all"`: each object once), `count` (`auto` or `1`..`8`), `spread`, optional `magnet_grade` / `fridge_surface` overrides, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
 | `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings, pruned}` (asynchronous) |
 | `project.open` | `path` | `{open: "asked" or "none"}` |
 | `copies.status` | | `{count, bytes, kept}`: the old applied copies that may be deleted, and how many are kept |
