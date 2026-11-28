@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [0.10.2] - 2026-11-28
+
+### Changed
+- Shared UI 5.13.0.
+
+### Documentation
+- The fridge magnet settings are in the architecture notes, the `auto_fridge` count range reads `1`..`8`, and the Portuguese README has the same Install steps as the English one.
+
 ## [0.10.1] - 2026-11-25
 
 ### Changed
