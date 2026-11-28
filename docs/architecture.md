@@ -100,7 +100,7 @@ Plugin to page:
 | `project.load` | | the job description below (asynchronous) |
 | `mesh.chunk` | `job`, `object`, `part`, `kind` (`pos` or `idx`), `i` | `{i, chunks, bytes, data}` (base64) |
 | `pocket.plan` | see below | the planned pocket or a block |
-| `pocket.auto_fridge` | `job`, `object` (an index, or `"all"`: each object once), `count` (`auto` or `1`..`8`), `spread`, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
+| `pocket.auto_fridge` | `job`, `object` (an index, or `"all"`: each object once), `count` (`auto` or `1`..`8`), `spread`, optional `magnet_grade` / `fridge_surface` overrides, plus the insert and pocket options | `{items: [{args, plan}, ...], count}` (asynchronous) |
 | `project.apply` | `job`, `pockets`, `remove` | `{path, name, pockets, removed, pauses, warnings, pruned}` (asynchronous) |
 | `project.open` | `path` | `{open: "asked" or "none"}` |
 | `copies.status` | | `{count, bytes, kept}`: the old applied copies that may be deleted, and how many are kept |
@@ -117,6 +117,8 @@ Plugin to page:
 | `z_clearance` | 0.2 mm | 0 to 1; added to the insert's thickness |
 | `cover_magnet` | 1.0 mm | 0 to 10; material sealed over an embedded magnet |
 | `cover_nfc` | 0.6 mm | 0 to 10; the same for an NFC tag |
+| `magnet_grade` | `N35` | `N35`, `N42`, `N52`, `ferrite`; used by `pocket.auto_fridge` hold estimates |
+| `fridge_surface` | `steel` | `steel`, `stainless`, `board`; used by `pocket.auto_fridge` hold estimates |
 | `user_presets` | `[]` | at most 200 valid presets |
 | `pocket_shapes` | `{}` | preset id (1 to 40 characters) to the pocket shape picked for it, newest last; the newest 500 are kept, and `presets.delete` drops the preset's entry |
 
