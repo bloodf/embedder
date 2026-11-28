@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-28
+
 ### Changed
 - **The pocket you just placed stays on screen.** After a click on a face, what goes in, where the print pauses, the cover, any warnings and **Add pocket** sit at the bottom of the form, which now scrolls inside its own panel. They used to end up below the window edge. The warnings come first, **Add pocket** turns into the main button once the pocket can be added, and the pocket's size, position and cavity are behind **Dimensions**.
 - **Form, 3D view and list fit one screen** from 860 px wide. In two columns the list sits under the 3D view next to the form, so the staged pockets and **Apply** are in sight while you place. A banner above the panels no longer pushes their bottom edge out of the window.
