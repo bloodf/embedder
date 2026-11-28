@@ -32,12 +32,17 @@ O Embedder coloca ímãs e etiquetas NFC dentro das suas peças impressas em 3D.
 
 ## 📦 Instalação
 
-Assine o [Embedder no Orca Cloud](https://cloud.orcaslicer.com/p/58222d4f9e52), depois abra **File > Plugins** no OrcaSlicer, clique em **Refresh** e marque **Activate**.
+Primeiro encontre a janela **Plugins** do OrcaSlicer:
+
+- **Windows e Linux:** clique na pequena seta ▾ à direita de **File**, no canto superior esquerdo da janela do OrcaSlicer, e depois em **Plugins**. (Aqui **Plugins** não fica dentro de **File**.)
+- **macOS:** clique em **File** na barra de menus no topo da tela e depois em **Plugins**.
+
+Pelo Orca Cloud: assine o [Embedder no Orca Cloud](https://cloud.orcaslicer.com/p/58222d4f9e52), abra **Plugins**, clique em **Refresh** e marque **Activate**.
 
 A partir de um arquivo (os menus do OrcaSlicer aparecem aqui com os nomes em inglês):
 
 1. Baixe `embedder_any.whl` da [última versão](https://github.com/bloodf/embedder/releases/latest).
-2. No OrcaSlicer, abra **File > Plugins > Install local plugin** e escolha o arquivo.
+2. Abra **Plugins** como acima, clique na pequena seta na ponta esquerda do botão **Install plugin**, escolha **Install local plugin**, clique nele e escolha o arquivo.
 3. Marque **Activate** e permita a thread em segundo plano quando o OrcaSlicer pedir.
 4. Abra a aba **Embedder**, ao lado de Prepare, Preview e Device.
 
